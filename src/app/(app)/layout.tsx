@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/Sidebar";
+import { CommandPalette } from "@/components/CommandPalette";
 
 export default function AppLayout({
   children,
@@ -7,6 +8,7 @@ export default function AppLayout({
 }>) {
   return (
     <div className="flex min-h-screen">
+      <CommandPalette />
       {/* 240px Left Rail */}
       <Sidebar />
       
