@@ -2,6 +2,7 @@
 
 import { db } from "@/server/db";
 import { tasks } from "@/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -12,7 +13,6 @@ export async function createTask(formData: FormData) {
         return { error: "Task title cannot be empty." };
     }
 
-    // Get the authenticated user
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -21,19 +21,46 @@ export async function createTask(formData: FormData) {
     }
 
     try {
-        // Insert the task into Postgres via Drizzle
         await db.insert(tasks).values({
             userId: user.id,
             title: title.trim(),
             status: "next",
         });
 
-        // Tell Next.js to refresh the data on the Today page
         revalidatePath("/");
+        revalidatePath("/tasks");
 
         return { success: true };
     } catch (error) {
         console.error("Failed to create task:", error);
-        return { error: "Failed to save the task to the database." };
+        return { error: "Failed to save the task." };
     }
+}
+
+export async function toggleTaskStatus(id: string, currentStatus: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    const newStatus = currentStatus === "done" ? "next" : "done";
+    const completedAt = newStatus === "done" ? new Date() : null; // We'll just use updated_at for now, but this prepares us for future logic
+
+    await db.update(tasks)
+        .set({ status: newStatus, updatedAt: new Date() })
+        .where(and(eq(tasks.id, id), eq(tasks.userId, user.id)));
+
+    revalidatePath("/");
+    revalidatePath("/tasks");
+}
+
+export async function deleteTask(id: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Unauthorized" };
+
+    await db.delete(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.userId, user.id)));
+
+    revalidatePath("/");
+    revalidatePath("/tasks");
 }
