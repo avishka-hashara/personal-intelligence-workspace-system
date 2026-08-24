@@ -3,8 +3,8 @@ import { tasks } from "@/server/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { toggleTaskStatus, deleteTask, createTask } from "@/server/actions/tasks";
-import { CheckSquare, Square, Trash2 } from "lucide-react";
+import { createTask } from "@/server/actions/tasks";
+import TaskList from "@/components/TaskList";
 
 export default async function TasksPage() {
     const supabase = await createClient();
@@ -55,57 +55,13 @@ export default async function TasksPage() {
             {/* Pending Tasks */}
             <section>
                 <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Pending</h2>
-                <div className="space-y-3">
-                    {pendingTasks.length === 0 ? (
-                        <p className="text-sm text-slate-500 italic">No pending tasks.</p>
-                    ) : (
-                        pendingTasks.map((task) => (
-                            <div key={task.id} className="group h-14 border border-slate-200 rounded-lg bg-white flex items-center justify-between px-4 hover:border-slate-300 transition-colors">
-                                <div className="flex items-center flex-1">
-                                    <form action={toggleTaskStatus.bind(null, task.id, task.status)}>
-                                        <button type="submit" className="text-slate-300 hover:text-slate-600 mr-4 mt-1 transition-colors">
-                                            <Square className="w-5 h-5" />
-                                        </button>
-                                    </form>
-                                    <span className="text-slate-700 font-medium">{task.title}</span>
-                                </div>
-                                <form action={deleteTask.bind(null, task.id)}>
-                                    <button type="submit" className="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
-                                </form>
-                            </div>
-                        ))
-                    )}
-                </div>
+                <TaskList tasks={pendingTasks} />
             </section>
 
             {/* Completed Tasks */}
             <section>
                 <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Completed</h2>
-                <div className="space-y-3">
-                    {completedTasks.length === 0 ? (
-                        <p className="text-sm text-slate-500 italic">No completed tasks yet.</p>
-                    ) : (
-                        completedTasks.map((task) => (
-                            <div key={task.id} className="group h-14 border border-slate-200 rounded-lg bg-slate-50 flex items-center justify-between px-4">
-                                <div className="flex items-center flex-1 opacity-60">
-                                    <form action={toggleTaskStatus.bind(null, task.id, task.status)}>
-                                        <button type="submit" className="text-slate-900 mr-4 mt-1">
-                                            <CheckSquare className="w-5 h-5" />
-                                        </button>
-                                    </form>
-                                    <span className="text-slate-700 font-medium line-through">{task.title}</span>
-                                </div>
-                                <form action={deleteTask.bind(null, task.id)}>
-                                    <button type="submit" className="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
-                                </form>
-                            </div>
-                        ))
-                    )}
-                </div>
+                <TaskList isCompletedList={true} tasks={completedTasks} />
             </section>
         </div>
     );
