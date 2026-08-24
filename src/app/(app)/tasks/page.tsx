@@ -1,6 +1,6 @@
 import { db } from "@/server/db";
 import { tasks } from "@/server/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, asc, desc } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { createTask } from "@/server/actions/tasks";
@@ -14,12 +14,12 @@ export default async function TasksPage() {
         redirect("/login");
     }
 
-    // Fetch all tasks for the user
+    // Fetch all tasks for the user ordered by sortKey
     const allTasks = await db
         .select()
         .from(tasks)
         .where(eq(tasks.userId, user.id))
-        .orderBy(desc(tasks.createdAt));
+        .orderBy(asc(tasks.sortKey), desc(tasks.createdAt));
 
     const pendingTasks = allTasks.filter(t => t.status !== "done");
     const completedTasks = allTasks.filter(t => t.status === "done");

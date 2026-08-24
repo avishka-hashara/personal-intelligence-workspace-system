@@ -1,10 +1,10 @@
 import { db } from "@/server/db";
 import { tasks, users } from "@/server/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, asc, desc } from "drizzle-orm";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { createTask } from "@/server/actions/tasks";
-import { CheckSquare } from "lucide-react";
+import TaskList from "@/components/TaskList";
 
 export default async function Today() {
   const supabase = await createClient();
@@ -24,19 +24,21 @@ export default async function Today() {
   }
   // -----------------------------------------------------
 
-  // Fetch tasks for the current user, newest first
+  // Fetch tasks for the current user ordered by sortKey
   const userTasks = await db
     .select()
     .from(tasks)
     .where(eq(tasks.userId, user.id))
-    .orderBy(desc(tasks.createdAt));
+    .orderBy(asc(tasks.sortKey), desc(tasks.createdAt));
+
+  const pendingTasks = userTasks.filter((t) => t.status !== "done");
 
   return (
     <div className="flex flex-col gap-8">
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Today</h1>
         <p className="text-slate-500 mt-2 text-sm font-medium">
-          {userTasks.length} tasks · 0 h blocked
+          {pendingTasks.length} tasks · 0 h blocked
         </p>
       </header>
 
@@ -62,26 +64,7 @@ export default async function Today() {
       {/* Task List */}
       <section>
         <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Your Tasks</h2>
-
-        {userTasks.length === 0 ? (
-          <div className="h-32 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-500 text-sm">
-            Your task list is empty. Add a task above to get started.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {userTasks.map((task) => (
-              <div
-                key={task.id}
-                className="h-14 border border-slate-200 rounded-lg bg-white flex items-center px-4 hover:border-slate-300 transition-colors cursor-pointer"
-              >
-                <div className="w-5 h-5 border-2 border-slate-300 rounded mr-4 flex items-center justify-center text-transparent hover:text-slate-400 hover:border-slate-400 transition-colors">
-                  <CheckSquare className="w-4 h-4" />
-                </div>
-                <span className="text-slate-700 font-medium">{task.title}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <TaskList tasks={pendingTasks} />
       </section>
     </div>
   );

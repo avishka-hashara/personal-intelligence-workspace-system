@@ -15,6 +15,13 @@
       "when": 1787591695097,
       "tag": "0001_oval_ronan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787595522141,
+      "tag": "0002_curvy_jocasta",
+      "breakpoints": true
     }
   ]
 }

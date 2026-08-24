@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ALTER COLUMN "sort_key" SET DATA TYPE text;

@@ -73,7 +73,7 @@ export const tasks = pgTable("tasks", {
     rrule: text("rrule"),
     recurrenceParentId: uuid("recurrence_parent_id"),
     isContainer: boolean("is_container").default(false),
-    sortKey: numeric("sort_key"),
+    sortKey: text("sort_key"),
     energy: text("energy"),
     milestoneId: uuid("milestone_id"),
     parentTaskId: uuid("parent_task_id"),
