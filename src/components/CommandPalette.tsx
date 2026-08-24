@@ -26,7 +26,7 @@ import {
 export function CommandPalette() {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const { isCommandOpen, setCommandOpen, toggleCommand } = useUIStore();
+  const { isCommandOpen, setCommandOpen, toggleCommand, isCaptureOpen } = useUIStore();
 
   useEffect(() => {
     setMounted(true);
@@ -57,8 +57,8 @@ export function CommandPalette() {
         return;
       }
 
-      // 3. Single-key navigation (only when palette is closed and no modifiers pressed)
-      if (isCommandOpen || e.metaKey || e.ctrlKey || e.altKey) {
+      // 3. Single-key navigation (only when palette & capture are closed and no modifiers pressed)
+      if (isCommandOpen || isCaptureOpen || e.metaKey || e.ctrlKey || e.altKey) {
         return;
       }
 

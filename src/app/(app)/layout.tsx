@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/Sidebar";
 import { CommandPalette } from "@/components/CommandPalette";
+import { QuickCapture } from "@/components/QuickCapture";
 
 export default function AppLayout({
   children,
@@ -9,6 +10,7 @@ export default function AppLayout({
   return (
     <div className="flex min-h-screen">
       <CommandPalette />
+      <QuickCapture />
       {/* 240px Left Rail */}
       <Sidebar />
       
