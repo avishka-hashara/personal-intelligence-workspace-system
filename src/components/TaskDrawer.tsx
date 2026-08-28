@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useMemo, useTransition } from "react";
 import { useUIStore } from "@/store/uiStore";
 import { useTaskStore, type Task } from "@/store/taskStore";
 import {
@@ -13,10 +13,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { CheckSquare, Square, Trash2, ListTree, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CheckSquare, Square, Trash2, ListTree, Plus, Tag, X, Loader2 } from "lucide-react";
+import { assignTag, removeTag, fetchTagsForTask } from "@/server/actions/tasks";
 
 interface TaskDrawerProps {
   tasks?: Task[];
+}
+
+interface TagItem {
+  id: string;
+  name: string;
+  colour?: string | null;
 }
 
 export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
@@ -34,12 +42,43 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
   const [notes, setNotes] = useState("");
   const [subtaskTitle, setSubtaskTitle] = useState("");
 
+  // Tag state
+  const [tagsList, setTagsList] = useState<TagItem[]>([]);
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [isTagPending, startTagTransition] = useTransition();
+
   useEffect(() => {
     if (selectedTask) {
       setTitle(selectedTask.title ?? "");
       setNotes(selectedTask.notes ?? "");
     }
   }, [selectedTask?.id, selectedTask?.title, selectedTask?.notes]);
+
+  // Load tags dynamically when drawer opens or selected task changes
+  useEffect(() => {
+    if (selectedTask?.id) {
+      let isCancelled = false;
+      setIsLoadingTags(true);
+      fetchTagsForTask(selectedTask.id).then((res) => {
+        if (!isCancelled) {
+          if (res && res.tags) {
+            setTagsList(res.tags);
+          } else {
+            setTagsList([]);
+          }
+          setIsLoadingTags(false);
+        }
+      });
+
+      return () => {
+        isCancelled = true;
+      };
+    } else {
+      setTagsList([]);
+      setNewTagName("");
+    }
+  }, [selectedTask?.id]);
 
   const handleTitleBlur = () => {
     if (!selectedTask) return;
@@ -55,6 +94,52 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
     if (notes === currentNotes) return;
 
     updateTask(selectedTask.id, { notes });
+  };
+
+  const handleAddTag = (e?: React.FormEvent<HTMLFormElement>) => {
+    if (e) e.preventDefault();
+    const trimmed = newTagName.trim();
+    if (!trimmed || !selectedTask) return;
+
+    // Avoid duplicate display
+    const alreadyPresent = tagsList.some(
+      (t) => t.name.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (alreadyPresent) {
+      setNewTagName("");
+      return;
+    }
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticTag: TagItem = { id: tempId, name: trimmed };
+    setTagsList((prev) => [...prev, optimisticTag]);
+    setNewTagName("");
+
+    startTagTransition(async () => {
+      const res = await assignTag(selectedTask.id, trimmed);
+      if (res && res.success && res.tag) {
+        setTagsList((prev) =>
+          prev.map((t) => (t.id === tempId ? (res.tag as TagItem) : t))
+        );
+      } else {
+        // Rollback
+        setTagsList((prev) => prev.filter((t) => t.id !== tempId));
+      }
+    });
+  };
+
+  const handleRemoveTag = (tagId: string) => {
+    if (!selectedTask) return;
+    const previousTags = tagsList;
+    setTagsList((prev) => prev.filter((t) => t.id !== tagId));
+
+    startTagTransition(async () => {
+      const res = await removeTag(selectedTask.id, tagId);
+      if (res && res.error) {
+        // Rollback
+        setTagsList(previousTags);
+      }
+    });
   };
 
   const handleAddSubtask = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -87,7 +172,7 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
             Task Details
           </SheetTitle>
           <SheetDescription className="sr-only">
-            Edit task details, notes, and manage subtasks.
+            Edit task details, notes, tags, and manage subtasks.
           </SheetDescription>
         </SheetHeader>
 
@@ -120,6 +205,66 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                 rows={4}
                 className="min-h-28 text-sm text-slate-800 border-slate-200 focus-visible:ring-slate-900"
               />
+            </div>
+
+            {/* Tags Section */}
+            <div className="space-y-2.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-slate-400" />
+                Tags
+              </label>
+
+              {/* Tag Badges List */}
+              <div className="flex flex-wrap items-center gap-1.5 min-h-6">
+                {tagsList.map((tag) => (
+                  <Badge
+                    key={tag.id}
+                    variant="secondary"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200/80 hover:bg-slate-200/70 transition-colors rounded-md"
+                  >
+                    <span>{tag.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag.id)}
+                      className="text-slate-400 hover:text-red-500 rounded-full p-0.5 hover:bg-slate-200 transition-colors focus:outline-none cursor-pointer"
+                      aria-label={`Remove tag ${tag.name}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+
+                {isLoadingTags && tagsList.length === 0 && (
+                  <span className="text-xs text-slate-400 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Loading tags...
+                  </span>
+                )}
+
+                {!isLoadingTags && tagsList.length === 0 && (
+                  <span className="text-xs text-slate-400 italic">No tags assigned yet.</span>
+                )}
+              </div>
+
+              {/* Tag Input Form */}
+              <form onSubmit={handleAddTag} className="flex items-center gap-2 pt-1">
+                <Input
+                  type="text"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  placeholder="Add a tag (e.g. 'urgent', 'dev') and press Enter..."
+                  className="h-9 text-xs border-slate-200 focus-visible:ring-slate-900 flex-1"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  variant="outline"
+                  disabled={!newTagName.trim() || isTagPending}
+                  className="h-9 px-3 text-xs font-medium text-slate-700 border-slate-200 hover:bg-slate-50 shrink-0 cursor-pointer disabled:opacity-40"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Add
+                </Button>
+              </form>
             </div>
 
             {/* Subtasks Section */}
@@ -212,4 +357,3 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
 }
 
 export default TaskDrawer;
-
