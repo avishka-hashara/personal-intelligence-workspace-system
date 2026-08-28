@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useUIStore } from "@/store/uiStore";
-import { createTask } from "@/server/actions/tasks";
+import { useTaskStore } from "@/store/taskStore";
 import { Plus, CornerDownLeft, Sparkles } from "lucide-react";
 
 export function QuickCapture() {
   const { isCaptureOpen, setCaptureOpen, isCommandOpen } = useUIStore();
+  const { addTask } = useTaskStore();
   const [title, setTitle] = useState("");
-  const [, startTransition] = useTransition();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -39,21 +39,18 @@ export function QuickCapture() {
     };
   }, [setCaptureOpen, isCommandOpen]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
 
-    const formData = new FormData();
-    formData.append("title", trimmedTitle);
-
     setTitle("");
     setCaptureOpen(false);
 
-    startTransition(async () => {
-      await createTask(formData);
-    });
+    // Instant optimistic 0ms task addition + background sync
+    await addTask({ title: trimmedTitle });
   };
+
 
   if (!isCaptureOpen) {
     return null;

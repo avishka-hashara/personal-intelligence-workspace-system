@@ -7,6 +7,10 @@ interface UIState {
   isCaptureOpen: boolean;
   setCaptureOpen: (open: boolean) => void;
   toggleCapture: () => void;
+  selectedTaskId: string | null;
+  selectedTask: any | null;
+  setSelectedTaskId: (id: string | null) => void;
+  setSelectedTask: (task: any | null) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -16,4 +20,14 @@ export const useUIStore = create<UIState>((set) => ({
   isCaptureOpen: false,
   setCaptureOpen: (open: boolean) => set({ isCaptureOpen: open }),
   toggleCapture: () => set((state) => ({ isCaptureOpen: !state.isCaptureOpen })),
+  selectedTaskId: null,
+  selectedTask: null,
+  setSelectedTaskId: (id: string | null) => set({ selectedTaskId: id, selectedTask: id ? { id } : null }),
+  setSelectedTask: (task: any | null) =>
+    set({
+      selectedTask: task,
+      selectedTaskId: task ? (typeof task === "string" ? task : task.id) : null,
+    }),
 }));
+
+
