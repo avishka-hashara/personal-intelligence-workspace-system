@@ -14,8 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckSquare, Square, Trash2, ListTree, Plus, Tag, X, Loader2 } from "lucide-react";
-import { assignTag, removeTag, fetchTagsForTask } from "@/server/actions/tasks";
+import { CheckSquare, Square, Trash2, ListTree, Plus, Tag, X, Loader2, Repeat } from "lucide-react";
+import { assignTag, removeTag, fetchTagsForTask, updateTask as serverUpdateTask } from "@/server/actions/tasks";
+import { RecurrencePicker } from "@/components/RecurrencePicker";
 
 interface TaskDrawerProps {
   tasks?: Task[];
@@ -94,6 +95,16 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
     if (notes === currentNotes) return;
 
     updateTask(selectedTask.id, { notes });
+  };
+
+  const [isRecurrencePending, startRecurrenceTransition] = useTransition();
+
+  const handleRuleChange = (newRule: string | null) => {
+    if (!selectedTask) return;
+    updateTask(selectedTask.id, { rrule: newRule });
+    startRecurrenceTransition(async () => {
+      await serverUpdateTask(selectedTask.id, { rrule: newRule });
+    });
   };
 
   const handleAddTag = (e?: React.FormEvent<HTMLFormElement>) => {
@@ -204,6 +215,19 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                 placeholder="Add notes or detailed descriptions..."
                 rows={4}
                 className="min-h-28 text-sm text-slate-800 border-slate-200 focus-visible:ring-slate-900"
+              />
+            </div>
+
+            {/* Repeat Section */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Repeat className="w-3.5 h-3.5 text-slate-400" />
+                Repeat
+              </label>
+              <RecurrencePicker
+                value={selectedTask.rrule}
+                onChange={(newRule) => handleRuleChange(newRule)}
+                disabled={isRecurrencePending}
               />
             </div>
 

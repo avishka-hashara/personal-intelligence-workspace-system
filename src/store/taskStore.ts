@@ -21,7 +21,7 @@ interface TaskState {
   addTask: (input: { title: string; parentTaskId?: string | null }) => Promise<Task | null>;
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
-  updateTask: (id: string, data: { title?: string; notes?: string }) => Promise<void>;
+  updateTask: (id: string, data: { title?: string; notes?: string | null; rrule?: string | null; [key: string]: unknown }) => Promise<void>;
   reorderTasks: (activeId: string, overId: string, customList?: Task[]) => Promise<void>;
 }
 
@@ -179,7 +179,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
   },
 
-  updateTask: async (id: string, data: { title?: string; notes?: string }) => {
+  updateTask: async (id: string, data: { title?: string; notes?: string | null; rrule?: string | null; [key: string]: unknown }) => {
     const previousTasks = get().tasks;
     const target = previousTasks.find((t) => t.id === id);
     if (!target) return;

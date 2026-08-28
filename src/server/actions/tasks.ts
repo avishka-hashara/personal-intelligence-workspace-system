@@ -1,6 +1,7 @@
 "use server";
 
 import * as chrono from "chrono-node";
+import { RRule } from "rrule";
 import { db } from "@/server/db";
 import { tasks, tags, nodeTags, nodes } from "@/server/db/schema";
 import { eq, and, asc, isNull, sql } from "drizzle-orm";
@@ -97,7 +98,19 @@ export async function createTask(input: FormData | CreateTaskInput) {
     }
 }
 
-export async function updateTask(id: string, data: { title?: string; notes?: string }) {
+export async function updateTask(
+    id: string,
+    data: {
+        title?: string;
+        notes?: string | null;
+        rrule?: string | null;
+        status?: string;
+        priority?: number;
+        energy?: string | null;
+        dueAt?: Date | null;
+        [key: string]: unknown;
+    }
+) {
     const user = await getCurrentUser();
     if (!user) return { error: "Unauthorized" };
 
@@ -121,7 +134,66 @@ export async function toggleTaskStatus(id: string, currentStatus: string) {
     if (!user) return { error: "Unauthorized" };
 
     try {
+        const [task] = await db
+            .select()
+            .from(tasks)
+            .where(and(eq(tasks.id, id), eq(tasks.userId, user.id)))
+            .limit(1);
+
+        if (!task) return { error: "Task not found" };
+
         const newStatus = currentStatus === "done" ? "next" : "done";
+        const isCompleting = newStatus === "done";
+
+        if (isCompleting && task.rrule) {
+            // Check if a child instance has already been spawned for this recurrence
+            const [existingChild] = await db
+                .select({ id: tasks.id })
+                .from(tasks)
+                .where(
+                    and(
+                        eq(tasks.userId, user.id),
+                        eq(tasks.recurrenceParentId, task.id),
+                        eq(tasks.rrule, task.rrule),
+                        isNull(tasks.deletedAt)
+                    )
+                )
+                .limit(1);
+
+            if (!existingChild) {
+                try {
+                    const rule = RRule.fromString(task.rrule);
+                    const baseDate = task.dueAt ? new Date(task.dueAt) : new Date();
+                    const nextDate = rule.after(baseDate);
+
+                    if (nextDate) {
+                        const [topTask] = await db
+                            .select({ sortKey: tasks.sortKey })
+                            .from(tasks)
+                            .where(eq(tasks.userId, user.id))
+                            .orderBy(asc(tasks.sortKey))
+                            .limit(1);
+
+                        const sortKey = generateKeyBetween(null, topTask?.sortKey ?? null);
+
+                        await db.insert(tasks).values({
+                            userId: user.id,
+                            title: task.title,
+                            notes: task.notes,
+                            priority: task.priority,
+                            energy: task.energy,
+                            rrule: task.rrule,
+                            dueAt: nextDate,
+                            status: "next",
+                            recurrenceParentId: task.id,
+                            sortKey,
+                        });
+                    }
+                } catch (rruleErr) {
+                    console.error("Failed to parse recurrence rule or spawn next instance:", rruleErr);
+                }
+            }
+        }
 
         const [updatedTask] = await db.update(tasks)
             .set({ status: newStatus, updatedAt: new Date() })
