@@ -380,3 +380,34 @@ export const studySessions = pgTable("study_sessions", {
     hlc: text("hlc"),
     version: smallint("version").default(1)
 });
+
+// ----------------------------------------------------------------------
+// Section 7.2.5: Notes & Knowledge (Notes, Polymorphic Node Links)
+// ----------------------------------------------------------------------
+
+export const notes = pgTable("notes", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull().default("Untitled Note"),
+    content: text("content").default(""),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const nodeLinks = pgTable("node_links", {
+    sourceNodeId: uuid("source_node_id").notNull().references(() => nodes.id, { onDelete: "cascade" }),
+    targetNodeId: uuid("target_node_id").notNull().references(() => nodes.id, { onDelete: "cascade" }),
+    kind: text("kind").default("reference"), // 'reference' | 'blocks' | 'relates_to'
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+}, (t) => [
+    primaryKey({ columns: [t.sourceNodeId, t.targetNodeId] })
+]);
