@@ -304,3 +304,79 @@ export const nodeTags = pgTable("node_tags", {
 }, (t) => [
     primaryKey({ columns: [t.nodeId, t.tagId] })
 ]);
+
+// ----------------------------------------------------------------------
+// Section 7.2.4: Study (Courses, Syllabus, Exams, Study Sessions)
+// ----------------------------------------------------------------------
+
+export const courses = pgTable("courses", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    title: text("title").notNull(),
+    term: text("term"),
+    credits: numeric("credits"),
+    instructor: text("instructor"),
+    colour: text("colour"),
+    targetGrade: text("target_grade"),
+    active: boolean("active").default(true).notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const syllabusItems = pgTable("syllabus_items", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    courseId: uuid("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    ordinal: integer("ordinal").default(0).notNull(),
+    scheduledWeek: integer("scheduled_week"),
+    coverage: text("coverage").default("not_started").notNull(), // 'not_started' | 'in_progress' | 'covered' | 'revised'
+    confidence: smallint("confidence").default(1), // 1-5
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const exams = pgTable("exams", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    courseId: uuid("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }),
+    venue: text("venue"),
+    weight: numeric("weight"),
+    rampDays: integer("ramp_days").default(14),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const studySessions = pgTable("study_sessions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    courseId: uuid("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+    syllabusItemId: uuid("syllabus_item_id").references(() => syllabusItems.id, { onDelete: "set null" }),
+    plannedMinutes: integer("planned_minutes"),
+    actualMinutes: integer("actual_minutes"),
+    technique: text("technique"),
+    confidenceBefore: smallint("confidence_before"),
+    confidenceAfter: smallint("confidence_after"),
+    notes: text("notes"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
