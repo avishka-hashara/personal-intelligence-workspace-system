@@ -1,5 +1,5 @@
 import { db } from "@/server/db";
-import { goals, roadmaps, stages, milestones, tasks } from "@/server/db/schema";
+import { goals, roadmaps, stages, milestones, tasks, vMilestoneStatus, milestoneDependencies } from "@/server/db/schema";
 import { eq, and, isNull, inArray, asc, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
@@ -14,7 +14,7 @@ import {
   Activity,
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
-import { RoadmapView, type StageWithMilestones } from "@/components/RoadmapView";
+import { RoadmapView, type StageWithMilestones, type MilestoneWithStatus, type DependencyLink } from "@/components/RoadmapView";
 import { Progress } from "@/components/ui/progress";
 import { ContextSetter } from "@/components/ContextSetter";
 
@@ -91,9 +91,10 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
     .limit(1);
 
   let stagesWithMilestones: StageWithMilestones[] = [];
-  let allMilestoneRows: (typeof milestones.$inferSelect)[] = [];
+  let allMilestoneRows: MilestoneWithStatus[] = [];
+  let dependencies: DependencyLink[] = [];
 
-  // 3. If roadmap exists, fetch its stages & milestones
+  // 3. If roadmap exists, fetch its stages, derived milestone statuses, and dependencies
   if (roadmap) {
     const stageRows = await db
       .select()
@@ -110,17 +111,28 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
     const stageIds = stageRows.map((s) => s.id);
 
     if (stageIds.length > 0) {
-      allMilestoneRows = await db
+      allMilestoneRows = (await db
         .select()
-        .from(milestones)
+        .from(vMilestoneStatus)
         .where(
           and(
-            inArray(milestones.stageId, stageIds),
-            eq(milestones.userId, user.id),
-            isNull(milestones.deletedAt)
+            inArray(vMilestoneStatus.stageId, stageIds),
+            eq(vMilestoneStatus.userId, user.id)
           )
         )
-        .orderBy(asc(milestones.ordinal), asc(milestones.createdAt));
+        .orderBy(asc(vMilestoneStatus.ordinal), asc(vMilestoneStatus.createdAt))) as MilestoneWithStatus[];
+
+      const milestoneIds = allMilestoneRows.map((m) => m.id);
+      if (milestoneIds.length > 0) {
+        dependencies = await db
+          .select({
+            predecessorId: milestoneDependencies.predecessorId,
+            successorId: milestoneDependencies.successorId,
+            kind: milestoneDependencies.kind,
+          })
+          .from(milestoneDependencies)
+          .where(inArray(milestoneDependencies.predecessorId, milestoneIds));
+      }
     }
 
     stagesWithMilestones = stageRows.map((stage) => ({
@@ -265,8 +277,10 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
         {/* Roadmap & Stages View */}
         <RoadmapView
           goalId={goal.id}
+          goal={goal}
           roadmap={roadmap ?? null}
           stages={stagesWithMilestones}
+          dependencies={dependencies}
         />
 
         {/* Evidence Feed Section */}

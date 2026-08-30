@@ -1,5 +1,5 @@
 import {
-    pgTable, uuid, text, timestamp, jsonb, time, smallint, boolean, integer, numeric, date, unique, primaryKey, vector
+    pgTable, pgView, uuid, text, timestamp, jsonb, time, smallint, boolean, integer, numeric, date, unique, primaryKey, vector
 } from "drizzle-orm/pg-core";
 
 // ----------------------------------------------------------------------
@@ -194,6 +194,31 @@ export const milestoneDependencies = pgTable("milestone_dependencies", {
 }, (t) => [
     primaryKey({ columns: [t.predecessorId, t.successorId] })
 ]);
+
+export const vMilestoneStatus = pgView("v_milestone_status", {
+    id: uuid("id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    stageId: uuid("stage_id").notNull(),
+    objectiveId: uuid("objective_id"),
+    title: text("title").notNull(),
+    definitionOfDone: text("definition_of_done"),
+    dueDate: timestamp("due_date", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    estHours: numeric("est_hours"),
+    ordinal: integer("ordinal").notNull(),
+    statusOverride: text("status_override"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version"),
+    totalTasks: integer("total_tasks").notNull(),
+    completedTasks: integer("completed_tasks").notNull(),
+    blockedByCount: integer("blocked_by_count").notNull(),
+    incompletePredecessorIds: text("incomplete_predecessor_ids").array().notNull(),
+    incompletePredecessorTitles: text("incomplete_predecessor_titles").array().notNull(),
+    derivedStatus: text("derived_status").notNull(),
+}).existing();
 
 // ----------------------------------------------------------------------
 // Section 7.2.3: Execution (Tasks, Time, Tags, Habits)

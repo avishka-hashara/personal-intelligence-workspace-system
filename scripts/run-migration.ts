@@ -17,11 +17,11 @@ async function main() {
   const sql = postgres(connectionString!, { max: 1 });
 
   try {
-    const migrationPath = path.join(process.cwd(), "supabase", "migrations", "0009_enable_vector.sql");
+    const migrationPath = path.join(process.cwd(), "supabase", "migrations", "0010_milestone_status_view.sql");
     const migrationSql = fs.readFileSync(migrationPath, "utf8");
-    console.log("Running migration 0009_enable_vector.sql...");
+    console.log("Running migration 0010_milestone_status_view.sql...");
     await sql.unsafe(migrationSql);
-    console.log("Migration completed successfully!");
+    console.log("Migration 0010 completed successfully!");
   } catch (error) {
     console.error("Migration failed:", error);
     process.exit(1);

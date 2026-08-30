@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/server/db";
-import { goals, roadmaps, stages, milestones } from "@/server/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { goals, roadmaps, stages, milestones, milestoneDependencies, vMilestoneStatus } from "@/server/db/schema";
+import { eq, and, desc, inArray, isNull } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { generateNodeEmbedding } from "@/lib/embeddings";
@@ -288,5 +288,365 @@ export async function toggleMilestone(
     } catch (error) {
         console.error("Failed to toggle milestone:", error);
         return { error: "Failed to toggle milestone" };
+    }
+}
+
+export async function updateMilestoneDueDate(
+    milestoneId: string,
+    dueDate: Date | string | null,
+    goalId?: string
+) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        const parsedDate = dueDate ? (typeof dueDate === "string" ? new Date(dueDate) : dueDate) : null;
+
+        const [updatedMilestone] = await db
+            .update(milestones)
+            .set({
+                dueDate: parsedDate,
+                updatedAt: new Date(),
+            })
+            .where(and(eq(milestones.id, milestoneId), eq(milestones.userId, user.id)))
+            .returning();
+
+        if (goalId) {
+            revalidatePath(`/plan/goals/${goalId}`);
+        }
+        revalidatePath("/plan/goals");
+
+        return { success: true, milestone: updatedMilestone };
+    } catch (error) {
+        console.error("Failed to update milestone due date:", error);
+        return { error: "Failed to update milestone due date" };
+    }
+}
+
+export async function addMilestoneDependency(
+    predecessorId: string,
+    successorId: string,
+    goalId?: string
+) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    if (!predecessorId || !successorId) {
+        return { error: "Both predecessor and successor are required" };
+    }
+
+    if (predecessorId === successorId) {
+        return { error: "A milestone cannot depend on itself" };
+    }
+
+    try {
+        // 1. Verify user ownership of both milestones
+        const ownedMilestones = await db
+            .select({ id: milestones.id })
+            .from(milestones)
+            .where(
+                and(
+                    inArray(milestones.id, [predecessorId, successorId]),
+                    eq(milestones.userId, user.id),
+                    isNull(milestones.deletedAt)
+                )
+            );
+
+        if (ownedMilestones.length < 2) {
+            return { error: "One or both milestones not found" };
+        }
+
+        // 2. Fetch all existing dependencies for user's milestones to check for cycles
+        const allUserMilestones = await db
+            .select({ id: milestones.id })
+            .from(milestones)
+            .where(and(eq(milestones.userId, user.id), isNull(milestones.deletedAt)));
+
+        const allUserMilestoneIds = allUserMilestones.map((m) => m.id);
+
+        const existingDeps = allUserMilestoneIds.length > 0
+            ? await db
+                .select({
+                    predecessorId: milestoneDependencies.predecessorId,
+                    successorId: milestoneDependencies.successorId,
+                })
+                .from(milestoneDependencies)
+                .where(inArray(milestoneDependencies.predecessorId, allUserMilestoneIds))
+            : [];
+
+        // Build adjacency list: node -> outgoing successors
+        const graph = new Map<string, string[]>();
+        for (const dep of existingDeps) {
+            const list = graph.get(dep.predecessorId) || [];
+            list.push(dep.successorId);
+            graph.set(dep.predecessorId, list);
+        }
+
+        // Check if successorId can reach predecessorId (which would mean adding predecessorId -> successorId creates a cycle)
+        const visited = new Set<string>();
+        const queue: string[] = [successorId];
+        let createsCycle = false;
+
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+            if (current === predecessorId) {
+                createsCycle = true;
+                break;
+            }
+            if (!visited.has(current)) {
+                visited.add(current);
+                const nextNodes = graph.get(current) || [];
+                for (const next of nextNodes) {
+                    if (!visited.has(next)) {
+                        queue.push(next);
+                    }
+                }
+            }
+        }
+
+        if (createsCycle) {
+            return { error: "Cycle detected: cannot create dependency loop" };
+        }
+
+        // 3. Insert dependency
+        await db
+            .insert(milestoneDependencies)
+            .values({
+                predecessorId,
+                successorId,
+                kind: "fs",
+            })
+            .onConflictDoNothing();
+
+        if (goalId) {
+            revalidatePath(`/plan/goals/${goalId}`);
+        }
+        revalidatePath("/plan/goals");
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to add milestone dependency:", error);
+        return { error: error?.message || "Failed to add milestone dependency" };
+    }
+}
+
+export async function removeMilestoneDependency(
+    predecessorId: string,
+    successorId: string,
+    goalId?: string
+) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        await db
+            .delete(milestoneDependencies)
+            .where(
+                and(
+                    eq(milestoneDependencies.predecessorId, predecessorId),
+                    eq(milestoneDependencies.successorId, successorId)
+                )
+            );
+
+        if (goalId) {
+            revalidatePath(`/plan/goals/${goalId}`);
+        }
+        revalidatePath("/plan/goals");
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to remove milestone dependency:", error);
+        return { error: "Failed to remove milestone dependency" };
+    }
+}
+
+export async function getMilestoneDependencies(goalId?: string) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { dependencies: [] };
+    }
+
+    try {
+        const deps = await db
+            .select({
+                predecessorId: milestoneDependencies.predecessorId,
+                successorId: milestoneDependencies.successorId,
+                kind: milestoneDependencies.kind,
+            })
+            .from(milestoneDependencies)
+            .innerJoin(milestones, eq(milestoneDependencies.predecessorId, milestones.id))
+            .where(and(eq(milestones.userId, user.id), isNull(milestones.deletedAt)));
+
+        return { dependencies: deps };
+    } catch (error) {
+        console.error("Failed to fetch milestone dependencies:", error);
+        return { dependencies: [] };
+    }
+}
+
+/**
+ * Deterministic Fallback: Shifts a milestone and all its downstream transitive successors by N days.
+ */
+export async function shiftDownstreamMilestones(
+    milestoneId: string,
+    days: number,
+    goalId?: string
+) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    if (!days || isNaN(days)) {
+        return { error: "Valid number of days required" };
+    }
+
+    try {
+        // 1. Fetch all user milestones & dependencies
+        const userMilestones = await db
+            .select()
+            .from(milestones)
+            .where(and(eq(milestones.userId, user.id), isNull(milestones.deletedAt)));
+
+        const milestoneMap = new Map(userMilestones.map((m) => [m.id, m]));
+        const target = milestoneMap.get(milestoneId);
+        if (!target) {
+            return { error: "Target milestone not found" };
+        }
+
+        const userMilestoneIds = userMilestones.map((m) => m.id);
+        const deps = userMilestoneIds.length > 0
+            ? await db
+                .select({
+                    predecessorId: milestoneDependencies.predecessorId,
+                    successorId: milestoneDependencies.successorId,
+                })
+                .from(milestoneDependencies)
+                .where(inArray(milestoneDependencies.predecessorId, userMilestoneIds))
+            : [];
+
+        // Build adjacency list for downstream traversal
+        const graph = new Map<string, string[]>();
+        for (const d of deps) {
+            const list = graph.get(d.predecessorId) || [];
+            list.push(d.successorId);
+            graph.set(d.predecessorId, list);
+        }
+
+        // Find all transitive downstream successors (including starting milestone)
+        const downstreamIds = new Set<string>();
+        const queue: string[] = [milestoneId];
+
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+            if (!downstreamIds.has(current)) {
+                downstreamIds.add(current);
+                const nexts = graph.get(current) || [];
+                for (const n of nexts) {
+                    if (!downstreamIds.has(n)) {
+                        queue.push(n);
+                    }
+                }
+            }
+        }
+
+        const msToAdd = days * 24 * 60 * 60 * 1000;
+        const updatedMilestonesList: (typeof milestones.$inferSelect)[] = [];
+
+        // Apply shift to all downstream milestones with a due date
+        for (const id of downstreamIds) {
+            const m = milestoneMap.get(id);
+            if (m && m.dueDate) {
+                const currentDueDate = new Date(m.dueDate);
+                const newDueDate = new Date(currentDueDate.getTime() + msToAdd);
+
+                const [updated] = await db
+                    .update(milestones)
+                    .set({
+                        dueDate: newDueDate,
+                        updatedAt: new Date(),
+                    })
+                    .where(and(eq(milestones.id, id), eq(milestones.userId, user.id)))
+                    .returning();
+
+                if (updated) {
+                    updatedMilestonesList.push(updated);
+                }
+            }
+        }
+
+        if (goalId) {
+            revalidatePath(`/plan/goals/${goalId}`);
+        }
+        revalidatePath("/plan/goals");
+
+        return {
+            success: true,
+            shiftedCount: updatedMilestonesList.length,
+            milestones: updatedMilestonesList,
+        };
+    } catch (error: any) {
+        console.error("Failed to shift downstream milestones:", error);
+        return { error: error?.message || "Failed to shift downstream milestones" };
+    }
+}
+
+/**
+ * Applies AI-09 proposed date adjustments across milestones.
+ */
+export async function applyReplan(
+    milestoneUpdates: { milestone_id: string; new_date: string; reason?: string }[],
+    goalId?: string
+) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    if (!Array.isArray(milestoneUpdates) || milestoneUpdates.length === 0) {
+        return { error: "No milestone updates provided" };
+    }
+
+    try {
+        const updatedResults: (typeof milestones.$inferSelect)[] = [];
+
+        for (const item of milestoneUpdates) {
+            if (!item.milestone_id || !item.new_date) continue;
+            const parsedDate = new Date(item.new_date);
+            if (isNaN(parsedDate.getTime())) continue;
+
+            const [updated] = await db
+                .update(milestones)
+                .set({
+                    dueDate: parsedDate,
+                    updatedAt: new Date(),
+                })
+                .where(and(eq(milestones.id, item.milestone_id), eq(milestones.userId, user.id)))
+                .returning();
+
+            if (updated) {
+                updatedResults.push(updated);
+            }
+        }
+
+        if (goalId) {
+            revalidatePath(`/plan/goals/${goalId}`);
+        }
+        revalidatePath("/plan/goals");
+
+        return {
+            success: true,
+            appliedCount: updatedResults.length,
+            milestones: updatedResults,
+        };
+    } catch (error: any) {
+        console.error("Failed to apply replan:", error);
+        return { error: error?.message || "Failed to apply replan" };
     }
 }

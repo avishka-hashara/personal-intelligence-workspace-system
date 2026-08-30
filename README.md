@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/piw-banner.jpg" alt="Personal Intelligence Workspace (PIW) Banner" width="100%" />
+</p>
+
 # Personal Intelligence Workspace (PIW)
 
 > **A next-generation, AI-augmented personal operating system uniting strategic life planning, academic mastery, networked knowledge graphs, deterministic task execution, and an emotionally intelligent workspace companion.**
