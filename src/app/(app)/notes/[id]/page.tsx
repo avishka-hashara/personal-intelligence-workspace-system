@@ -4,6 +4,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { NoteEditor } from "@/components/NoteEditor";
+import { getNodeConnections } from "@/server/actions/nodes";
 
 interface NoteDetailPageProps {
   params: Promise<{ id: string }>;
@@ -17,6 +18,7 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
 
   const { id } = await params;
 
+  // 1. Fetch Note
   const [note] = await db
     .select()
     .from(notes)
@@ -33,5 +35,8 @@ export default async function NoteDetailPage({ params }: NoteDetailPageProps) {
     redirect("/notes");
   }
 
-  return <NoteEditor note={note} />;
+  // 2. Fetch Node Connections (Forward links & Backlinks)
+  const connections = await getNodeConnections(id);
+
+  return <NoteEditor note={note} connections={connections} />;
 }

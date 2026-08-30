@@ -5,6 +5,8 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { updateNote } from "@/server/actions/notes";
 import type { notes } from "@/server/db/schema";
+import type { ConnectedNode } from "@/server/actions/nodes";
+import { ConnectionsPanel } from "@/components/ConnectionsPanel";
 import {
   ArrowLeft,
   Columns,
@@ -22,11 +24,15 @@ export type Note = typeof notes.$inferSelect;
 
 interface NoteEditorProps {
   note: Note;
+  connections?: {
+    forwardLinks: ConnectedNode[];
+    backlinks: ConnectedNode[];
+  };
 }
 
 type ViewMode = "split" | "edit" | "preview";
 
-export function NoteEditor({ note }: NoteEditorProps) {
+export function NoteEditor({ note, connections }: NoteEditorProps) {
   const [title, setTitle] = useState(note.title || "Untitled Note");
   const [content, setContent] = useState(note.content || "");
   const [viewMode, setViewMode] = useState<ViewMode>("split");
@@ -83,7 +89,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
   };
 
   return (
-    <div className="flex flex-col gap-5 pb-12">
+    <div className="flex flex-col gap-6 pb-12">
       {/* Top Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-200">
         <div className="flex items-center gap-3">
@@ -158,7 +164,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         </div>
       </div>
 
-      {/* Title Input */}
+      {/* Title & Metadata Card */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs space-y-2">
         <input
           type="text"
@@ -180,6 +186,11 @@ export function NoteEditor({ note }: NoteEditorProps) {
           <span>{content.length} characters</span>
         </div>
       </div>
+
+      {/* Bi-directional Knowledge Connections */}
+      {connections && (
+        <ConnectionsPanel nodeId={note.id} connections={connections} />
+      )}
 
       {/* Editor & Preview Split Pane */}
       <div
