@@ -10,7 +10,7 @@ export default function AppLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" suppressHydrationWarning>
       <CommandPalette />
       <QuickCapture />
       <FocusTimer />

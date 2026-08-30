@@ -108,20 +108,7 @@ export async function POST(req: Request) {
 
     // 3. Trim conversation history (last 12 turns max within token budget)
     const trimmedRawMessages = trimConversationHistory(messages, 12, 3500);
-
-    // Normalize messages to ensure parts array exists for convertToModelMessages
-    const normalizedMessages = (trimmedRawMessages || []).map((m: any) => {
-      if (!Array.isArray(m.parts) || m.parts.length === 0) {
-        const textContent = typeof m.content === "string" ? m.content : "";
-        return {
-          role: m.role || "user",
-          parts: [{ type: "text" as const, text: textContent }],
-        };
-      }
-      return m;
-    });
-
-    const modelMessages = await convertToModelMessages(normalizedMessages as any);
+    const modelMessages = await convertToModelMessages(trimmedRawMessages as any);
 
     // 4. Trigger rolling memory in background if turn count reaches checkpoint
     maybeTriggerRollingMemory(user.id, personaSettings.memorySummary, messages);
@@ -352,7 +339,11 @@ ${
     const result = streamText({
       model: openrouter.chat(selectedModel),
       temperature: 0.85,
-      maxOutputTokens: 1000,
+      providerOptions: {
+        openai: {
+          maxCompletionTokens: 1500,
+        },
+      },
       messages: modelMessages,
       system: systemPrompt,
       tools: {
@@ -361,11 +352,11 @@ ${
           inputSchema: z.object({
             title: z.string().optional().describe("The task title or description, e.g. 'Finish database schema'"),
             dueAt: z
-              .union([z.string(), z.date()])
+              .string()
               .optional()
               .describe("Due date string (ISO date or natural language date like 'tomorrow', 'tomorrow at 2pm')"),
             dueDate: z
-              .union([z.string(), z.date()])
+              .string()
               .optional()
               .describe("Alternative field for due date"),
             priority: z
@@ -380,8 +371,8 @@ ${
             priority,
           }: {
             title?: string;
-            dueAt?: string | Date;
-            dueDate?: string | Date;
+            dueAt?: string;
+            dueDate?: string;
             priority?: number | string;
           }) => {
             let rawTitle = title;
@@ -397,18 +388,14 @@ ${
 
             try {
               let parsedDueAt: Date | null = null;
-              if (dueAtInput) {
-                if (dueAtInput instanceof Date) {
-                  parsedDueAt = dueAtInput;
-                } else if (typeof dueAtInput === "string") {
-                  const chronoDate = chrono.parseDate(dueAtInput);
-                  if (chronoDate) {
-                    parsedDueAt = chronoDate;
-                  } else {
-                    const d = new Date(dueAtInput);
-                    if (!isNaN(d.getTime())) {
-                      parsedDueAt = d;
-                    }
+              if (dueAtInput && typeof dueAtInput === "string") {
+                const chronoDate = chrono.parseDate(dueAtInput);
+                if (chronoDate) {
+                  parsedDueAt = chronoDate;
+                } else {
+                  const d = new Date(dueAtInput);
+                  if (!isNaN(d.getTime())) {
+                    parsedDueAt = d;
                   }
                 }
               }
