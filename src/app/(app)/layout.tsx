@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/Sidebar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { QuickCapture } from "@/components/QuickCapture";
+import { FocusTimer } from "@/components/FocusTimer";
 
 export default function AppLayout({
   children,
@@ -11,6 +12,7 @@ export default function AppLayout({
     <div className="flex min-h-screen">
       <CommandPalette />
       <QuickCapture />
+      <FocusTimer />
       {/* 240px Left Rail */}
       <Sidebar />
       

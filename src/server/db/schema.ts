@@ -1,5 +1,5 @@
 import {
-    pgTable, uuid, text, timestamp, jsonb, time, smallint, boolean, integer, numeric, primaryKey
+    pgTable, uuid, text, timestamp, jsonb, time, smallint, boolean, integer, primaryKey
 } from "drizzle-orm/pg-core";
 
 // ----------------------------------------------------------------------
@@ -77,6 +77,22 @@ export const tasks = pgTable("tasks", {
     energy: text("energy"),
     milestoneId: uuid("milestone_id"),
     parentTaskId: uuid("parent_task_id"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const focusSessions = pgTable("focus_sessions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "cascade" }),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
+    minutes: integer("minutes").notNull(),
+    interruptions: integer("interruptions").default(0).notNull(),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

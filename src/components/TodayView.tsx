@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Square,
   ArrowUpRight,
+  Play,
 } from "lucide-react";
 
 interface TodayViewProps {
@@ -23,7 +24,7 @@ interface TodayViewProps {
 
 export function TodayView({ initialTasks }: TodayViewProps) {
   const { tasks, isInitialized, initTasks, addTask, toggleTask } = useTaskStore();
-  const { setSelectedTaskId } = useUIStore();
+  const { setSelectedTaskId, setActiveFocusTask, setTimerOpen, setTimerStatus } = useUIStore();
   const [title, setTitle] = useState("");
 
   useEffect(() => {
@@ -145,14 +146,28 @@ export function TodayView({ initialTasks }: TodayViewProps) {
                   )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedTaskId(nowTask.id)}
-                className="text-xs font-medium text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
-              >
-                <span>Details</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveFocusTask(nowTask.id);
+                    setTimerOpen(true);
+                    setTimerStatus("running");
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-sm transition-all hover:shadow cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Start focus</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTaskId(nowTask.id)}
+                  className="text-xs font-medium text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Details</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50/50 flex flex-col items-center justify-center gap-2">

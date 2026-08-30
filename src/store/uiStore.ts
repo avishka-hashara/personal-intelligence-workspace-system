@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+export type TimerStatus = "idle" | "running" | "paused";
+
 interface UIState {
   isCommandOpen: boolean;
   setCommandOpen: (open: boolean) => void;
@@ -8,9 +10,21 @@ interface UIState {
   setCaptureOpen: (open: boolean) => void;
   toggleCapture: () => void;
   selectedTaskId: string | null;
-  selectedTask: any | null;
+  selectedTask: Record<string, unknown> | null;
   setSelectedTaskId: (id: string | null) => void;
-  setSelectedTask: (task: any | null) => void;
+  setSelectedTask: (task: Record<string, unknown> | null) => void;
+
+  // Focus Timer State
+  isTimerOpen: boolean;
+  setTimerOpen: (open: boolean) => void;
+  toggleTimer: () => void;
+  activeFocusTaskId: string | null;
+  setActiveFocusTask: (id: string | null) => void;
+  timerStatus: TimerStatus;
+  setTimerStatus: (status: TimerStatus) => void;
+  elapsedSeconds: number;
+  setElapsedSeconds: (seconds: number | ((prev: number) => number)) => void;
+  resetTimer: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -23,11 +37,31 @@ export const useUIStore = create<UIState>((set) => ({
   selectedTaskId: null,
   selectedTask: null,
   setSelectedTaskId: (id: string | null) => set({ selectedTaskId: id, selectedTask: id ? { id } : null }),
-  setSelectedTask: (task: any | null) =>
+  setSelectedTask: (task: Record<string, unknown> | null) =>
     set({
       selectedTask: task,
-      selectedTaskId: task ? (typeof task === "string" ? task : task.id) : null,
+      selectedTaskId: task ? (typeof task.id === "string" ? task.id : null) : null,
+    }),
+
+  // Focus Timer implementation
+  isTimerOpen: false,
+  setTimerOpen: (open: boolean) => set({ isTimerOpen: open }),
+  toggleTimer: () => set((state) => ({ isTimerOpen: !state.isTimerOpen })),
+  activeFocusTaskId: null,
+  setActiveFocusTask: (id: string | null) => set({ activeFocusTaskId: id }),
+  timerStatus: "idle",
+  setTimerStatus: (status: TimerStatus) => set({ timerStatus: status }),
+  elapsedSeconds: 0,
+  setElapsedSeconds: (seconds: number | ((prev: number) => number)) =>
+    set((state) => ({
+      elapsedSeconds: typeof seconds === "function" ? seconds(state.elapsedSeconds) : seconds,
+    })),
+  resetTimer: () =>
+    set({
+      timerStatus: "idle",
+      elapsedSeconds: 0,
     }),
 }));
+
 
 

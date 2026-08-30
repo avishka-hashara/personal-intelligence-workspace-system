@@ -21,12 +21,13 @@ import {
   FileText,
   Book,
   Settings,
+  Zap,
 } from "lucide-react";
 
 export function CommandPalette() {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const { isCommandOpen, setCommandOpen, toggleCommand, isCaptureOpen } = useUIStore();
+  const { isCommandOpen, setCommandOpen, toggleCommand, isCaptureOpen, setTimerOpen } = useUIStore();
 
   useEffect(() => {
     setMounted(true);
@@ -129,6 +130,16 @@ export function CommandPalette() {
           <CommandItem onSelect={() => handleNavigate("/settings")}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => {
+              setCommandOpen(false);
+              setTimerOpen(true);
+            }}
+          >
+            <Zap className="mr-2 h-4 w-4 text-amber-500" />
+            <span>Focus Mode</span>
+            <CommandShortcut>F</CommandShortcut>
           </CommandItem>
         </CommandGroup>
       </CommandList>

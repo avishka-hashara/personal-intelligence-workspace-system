@@ -3,7 +3,7 @@
 import * as chrono from "chrono-node";
 import { RRule } from "rrule";
 import { db } from "@/server/db";
-import { tasks, tags, nodeTags, nodes } from "@/server/db/schema";
+import { tasks, tags, nodeTags, nodes, focusSessions } from "@/server/db/schema";
 import { eq, and, asc, isNull, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -387,4 +387,52 @@ export async function getAllUserTags() {
         return { error: "Failed to fetch user tags", tags: [] };
     }
 }
+
+export async function recordFocusSession(
+    taskId: string,
+    startedAt: Date,
+    endedAt: Date,
+    minutes: number,
+    interruptions: number
+) {
+    const user = await getCurrentUser();
+    if (!user) return { error: "Unauthorized" };
+
+    try {
+        const start = startedAt instanceof Date ? startedAt : new Date(startedAt);
+        const end = endedAt instanceof Date ? endedAt : new Date(endedAt);
+
+        // 1. Insert row into focus_sessions
+        const [session] = await db
+            .insert(focusSessions)
+            .values({
+                userId: user.id,
+                taskId: taskId || null,
+                startedAt: start,
+                endedAt: end,
+                minutes,
+                interruptions,
+            })
+            .returning();
+
+        // 2. Increment actualMinutes on the corresponding task
+        if (taskId) {
+            await db
+                .update(tasks)
+                .set({
+                    actualMinutes: sql`COALESCE(${tasks.actualMinutes}, 0) + ${minutes}`,
+                    updatedAt: new Date(),
+                })
+                .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
+        }
+
+        revalidatePath("/");
+        revalidatePath("/tasks");
+        return { success: true, session };
+    } catch (error) {
+        console.error("Failed to record focus session:", error);
+        return { error: "Failed to record focus session" };
+    }
+}
+
 
