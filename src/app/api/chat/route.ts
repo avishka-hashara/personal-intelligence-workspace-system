@@ -108,7 +108,20 @@ export async function POST(req: Request) {
 
     // 3. Trim conversation history (last 12 turns max within token budget)
     const trimmedRawMessages = trimConversationHistory(messages, 12, 3500);
-    const modelMessages = await convertToModelMessages(trimmedRawMessages as any);
+
+    // Normalize messages to ensure parts array exists for convertToModelMessages
+    const normalizedMessages = (trimmedRawMessages || []).map((m: any) => {
+      if (!Array.isArray(m.parts) || m.parts.length === 0) {
+        const textContent = typeof m.content === "string" ? m.content : "";
+        return {
+          role: m.role || "user",
+          parts: [{ type: "text" as const, text: textContent }],
+        };
+      }
+      return m;
+    });
+
+    const modelMessages = await convertToModelMessages(normalizedMessages as any);
 
     // 4. Trigger rolling memory in background if turn count reaches checkpoint
     maybeTriggerRollingMemory(user.id, personaSettings.memorySummary, messages);
@@ -339,11 +352,7 @@ ${
     const result = streamText({
       model: openrouter.chat(selectedModel),
       temperature: 0.85,
-      providerOptions: {
-        openai: {
-          maxCompletionTokens: 1500,
-        },
-      },
+      maxOutputTokens: 1000,
       messages: modelMessages,
       system: systemPrompt,
       tools: {
