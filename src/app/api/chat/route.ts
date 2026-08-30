@@ -167,11 +167,11 @@ ${
     ? pendingTasks
         .map(
           (t) =>
-            `- [PENDING] "${t.title}" (Priority: P${t.priority})${
+            `- [PENDING] [ID: ${t.id}] "${t.title}" (Priority: P${t.priority})${
               t.dueAt ? ` [Due: ${format(new Date(t.dueAt), "yyyy-MM-dd HH:mm")}]` : " [No due date]"
             }${t.notes ? ` (Notes: ${t.notes})` : ""}${
               t.subtasks.length > 0
-                ? `\n  Subtasks: ${t.subtasks.map((s: any) => `"${s.title}" (${s.status})`).join(", ")}`
+                ? `\n  Subtasks: ${t.subtasks.map((s: any) => `"${s.title}" (${s.status}) [ID: ${s.id}]`).join(", ")}`
                 : ""
             }`
         )
@@ -182,7 +182,7 @@ ${
 COMPLETED TASKS:
 ${
   completedTasks.length > 0
-    ? completedTasks.map((t) => `- [COMPLETED] "${t.title}"`).join("\n")
+    ? completedTasks.map((t) => `- [COMPLETED] [ID: ${t.id}] "${t.title}"`).join("\n")
     : "No completed tasks."
 }
 
@@ -256,6 +256,7 @@ ${
 3. Be concise, direct, helpful, and organized using markdown formatting.
 4. You have access to tools:
    - Use 'createTask' to create a new actionable task when the user requests adding, scheduling, or reminding them of a task. When the user says "remind me to..." or "create task...", IMMEDIATELY call the createTask tool with the extracted title, due date, and priority. Do NOT ask for confirmation first.
+   - Use 'completeTask' to mark an existing task as completed (done) when the user mentions finishing, checking off, completing, or marking a task as done (e.g. "mark 'submit report' as done", "completed database schema", "done with task 1"). Pass the taskId if available or the task title.
    - Use 'searchKnowledge' to search the knowledge graph (notes, courses, goals, tasks) for context when the user asks about specific topics or information not already fully captured in the snapshot above.`;
 
     const result = streamText({
@@ -380,6 +381,128 @@ ${
             } catch (err: any) {
               console.error("[createTask] Tool createTask database error:", err);
               return { error: err?.message || "Failed to create task" };
+            }
+          },
+        }),
+
+        completeTask: tool({
+          description: "Mark an existing task as completed (done).",
+          parameters: z.object({
+            taskId: z.string().optional().describe("The UUID of the task to mark as done"),
+            title: z.string().optional().describe("The title or keywords of the task to mark as done"),
+          }),
+          execute: async ({ taskId, title }) => {
+            console.log("[completeTask] Executing with args:", { taskId, title });
+            try {
+              // 1. Fetch all user's tasks
+              const allUserTasks = await db
+                .select()
+                .from(tasks)
+                .where(and(eq(tasks.userId, user.id), isNull(tasks.deletedAt)))
+                .orderBy(asc(tasks.status), asc(tasks.createdAt));
+
+              let targetTask: any = null;
+
+              // 1. Try exact UUID match
+              if (taskId) {
+                targetTask = allUserTasks.find((t) => t.id === taskId);
+              }
+
+              // 2. Try match by title/keywords
+              if (!targetTask && title) {
+                const cleanQuery = title.toLowerCase().trim();
+
+                // 2a. Direct exact or substring match
+                targetTask = allUserTasks.find(
+                  (t) =>
+                    t.title.toLowerCase() === cleanQuery ||
+                    t.title.toLowerCase().includes(cleanQuery) ||
+                    cleanQuery.includes(t.title.toLowerCase())
+                );
+
+                // 2b. Word overlap fuzzy match
+                if (!targetTask) {
+                  const stopWords = new Set([
+                    "the",
+                    "a",
+                    "an",
+                    "to",
+                    "my",
+                    "task",
+                    "please",
+                    "done",
+                    "complete",
+                    "completed",
+                    "finish",
+                    "finished",
+                  ]);
+                  const queryWords = cleanQuery
+                    .replace(/[^\w\s]/g, "")
+                    .split(/\s+/)
+                    .filter((w) => w.length > 1 && !stopWords.has(w));
+
+                  if (queryWords.length > 0) {
+                    let bestScore = 0;
+                    let bestTask: any = null;
+
+                    for (const t of allUserTasks) {
+                      const taskTitleLower = t.title.toLowerCase();
+                      let score = 0;
+                      for (const qw of queryWords) {
+                        if (taskTitleLower.includes(qw)) {
+                          score += 1;
+                        }
+                      }
+                      // Prefer pending tasks over already done tasks
+                      if (t.status !== "done") {
+                        score += 0.5;
+                      }
+
+                      if (score > bestScore) {
+                        bestScore = score;
+                        bestTask = t;
+                      }
+                    }
+
+                    if (bestScore >= 1) {
+                      targetTask = bestTask;
+                    }
+                  }
+                }
+              }
+
+              // 3. Fallback: if only 1 pending task exists and user requested completing a task
+              if (!targetTask) {
+                const pending = allUserTasks.filter((t) => t.status !== "done");
+                if (pending.length === 1) {
+                  targetTask = pending[0];
+                }
+              }
+
+              if (!targetTask) {
+                return {
+                  success: false,
+                  error: `Could not find any task matching "${title || taskId || ""}".`,
+                };
+              }
+
+              const [updatedTask] = await db
+                .update(tasks)
+                .set({ status: "done", updatedAt: new Date() })
+                .where(and(eq(tasks.id, targetTask.id), eq(tasks.userId, user.id)))
+                .returning();
+
+              console.log("[completeTask] Successfully marked task as done in DB:", updatedTask);
+
+              return {
+                success: true,
+                message: `Task "${updatedTask.title}" has been marked as completed.`,
+                taskId: updatedTask.id,
+                task: updatedTask,
+              };
+            } catch (err: any) {
+              console.error("[completeTask] Error:", err);
+              return { error: err?.message || "Failed to complete task" };
             }
           },
         }),

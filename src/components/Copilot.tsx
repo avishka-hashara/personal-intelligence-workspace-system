@@ -45,6 +45,8 @@ interface ParsedToolInvocation {
   toolCallId: string;
   state?: string;
   args?: any;
+  output?: any;
+  result?: any;
 }
 
 function getMessageToolInvocations(message: any): ParsedToolInvocation[] {
@@ -57,11 +59,14 @@ function getMessageToolInvocations(message: any): ParsedToolInvocation[] {
       const id = t.toolCallId || t.id || `${t.toolName}-${list.length}`;
       if (!seenIds.has(id)) {
         seenIds.add(id);
+        const out = t.output !== undefined ? t.output : t.result;
         list.push({
           toolName: t.toolName || (typeof t.type === "string" && t.type.startsWith("tool-") ? t.type.replace("tool-", "") : "tool"),
           toolCallId: id,
           state: t.state,
           args: t.args || t.input,
+          output: out,
+          result: out,
         });
       }
     }
@@ -75,11 +80,14 @@ function getMessageToolInvocations(message: any): ParsedToolInvocation[] {
         const id = t.toolCallId || t.id || `${t.toolName}-${list.length}`;
         if (!seenIds.has(id)) {
           seenIds.add(id);
+          const out = t.output !== undefined ? t.output : t.result !== undefined ? t.result : part.output;
           list.push({
             toolName: t.toolName || "tool",
             toolCallId: id,
             state: t.state,
             args: t.args || t.input,
+            output: out,
+            result: out,
           });
         }
       } else if (typeof part.type === "string" && part.type.startsWith("tool-")) {
@@ -87,22 +95,28 @@ function getMessageToolInvocations(message: any): ParsedToolInvocation[] {
         const id = part.toolCallId || `${toolName}-${list.length}`;
         if (!seenIds.has(id)) {
           seenIds.add(id);
+          const out = part.output !== undefined ? part.output : (part as any).result;
           list.push({
             toolName,
             toolCallId: id,
             state: part.state,
-            args: part.input || part.args,
+            args: part.input || (part as any).args,
+            output: out,
+            result: out,
           });
         }
       } else if (part.type === "dynamic-tool") {
         const id = part.toolCallId || `${part.toolName}-${list.length}`;
         if (!seenIds.has(id)) {
           seenIds.add(id);
+          const out = (part as any).output !== undefined ? (part as any).output : (part as any).result;
           list.push({
             toolName: part.toolName || "tool",
             toolCallId: id,
             state: part.state,
-            args: part.input || part.args,
+            args: part.input || (part as any).args,
+            output: out,
+            result: out,
           });
         }
       }
@@ -131,33 +145,20 @@ export function Copilot() {
   const isLoading = status === "submitted" || status === "streaming";
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Sync tasks created by Copilot directly into client Zustand store & refresh Server Components
+  // Sync tasks created or completed by Copilot directly into client Zustand store & refresh Server Components
   useEffect(() => {
     for (const msg of messages) {
-      // 1. Check legacy/flat toolInvocations
-      if (Array.isArray(msg.toolInvocations)) {
-        for (const t of msg.toolInvocations) {
-          const res = t.result || t.output;
-          if (t.toolName === "createTask" && res?.task && !processedTaskIdsRef.current.has(res.task.id)) {
-            processedTaskIdsRef.current.add(res.task.id);
-            upsertTask(res.task);
-            router.refresh();
-          }
-        }
-      }
-
-      // 2. Check AI SDK parts
-      if (Array.isArray(msg.parts)) {
-        for (const part of msg.parts) {
-          const t = part.toolInvocation || part;
-          const toolName = t.toolName || (typeof part.type === "string" && part.type.startsWith("tool-") ? part.type.replace("tool-", "") : "");
-          const output = t.output || t.result || part.output;
-
-          if ((toolName === "createTask" || part.type === "tool-createTask") && output?.task && !processedTaskIdsRef.current.has(output.task.id)) {
-            processedTaskIdsRef.current.add(output.task.id);
-            upsertTask(output.task);
-            router.refresh();
-          }
+      const toolInvocations = getMessageToolInvocations(msg);
+      for (const t of toolInvocations) {
+        const out = t.output || t.result;
+        if (
+          (t.toolName === "createTask" || t.toolName === "completeTask") &&
+          out?.task &&
+          !processedTaskIdsRef.current.has(`${t.toolName}-${out.task.id}-${out.task.status}`)
+        ) {
+          processedTaskIdsRef.current.add(`${t.toolName}-${out.task.id}-${out.task.status}`);
+          upsertTask(out.task);
+          router.refresh();
         }
       }
     }
@@ -344,7 +345,12 @@ export function Copilot() {
                                   tool.state === "input-available";
                                 const isError =
                                   tool.state === "output-error" ||
-                                  Boolean(tool.output?.error || tool.result?.error);
+                                  Boolean(
+                                    tool.output?.error ||
+                                    tool.result?.error ||
+                                    tool.output?.success === false ||
+                                    tool.result?.success === false
+                                  );
 
                                 if (tool.toolName === "createTask") {
                                   return (
@@ -366,6 +372,31 @@ export function Copilot() {
                                       </span>
                                       {isCall && (
                                         <Loader2 className="w-3 h-3 animate-spin text-slate-400 ml-0.5" />
+                                      )}
+                                    </div>
+                                  );
+                                }
+
+                                if (tool.toolName === "completeTask") {
+                                  return (
+                                    <div
+                                      key={tool.toolCallId || `tool-complete-${idx}`}
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium shadow-2xs transition-all ${
+                                        isError
+                                          ? "bg-rose-50 text-rose-700 border-rose-200"
+                                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      }`}
+                                    >
+                                      <span>{isError ? "⚠️" : "✅"}</span>
+                                      <span>
+                                        {isCall
+                                          ? "Completing task..."
+                                          : isError
+                                          ? "Failed to complete task"
+                                          : "Marked task as done"}
+                                      </span>
+                                      {isCall && (
+                                        <Loader2 className="w-3 h-3 animate-spin text-emerald-500 ml-0.5" />
                                       )}
                                     </div>
                                   );
