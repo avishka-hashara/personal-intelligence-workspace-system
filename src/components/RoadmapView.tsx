@@ -289,9 +289,14 @@ export function RoadmapView({
   };
 
   const handleToggleMilestone = (milestoneId: string, currentCompletedAt: Date | string | null) => {
+    setDepError(null);
     startTransition(async () => {
-      await toggleMilestone(milestoneId, currentCompletedAt, goalId);
-      router.refresh();
+      const res = await toggleMilestone(milestoneId, currentCompletedAt, goalId);
+      if (res?.error) {
+        setDepError(res.error);
+      } else {
+        router.refresh();
+      }
     });
   };
 
@@ -561,16 +566,42 @@ export function RoadmapView({
                       } ${isOnCriticalPath && !isDone ? "ring-1 ring-amber-400/50" : ""}`}
                     >
                       <div className="flex items-start gap-3">
-                        {/* Checkbox */}
+                        {/* Checkbox / Lock Icon */}
                         <button
                           type="button"
-                          onClick={() => handleToggleMilestone(milestone.id, milestone.completedAt)}
+                          onClick={() => {
+                            if (isBlocked && !isDone) {
+                              const blockerTitles =
+                                milestone.incompletePredecessorTitles && milestone.incompletePredecessorTitles.length > 0
+                                  ? milestone.incompletePredecessorTitles.join(", ")
+                                  : "predecessor milestones";
+                              setDepError(
+                                `Cannot complete "${milestone.title}" because it is blocked by: ${blockerTitles}. Complete dependencies first!`
+                              );
+                              return;
+                            }
+                            handleToggleMilestone(milestone.id, milestone.completedAt);
+                          }}
                           disabled={isPending}
-                          className="mt-0.5 text-slate-400 hover:text-slate-900 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
-                          title={isDone ? "Mark as pending" : "Mark as completed"}
+                          className={`mt-0.5 transition-colors shrink-0 ${
+                            isBlocked && !isDone
+                              ? "text-rose-500 hover:text-rose-700 cursor-not-allowed"
+                              : "text-slate-400 hover:text-slate-900 cursor-pointer disabled:opacity-50"
+                          }`}
+                          title={
+                            isDone
+                              ? "Mark as pending"
+                              : isBlocked
+                              ? `Blocked: Waiting on ${
+                                  milestone.incompletePredecessorTitles?.join(", ") || "predecessor milestones"
+                                }`
+                              : "Mark as completed"
+                          }
                         >
                           {isDone ? (
                             <CheckCircle2 className="w-4 h-4 text-emerald-600 fill-emerald-100" />
+                          ) : isBlocked ? (
+                            <Lock className="w-4 h-4 text-rose-500 hover:text-rose-600" />
                           ) : (
                             <Circle className="w-4 h-4 hover:text-slate-700" />
                           )}

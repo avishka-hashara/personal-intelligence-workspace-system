@@ -266,6 +266,29 @@ export async function toggleMilestone(
 
     try {
         const isCurrentlyCompleted = !!currentCompletedAt;
+
+        // If trying to complete, verify no incomplete predecessors exist
+        if (!isCurrentlyCompleted) {
+            const incompleteDeps = await db
+                .select({ title: milestones.title })
+                .from(milestoneDependencies)
+                .innerJoin(milestones, eq(milestoneDependencies.predecessorId, milestones.id))
+                .where(
+                    and(
+                        eq(milestoneDependencies.successorId, milestoneId),
+                        isNull(milestones.completedAt),
+                        isNull(milestones.deletedAt)
+                    )
+                );
+
+            if (incompleteDeps.length > 0) {
+                const depNames = incompleteDeps.map((d) => `"${d.title}"`).join(", ");
+                return {
+                    error: `Cannot complete this milestone: it is blocked by incomplete dependency ${depNames}. Complete dependencies first!`,
+                };
+            }
+        }
+
         const newCompletedAt = isCurrentlyCompleted ? null : new Date();
         const newStatus = isCurrentlyCompleted ? "pending" : "done";
 
