@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { useUIStore } from "@/store/uiStore";
+import { useTaskStore } from "@/store/taskStore";
 import ReactMarkdown from "react-markdown";
 import {
   Sparkles,
@@ -31,15 +33,91 @@ function getMessageText(message: any): string {
   }
   if (Array.isArray(message.parts)) {
     return message.parts
-      .map((part: any) => (part.type === "text" ? part.text : ""))
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text || "")
       .join("");
   }
   return "";
 }
 
+interface ParsedToolInvocation {
+  toolName: string;
+  toolCallId: string;
+  state?: string;
+  args?: any;
+}
+
+function getMessageToolInvocations(message: any): ParsedToolInvocation[] {
+  const list: ParsedToolInvocation[] = [];
+  const seenIds = new Set<string>();
+
+  // 1. Direct toolInvocations array if present
+  if (Array.isArray(message.toolInvocations)) {
+    for (const t of message.toolInvocations) {
+      const id = t.toolCallId || t.id || `${t.toolName}-${list.length}`;
+      if (!seenIds.has(id)) {
+        seenIds.add(id);
+        list.push({
+          toolName: t.toolName || (typeof t.type === "string" && t.type.startsWith("tool-") ? t.type.replace("tool-", "") : "tool"),
+          toolCallId: id,
+          state: t.state,
+          args: t.args || t.input,
+        });
+      }
+    }
+  }
+
+  // 2. Parts array (AI SDK v7 UIMessage parts)
+  if (Array.isArray(message.parts)) {
+    for (const part of message.parts) {
+      if (part.type === "tool-invocation") {
+        const t = part.toolInvocation || part;
+        const id = t.toolCallId || t.id || `${t.toolName}-${list.length}`;
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          list.push({
+            toolName: t.toolName || "tool",
+            toolCallId: id,
+            state: t.state,
+            args: t.args || t.input,
+          });
+        }
+      } else if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+        const toolName = part.type.replace("tool-", "");
+        const id = part.toolCallId || `${toolName}-${list.length}`;
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          list.push({
+            toolName,
+            toolCallId: id,
+            state: part.state,
+            args: part.input || part.args,
+          });
+        }
+      } else if (part.type === "dynamic-tool") {
+        const id = part.toolCallId || `${part.toolName}-${list.length}`;
+        if (!seenIds.has(id)) {
+          seenIds.add(id);
+          list.push({
+            toolName: part.toolName || "tool",
+            toolCallId: id,
+            state: part.state,
+            args: part.input || part.args,
+          });
+        }
+      }
+    }
+  }
+
+  return list;
+}
+
 export function Copilot() {
+  const router = useRouter();
   const { isCopilotOpen, setCopilotOpen } = useUIStore();
+  const { upsertTask } = useTaskStore();
   const [input, setInput] = useState("");
+  const processedTaskIdsRef = useRef<Set<string>>(new Set());
 
   const {
     messages,
@@ -52,6 +130,38 @@ export function Copilot() {
 
   const isLoading = status === "submitted" || status === "streaming";
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Sync tasks created by Copilot directly into client Zustand store & refresh Server Components
+  useEffect(() => {
+    for (const msg of messages) {
+      // 1. Check legacy/flat toolInvocations
+      if (Array.isArray(msg.toolInvocations)) {
+        for (const t of msg.toolInvocations) {
+          const res = t.result || t.output;
+          if (t.toolName === "createTask" && res?.task && !processedTaskIdsRef.current.has(res.task.id)) {
+            processedTaskIdsRef.current.add(res.task.id);
+            upsertTask(res.task);
+            router.refresh();
+          }
+        }
+      }
+
+      // 2. Check AI SDK parts
+      if (Array.isArray(msg.parts)) {
+        for (const part of msg.parts) {
+          const t = part.toolInvocation || part;
+          const toolName = t.toolName || (typeof part.type === "string" && part.type.startsWith("tool-") ? part.type.replace("tool-", "") : "");
+          const output = t.output || t.result || part.output;
+
+          if ((toolName === "createTask" || part.type === "tool-createTask") && output?.task && !processedTaskIdsRef.current.has(output.task.id)) {
+            processedTaskIdsRef.current.add(output.task.id);
+            upsertTask(output.task);
+            router.refresh();
+          }
+        }
+      }
+    }
+  }, [messages, upsertTask, router]);
 
   // Auto-scroll to bottom as messages stream
   useEffect(() => {
@@ -190,6 +300,7 @@ export function Copilot() {
               {messages.map((message: any) => {
                 const isUser = message.role === "user";
                 const textContent = getMessageText(message);
+                const toolInvocations = getMessageToolInvocations(message);
 
                 return (
                   <div
@@ -205,18 +316,114 @@ export function Copilot() {
                     )}
 
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                      className={`max-w-[85%] ${
                         isUser
-                          ? "bg-slate-900 text-white shadow-xs rounded-br-xs"
-                          : "bg-slate-100/90 text-slate-900 border border-slate-200/80 rounded-bl-xs"
+                          ? "rounded-2xl px-4 py-3 text-xs leading-relaxed bg-slate-900 text-white shadow-xs rounded-br-xs"
+                          : "flex flex-col gap-1.5"
                       }`}
                     >
                       {isUser ? (
                         <p className="whitespace-pre-wrap">{textContent}</p>
                       ) : (
-                        <div className="prose prose-slate prose-xs max-w-none space-y-2">
-                          <ReactMarkdown>{textContent}</ReactMarkdown>
-                        </div>
+                        <>
+                          {textContent ? (
+                            <div className="rounded-2xl px-4 py-3 text-xs leading-relaxed bg-slate-100/90 text-slate-900 border border-slate-200/80 rounded-bl-xs">
+                              <div className="prose prose-slate prose-xs max-w-none space-y-2">
+                                <ReactMarkdown>{textContent}</ReactMarkdown>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {/* Tool Invocations */}
+                          {toolInvocations.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-0.5">
+                              {toolInvocations.map((tool: any, idx: number) => {
+                                const isCall =
+                                  tool.state === "call" ||
+                                  tool.state === "input-streaming" ||
+                                  tool.state === "input-available";
+                                const isError =
+                                  tool.state === "output-error" ||
+                                  Boolean(tool.output?.error || tool.result?.error);
+
+                                if (tool.toolName === "createTask") {
+                                  return (
+                                    <div
+                                      key={tool.toolCallId || `tool-create-${idx}`}
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium shadow-2xs transition-all ${
+                                        isError
+                                          ? "bg-rose-50 text-rose-700 border-rose-200"
+                                          : "bg-slate-100 text-slate-700 border-slate-200"
+                                      }`}
+                                    >
+                                      <span>{isError ? "⚠️" : "🛠️"}</span>
+                                      <span>
+                                        {isCall
+                                          ? "Creating task..."
+                                          : isError
+                                          ? "Failed to create task"
+                                          : "Created task"}
+                                      </span>
+                                      {isCall && (
+                                        <Loader2 className="w-3 h-3 animate-spin text-slate-400 ml-0.5" />
+                                      )}
+                                    </div>
+                                  );
+                                }
+
+                                if (tool.toolName === "searchKnowledge") {
+                                  return (
+                                    <div
+                                      key={tool.toolCallId || `tool-search-${idx}`}
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium shadow-2xs transition-all ${
+                                        isError
+                                          ? "bg-rose-50 text-rose-700 border-rose-200"
+                                          : "bg-slate-100 text-slate-700 border-slate-200"
+                                      }`}
+                                    >
+                                      <span>{isError ? "⚠️" : "🔍"}</span>
+                                      <span>
+                                        {isCall
+                                          ? "Searching knowledge graph..."
+                                          : isError
+                                          ? "Search failed"
+                                          : "Searched knowledge graph"}
+                                      </span>
+                                      {isCall && (
+                                        <Loader2 className="w-3 h-3 animate-spin text-slate-400 ml-0.5" />
+                                      )}
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div
+                                    key={tool.toolCallId || `tool-generic-${idx}`}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium shadow-2xs transition-all ${
+                                      isError
+                                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                                        : "bg-slate-100 text-slate-700 border-slate-200"
+                                    }`}
+                                  >
+                                    <span>⚙️</span>
+                                    <span>{tool.toolName}</span>
+                                    {isCall && (
+                                      <Loader2 className="w-3 h-3 animate-spin text-slate-400 ml-0.5" />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Fallback if neither text nor tools have arrived yet during stream */}
+                          {!textContent && toolInvocations.length === 0 && (
+                            <div className="rounded-2xl px-4 py-3 text-xs leading-relaxed bg-slate-100/90 text-slate-500 border border-slate-200/80 rounded-bl-xs flex items-center gap-2">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                              <span>Thinking...</span>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
 

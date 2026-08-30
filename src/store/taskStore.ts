@@ -18,6 +18,7 @@ interface TaskState {
   tasks: Task[];
   isInitialized: boolean;
   initTasks: (initialTasks: Task[]) => void;
+  upsertTask: (task: Task) => void;
   addTask: (input: { title: string; parentTaskId?: string | null }) => Promise<Task | null>;
   toggleTask: (id: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -31,6 +32,21 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   initTasks: (initialTasks: Task[]) => {
     set({ tasks: initialTasks, isInitialized: true });
+  },
+
+  upsertTask: (task: Task) => {
+    set((state) => {
+      const existsIndex = state.tasks.findIndex((t) => t.id === task.id);
+      if (existsIndex >= 0) {
+        const updated = [...state.tasks];
+        updated[existsIndex] = { ...updated[existsIndex], ...task };
+        return { tasks: updated };
+      }
+      return {
+        tasks: [task, ...state.tasks],
+        isInitialized: true,
+      };
+    });
   },
 
   addTask: async ({ title: rawTitle, parentTaskId = null }) => {
