@@ -60,6 +60,20 @@ export function Copilot() {
     }
   }, [messages, isCopilotOpen, isLoading]);
 
+  // Close Copilot on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isCopilotOpen) {
+        setCopilotOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isCopilotOpen, setCopilotOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();

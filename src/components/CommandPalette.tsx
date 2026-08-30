@@ -23,6 +23,7 @@ import {
   Settings,
   Zap,
   Sparkles,
+  Plus,
 } from "lucide-react";
 
 export function CommandPalette() {
@@ -33,9 +34,12 @@ export function CommandPalette() {
     setCommandOpen,
     toggleCommand,
     isCaptureOpen,
+    setCaptureOpen,
+    isTimerOpen,
     setTimerOpen,
     isCopilotOpen,
     setCopilotOpen,
+    toggleCopilot,
   } = useUIStore();
 
   useEffect(() => {
@@ -67,8 +71,31 @@ export function CommandPalette() {
         return;
       }
 
-      // 3. Single-key navigation (only when palette, capture, & copilot are closed and no modifiers pressed)
-      if (isCommandOpen || isCaptureOpen || isCopilotOpen || e.metaKey || e.ctrlKey || e.altKey) {
+      // 3. Toggle Copilot on 'C' (when command palette, capture, & timer are closed)
+      if (
+        (e.key === "c" || e.key === "C") &&
+        !isCommandOpen &&
+        !isCaptureOpen &&
+        !isTimerOpen &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        toggleCopilot();
+        return;
+      }
+
+      // 4. Single-key navigation & actions (only when palette, capture, copilot, & timer are all closed)
+      if (
+        isCommandOpen ||
+        isCaptureOpen ||
+        isCopilotOpen ||
+        isTimerOpen ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey
+      ) {
         return;
       }
 
@@ -87,9 +114,9 @@ export function CommandPalette() {
         return;
       }
 
-      if (e.key.toLowerCase() === "c") {
+      if (e.key.toLowerCase() === "q") {
         e.preventDefault();
-        setCopilotOpen(true);
+        setCaptureOpen(true);
         return;
       }
     };
@@ -98,7 +125,17 @@ export function CommandPalette() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isCommandOpen, isCaptureOpen, isCopilotOpen, toggleCommand, setCopilotOpen, router]);
+  }, [
+    isCommandOpen,
+    isCaptureOpen,
+    isCopilotOpen,
+    isTimerOpen,
+    toggleCommand,
+    toggleCopilot,
+    setCopilotOpen,
+    setCaptureOpen,
+    router,
+  ]);
 
   if (!mounted) {
     return null;
@@ -121,6 +158,17 @@ export function CommandPalette() {
             <Sparkles className="mr-2 h-4 w-4 text-indigo-600" />
             <span className="font-semibold text-slate-900">Ask Copilot</span>
             <CommandShortcut>C</CommandShortcut>
+          </CommandItem>
+
+          <CommandItem
+            onSelect={() => {
+              setCommandOpen(false);
+              setCaptureOpen(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4 text-slate-700" />
+            <span>Quick Capture</span>
+            <CommandShortcut>Q</CommandShortcut>
           </CommandItem>
 
           <CommandItem

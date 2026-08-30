@@ -6,7 +6,13 @@ import { useTaskStore } from "@/store/taskStore";
 import { Plus, CornerDownLeft, Sparkles } from "lucide-react";
 
 export function QuickCapture() {
-  const { isCaptureOpen, setCaptureOpen, isCommandOpen } = useUIStore();
+  const {
+    isCaptureOpen,
+    setCaptureOpen,
+    isCommandOpen,
+    isCopilotOpen,
+    isTimerOpen,
+  } = useUIStore();
   const { addTask } = useTaskStore();
   const [title, setTitle] = useState("");
 
@@ -17,7 +23,16 @@ export function QuickCapture() {
         return;
       }
 
-      if (e.key.toLowerCase() === "c" && !isCommandOpen && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (
+        (e.key === "q" || e.key === "Q") &&
+        !isCaptureOpen &&
+        !isCommandOpen &&
+        !isCopilotOpen &&
+        !isTimerOpen &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
         const activeElement = document.activeElement as HTMLElement | null;
         if (
           activeElement &&
@@ -37,7 +52,7 @@ export function QuickCapture() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [setCaptureOpen, isCommandOpen]);
+  }, [setCaptureOpen, isCaptureOpen, isCommandOpen, isCopilotOpen, isTimerOpen]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

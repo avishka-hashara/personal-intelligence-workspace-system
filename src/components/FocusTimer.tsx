@@ -27,6 +27,7 @@ export function FocusTimer() {
     resetTimer,
     isCommandOpen,
     isCaptureOpen,
+    isCopilotOpen,
   } = useUIStore();
 
   const { tasks } = useTaskStore();
@@ -58,8 +59,8 @@ export function FocusTimer() {
         return;
       }
 
-      // Ignore if command palette or quick capture is currently active
-      if (isCommandOpen || isCaptureOpen) {
+      // Ignore if command palette, quick capture, or copilot is currently active
+      if (isCommandOpen || isCaptureOpen || isCopilotOpen) {
         return;
       }
 
@@ -73,7 +74,7 @@ export function FocusTimer() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [toggleTimer, isCommandOpen, isCaptureOpen]);
+  }, [toggleTimer, isCommandOpen, isCaptureOpen, isCopilotOpen]);
 
   // Interval ticker when timer is running
   useEffect(() => {

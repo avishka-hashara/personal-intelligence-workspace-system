@@ -17,7 +17,7 @@ import {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { setCopilotOpen } = useUIStore();
+  const { toggleCopilot } = useUIStore();
 
   const links = [
     { href: "/", label: "Today", icon: Home },
@@ -63,7 +63,7 @@ export function Sidebar() {
         <div className="pt-3">
           <button
             type="button"
-            onClick={() => setCopilotOpen(true)}
+            onClick={() => toggleCopilot()}
             className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 hover:from-indigo-100 hover:to-purple-100 text-indigo-900 border border-indigo-200/80 font-semibold text-xs transition-all shadow-2xs cursor-pointer group"
           >
             <span className="flex items-center gap-2">
