@@ -1,10 +1,11 @@
 import { db } from "@/server/db";
-import { tasks, users, habits, habitLogs } from "@/server/db/schema";
-import { eq, and, isNull, asc, desc } from "drizzle-orm";
+import { tasks, users, habits, habitLogs, exams, courses } from "@/server/db/schema";
+import { eq, and, isNull, asc, desc, gt } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import TodayView from "@/components/TodayView";
 import { calculateTaskScore } from "@/lib/scoring";
+import { differenceInCalendarDays } from "date-fns";
 
 export default async function Today() {
   const user = await getCurrentUser();
@@ -21,6 +22,8 @@ export default async function Today() {
       email: user.email!,
     })
     .onConflictDoNothing();
+
+  const now = new Date();
 
   // 1. Fetch all tasks for the current user ordered by sortKey
   const userTasks = await db
@@ -43,7 +46,7 @@ export default async function Today() {
     .orderBy(asc(habits.createdAt));
 
   // 3. Fetch habit logs for today
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = now.toISOString().split("T")[0];
   const userTodayLogs = await db
     .select()
     .from(habitLogs)
@@ -54,6 +57,39 @@ export default async function Today() {
         isNull(habitLogs.deletedAt)
       )
     );
+
+  // 4. Fetch upcoming exams approaching within their ramp-up window
+  const userExams = await db
+    .select({
+      id: exams.id,
+      title: exams.title,
+      startsAt: exams.startsAt,
+      venue: exams.venue,
+      weight: exams.weight,
+      rampDays: exams.rampDays,
+      courseId: exams.courseId,
+      courseCode: courses.code,
+      courseTitle: courses.title,
+    })
+    .from(exams)
+    .innerJoin(courses, eq(exams.courseId, courses.id))
+    .where(
+      and(
+        eq(exams.userId, user.id),
+        gt(exams.startsAt, now),
+        isNull(exams.deletedAt),
+        isNull(courses.deletedAt)
+      )
+    )
+    .orderBy(asc(exams.startsAt));
+
+  const upcomingExams = userExams.filter((exam) => {
+    if (!exam.startsAt) return false;
+    const examDate = new Date(exam.startsAt);
+    const daysUntil = differenceInCalendarDays(examDate, now);
+    const ramp = exam.rampDays || 14;
+    return daysUntil >= 0 && daysUntil <= ramp;
+  });
 
   // Filter pending tasks and sort by deterministic score descending
   const pendingTasks = userTasks.filter((t) => t.status !== "done" && !t.parentTaskId);
@@ -69,6 +105,7 @@ export default async function Today() {
       initialNextUpTasks={nextUpTasks}
       initialHabits={userHabits}
       initialTodayLogs={userTodayLogs}
+      initialUpcomingExams={upcomingExams}
       todayDateStr={todayStr}
     />
   );

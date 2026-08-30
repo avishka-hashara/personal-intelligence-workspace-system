@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/server/db";
-import { courses, syllabusItems } from "@/server/db/schema";
+import { courses, syllabusItems, exams, studySessions } from "@/server/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -155,5 +155,138 @@ export async function updateSyllabusCoverage(
     } catch (error) {
         console.error("Failed to update syllabus coverage:", error);
         return { error: "Failed to update syllabus coverage" };
+    }
+}
+
+export async function createExam(courseId: string, formData: FormData) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    const title = ((formData.get("title") as string) || "").trim();
+    const startsAtRaw = formData.get("startsAt") as string | null;
+    const venue = (formData.get("venue") as string) || null;
+    const weightRaw = formData.get("weight") as string | null;
+    const rampDaysRaw = formData.get("rampDays") as string | null;
+
+    if (!title) {
+        return { error: "Exam title is required" };
+    }
+
+    const startsAt = startsAtRaw ? new Date(startsAtRaw) : new Date();
+    const weight = weightRaw ? weightRaw.trim() : null;
+    const rampDays = rampDaysRaw ? parseInt(rampDaysRaw, 10) || 14 : 14;
+
+    try {
+        const [insertedExam] = await db
+            .insert(exams)
+            .values({
+                userId: user.id,
+                courseId,
+                title,
+                startsAt,
+                venue,
+                weight,
+                rampDays,
+            })
+            .returning();
+
+        revalidatePath(`/study/courses/${courseId}`);
+        revalidatePath("/study/courses");
+        revalidatePath("/");
+        return { success: true, exam: insertedExam };
+    } catch (error) {
+        console.error("Failed to create exam:", error);
+        return { error: "Failed to create exam" };
+    }
+}
+
+export interface LogStudySessionInput {
+    actualMinutes: number;
+    plannedMinutes?: number | null;
+    technique?: string | null;
+    confidenceBefore?: number | null;
+    confidenceAfter?: number | null;
+    notes?: string | null;
+}
+
+export async function logStudySession(
+    courseId: string,
+    syllabusItemId: string,
+    input: FormData | LogStudySessionInput
+) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    let actualMinutes = 25;
+    let plannedMinutes: number | null = null;
+    let technique = "Pomodoro";
+    let confidenceBefore: number = 1;
+    let confidenceAfter: number = 1;
+    let notes: string | null = null;
+
+    if (input instanceof FormData) {
+        const actualMinRaw = input.get("actualMinutes") as string | null;
+        if (actualMinRaw) actualMinutes = parseInt(actualMinRaw, 10) || 25;
+
+        const plannedMinRaw = input.get("plannedMinutes") as string | null;
+        if (plannedMinRaw) plannedMinutes = parseInt(plannedMinRaw, 10) || null;
+
+        const techRaw = input.get("technique") as string | null;
+        if (techRaw) technique = techRaw;
+
+        const confBeforeRaw = input.get("confidenceBefore") as string | null;
+        if (confBeforeRaw) confidenceBefore = parseInt(confBeforeRaw, 10) || 1;
+
+        const confAfterRaw = input.get("confidenceAfter") as string | null;
+        if (confAfterRaw) confidenceAfter = parseInt(confAfterRaw, 10) || 1;
+
+        notes = (input.get("notes") as string) || null;
+    } else {
+        actualMinutes = input.actualMinutes;
+        plannedMinutes = input.plannedMinutes ?? null;
+        technique = input.technique ?? "Pomodoro";
+        confidenceBefore = input.confidenceBefore ?? 1;
+        confidenceAfter = input.confidenceAfter ?? 1;
+        notes = input.notes ?? null;
+    }
+
+    try {
+        // 1. Insert session record
+        const [insertedSession] = await db
+            .insert(studySessions)
+            .values({
+                userId: user.id,
+                courseId,
+                syllabusItemId: syllabusItemId || null,
+                actualMinutes,
+                plannedMinutes,
+                technique,
+                confidenceBefore,
+                confidenceAfter,
+                notes,
+            })
+            .returning();
+
+        // 2. Automatically update syllabus item confidence
+        if (syllabusItemId) {
+            await db
+                .update(syllabusItems)
+                .set({
+                    confidence: confidenceAfter,
+                    updatedAt: new Date(),
+                })
+                .where(and(eq(syllabusItems.id, syllabusItemId), eq(syllabusItems.userId, user.id)));
+        }
+
+        revalidatePath(`/study/courses/${courseId}`);
+        revalidatePath("/study/courses");
+        return { success: true, session: insertedSession };
+    } catch (error) {
+        console.error("Failed to log study session:", error);
+        return { error: "Failed to log study session" };
     }
 }

@@ -6,7 +6,8 @@ import { useUIStore } from "@/store/uiStore";
 import { TaskList } from "@/components/TaskList";
 import { TaskDrawer } from "@/components/TaskDrawer";
 import { calculateTaskScore } from "@/lib/scoring";
-import { isToday, isPast } from "date-fns";
+import { isToday, isPast, differenceInCalendarDays, format } from "date-fns";
+import Link from "next/link";
 import {
   Zap,
   Clock,
@@ -14,8 +15,22 @@ import {
   Square,
   ArrowUpRight,
   Play,
+  GraduationCap,
+  ArrowRight,
 } from "lucide-react";
 import { HabitTracker, type Habit, type HabitLog } from "@/components/HabitTracker";
+
+export interface UpcomingExamItem {
+  id: string;
+  title: string;
+  startsAt: Date | string | null;
+  venue?: string | null;
+  weight?: string | null;
+  rampDays?: number | null;
+  courseId: string;
+  courseCode: string;
+  courseTitle: string;
+}
 
 interface TodayViewProps {
   initialTasks: Task[];
@@ -23,6 +38,7 @@ interface TodayViewProps {
   initialNextUpTasks?: Task[];
   initialHabits?: Habit[];
   initialTodayLogs?: HabitLog[];
+  initialUpcomingExams?: UpcomingExamItem[];
   todayDateStr?: string;
 }
 
@@ -30,6 +46,7 @@ export function TodayView({
   initialTasks,
   initialHabits = [],
   initialTodayLogs = [],
+  initialUpcomingExams = [],
   todayDateStr,
 }: TodayViewProps) {
   const { tasks, isInitialized, initTasks, addTask, toggleTask } = useTaskStore();
@@ -204,6 +221,56 @@ export function TodayView({
         todayLogs={initialTodayLogs}
         todayDateStr={todayDateStr}
       />
+
+      {/* Study Due / Upcoming Exams Section */}
+      {initialUpcomingExams && initialUpcomingExams.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+              STUDY DUE & UPCOMING EXAMS ({initialUpcomingExams.length})
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {initialUpcomingExams.map((exam) => {
+              const examDate = exam.startsAt ? new Date(exam.startsAt) : new Date();
+              const daysLeft = differenceInCalendarDays(examDate, new Date());
+
+              return (
+                <Link
+                  key={exam.id}
+                  href={`/study/courses/${exam.courseId}`}
+                  className="group bg-white border border-amber-200/90 hover:border-amber-300 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {exam.courseCode}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                        <Zap className="w-3 h-3 text-amber-600 fill-amber-600" />
+                        Ramp-up active
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+                      🚨 {exam.title} in {daysLeft === 0 ? "Today" : `${daysLeft} day${daysLeft === 1 ? "" : "s"}`}
+                    </h3>
+
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {format(examDate, "MMM d, yyyy 'at' p")}
+                      {exam.weight && ` · ${exam.weight}% weight`}
+                    </p>
+                  </div>
+
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all shrink-0" />
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <TaskDrawer />
     </div>
