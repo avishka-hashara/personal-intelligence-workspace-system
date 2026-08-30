@@ -1,6 +1,6 @@
 import { db } from "@/server/db";
-import { goals } from "@/server/db/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { goals, roadmaps, stages, milestones } from "@/server/db/schema";
+import { eq, and, isNull, inArray, asc } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -8,13 +8,11 @@ import {
   ArrowLeft,
   Target,
   Calendar,
-  Layers,
   CheckSquare,
-  Sparkles,
-  Map,
   Clock,
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
+import { RoadmapView, type StageWithMilestones } from "@/components/RoadmapView";
 
 const LIFE_AREA_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   work: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
@@ -43,6 +41,7 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
 
   const { id } = await params;
 
+  // 1. Fetch the Goal
   const [goal] = await db
     .select()
     .from(goals)
@@ -57,6 +56,58 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
 
   if (!goal) {
     redirect("/plan/goals");
+  }
+
+  // 2. Fetch Roadmap (if one exists for this goal)
+  const [roadmap] = await db
+    .select()
+    .from(roadmaps)
+    .where(
+      and(
+        eq(roadmaps.goalId, id),
+        eq(roadmaps.userId, user.id),
+        isNull(roadmaps.deletedAt)
+      )
+    )
+    .limit(1);
+
+  let stagesWithMilestones: StageWithMilestones[] = [];
+
+  // 3. If roadmap exists, fetch its stages & milestones
+  if (roadmap) {
+    const stageRows = await db
+      .select()
+      .from(stages)
+      .where(
+        and(
+          eq(stages.roadmapId, roadmap.id),
+          eq(stages.userId, user.id),
+          isNull(stages.deletedAt)
+        )
+      )
+      .orderBy(asc(stages.ordinal), asc(stages.createdAt));
+
+    const stageIds = stageRows.map((s) => s.id);
+    let milestoneRows: (typeof milestones.$inferSelect)[] = [];
+
+    if (stageIds.length > 0) {
+      milestoneRows = await db
+        .select()
+        .from(milestones)
+        .where(
+          and(
+            inArray(milestones.stageId, stageIds),
+            eq(milestones.userId, user.id),
+            isNull(milestones.deletedAt)
+          )
+        )
+        .orderBy(asc(milestones.ordinal), asc(milestones.createdAt));
+    }
+
+    stagesWithMilestones = stageRows.map((stage) => ({
+      ...stage,
+      milestones: milestoneRows.filter((m) => m.stageId === stage.id),
+    }));
   }
 
   const badgeStyle = getAreaBadge(goal.lifeArea);
@@ -127,34 +178,14 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
 
       {/* Main Content Sections */}
       <div className="space-y-6">
-        {/* Placeholder 1: Roadmap & Stages */}
-        <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-                <Map className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold text-slate-900">Roadmap & Stages</h2>
-                <p className="text-xs text-slate-500">Sequential milestones and phases for this goal.</p>
-              </div>
-            </div>
+        {/* Roadmap & Stages View */}
+        <RoadmapView
+          goalId={goal.id}
+          roadmap={roadmap ?? null}
+          stages={stagesWithMilestones}
+        />
 
-            <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200">
-              Coming Next
-            </span>
-          </div>
-
-          <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50/50 flex flex-col items-center justify-center gap-2">
-            <Layers className="w-8 h-8 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-700">Roadmap & Stages (Coming Next)</p>
-            <p className="text-xs text-slate-400 max-w-md">
-              Attach structured phases, automated AI-generated work breakdown structures, and sequential milestones.
-            </p>
-          </div>
-        </section>
-
-        {/* Placeholder 2: Contributing Tasks */}
+        {/* Contributing Tasks Section */}
         <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
