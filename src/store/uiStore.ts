@@ -2,6 +2,15 @@ import { create } from "zustand";
 
 export type TimerStatus = "idle" | "running" | "paused";
 
+export type PageContextType = "Note" | "Goal" | "Course";
+
+export interface PageContext {
+  type: PageContextType;
+  id: string;
+  title: string;
+  data?: string;
+}
+
 interface UIState {
   isCommandOpen: boolean;
   setCommandOpen: (open: boolean) => void;
@@ -13,6 +22,11 @@ interface UIState {
   selectedTask: Record<string, unknown> | null;
   setSelectedTaskId: (id: string | null) => void;
   setSelectedTask: (task: Record<string, unknown> | null) => void;
+
+  // Page-Aware Ephemeral Context
+  pageContext: PageContext | null;
+  setPageContext: (ctx: PageContext | null) => void;
+  clearPageContext: (id: string) => void;
 
   // Focus Timer State
   isTimerOpen: boolean;
@@ -47,6 +61,12 @@ export const useUIStore = create<UIState>((set) => ({
       selectedTask: task,
       selectedTaskId: task ? (typeof task.id === "string" ? task.id : null) : null,
     }),
+
+  // Page-Aware Ephemeral Context implementation
+  pageContext: null,
+  setPageContext: (ctx: PageContext | null) => set({ pageContext: ctx }),
+  clearPageContext: (id: string) =>
+    set((state) => (state.pageContext?.id === id ? { pageContext: null } : {})),
 
   // Focus Timer implementation
   isTimerOpen: false,

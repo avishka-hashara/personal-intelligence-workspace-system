@@ -16,6 +16,22 @@ import {
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import { RoadmapView, type StageWithMilestones } from "@/components/RoadmapView";
 import { Progress } from "@/components/ui/progress";
+import { ContextSetter } from "@/components/ContextSetter";
+
+function summarizeGoal(goal: any, stagesList: StageWithMilestones[]): string {
+  const parts: string[] = [];
+  if (goal.description) parts.push(`Description: ${goal.description}`);
+  if (goal.lifeArea) parts.push(`Life Area: ${goal.lifeArea}`);
+  if (goal.targetDate) parts.push(`Target Date: ${format(new Date(goal.targetDate), "yyyy-MM-dd")}`);
+  if (goal.targetValue) parts.push(`Target Metric: ${goal.currentValue || 0}/${goal.targetValue} ${goal.unit || ""}`);
+  if (stagesList && stagesList.length > 0) {
+    const stageSummary = stagesList
+      .map((s) => `${s.title} (${s.status || "pending"}, ${s.milestones.length} milestones)`)
+      .join(", ");
+    parts.push(`Roadmap Stages: ${stageSummary}`);
+  }
+  return parts.join("\n");
+}
 
 const LIFE_AREA_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   work: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
@@ -153,6 +169,12 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
 
   return (
     <div className="flex flex-col gap-8 pb-12">
+      <ContextSetter
+        type="Goal"
+        id={goal.id}
+        title={goal.title}
+        data={summarizeGoal(goal, stagesWithMilestones)}
+      />
       {/* Back Link */}
       <div>
         <Link

@@ -50,7 +50,33 @@ export async function POST(req: Request) {
       });
     }
 
-    const { messages } = await req.json();
+    const body = await req.json();
+    const messages = body.messages;
+    const rawPageContext = body.pageContext;
+
+    // Validate ephemeral page context (never trust client payload directly)
+    let validatedPageContext: { type: "Note" | "Goal" | "Course"; id: string; title: string; data?: string } | null = null;
+    if (
+      rawPageContext &&
+      typeof rawPageContext === "object" &&
+      (rawPageContext.type === "Note" || rawPageContext.type === "Goal" || rawPageContext.type === "Course") &&
+      typeof rawPageContext.id === "string" &&
+      rawPageContext.id.trim().length > 0
+    ) {
+      const cleanTitle = String(rawPageContext.title || "Untitled").trim();
+      let cleanData: string | undefined = undefined;
+      if (rawPageContext.data !== undefined && rawPageContext.data !== null) {
+        const rawDataStr = String(rawPageContext.data);
+        cleanData = rawDataStr.length > 2000 ? rawDataStr.slice(0, 2000) + "\n\n[...truncated]" : rawDataStr;
+      }
+
+      validatedPageContext = {
+        type: rawPageContext.type,
+        id: rawPageContext.id.trim(),
+        title: cleanTitle,
+        data: cleanData,
+      };
+    }
 
     // 1. Fetch persona settings for user
     const personaSettings = await getPersonaSettings(user.id);
@@ -303,6 +329,7 @@ ${
       userName: currentUserName,
       localTime: currentDateStr,
       memorySummary: personaSettings.memorySummary,
+      pageContext: validatedPageContext,
       workspaceSnapshot,
     });
 

@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
+import { ContextSetter } from "@/components/ContextSetter";
 
 export type Note = typeof notes.$inferSelect;
 
@@ -90,6 +91,7 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
 
   return (
     <div className="flex flex-col gap-6 pb-12">
+      <ContextSetter type="Note" id={note.id} title={title} data={content} />
       {/* Top Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-200">
         <div className="flex items-center gap-3">

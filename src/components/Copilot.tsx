@@ -128,7 +128,7 @@ function getMessageToolInvocations(message: any): ParsedToolInvocation[] {
 
 export function Copilot() {
   const router = useRouter();
-  const { isCopilotOpen, setCopilotOpen } = useUIStore();
+  const { isCopilotOpen, setCopilotOpen, pageContext } = useUIStore();
   const { upsertTask } = useTaskStore();
   const [input, setInput] = useState("");
   const processedTaskIdsRef = useRef<Set<string>>(new Set());
@@ -191,11 +191,13 @@ export function Copilot() {
     if (!trimmed || isLoading) return;
 
     setInput("");
-    sendMessage({ text: trimmed });
+    // Note: Passing pageContext as request-level option via second argument of sendMessage
+    // ensures fresh evaluation per-submit rather than stale hook-level capture.
+    sendMessage({ text: trimmed }, { body: { pageContext } });
   };
 
   const handleSuggestionClick = (text: string) => {
-    sendMessage({ text });
+    sendMessage({ text }, { body: { pageContext } });
   };
 
   const handleClear = () => {

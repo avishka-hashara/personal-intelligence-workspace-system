@@ -1,8 +1,16 @@
+export interface PersonaPageContext {
+  type: "Note" | "Goal" | "Course";
+  id: string;
+  title: string;
+  data?: string;
+}
+
 export interface PersonaContext {
   assistantName?: string | null;
   userName?: string | null;
   localTime?: string | null;
   memorySummary?: string | null;
+  pageContext?: PersonaPageContext | null;
   workspaceSnapshot?: string | null;
 }
 
@@ -49,6 +57,15 @@ If they seem to be in real distress, drop the productivity framing entirely and 
 
 CONTEXT
 ${contextLines.join("\n")}`;
+
+  if (ctx.pageContext) {
+    const { type, title, data } = ctx.pageContext;
+    const dataBlock = data ? `\n\n${data}` : "";
+    prompt += `\n\nWHAT THEY'RE LOOKING AT RIGHT NOW
+They have a ${type} open, titled "${title}".${dataBlock}
+
+When they say "this", "here", "it", or ask something with no stated subject, they almost certainly mean this ${type}. Just answer about it — don't ask which one they mean, and don't announce that you can see their screen. If they clearly mean something else, follow them there instead.`;
+  }
 
   if (ctx.workspaceSnapshot) {
     prompt += `\n\n${ctx.workspaceSnapshot}`;

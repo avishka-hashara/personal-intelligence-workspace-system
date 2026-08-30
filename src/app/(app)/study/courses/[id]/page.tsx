@@ -42,6 +42,38 @@ import { FlashcardList } from "@/components/FlashcardList";
 import { ResourceUploader } from "@/components/ResourceUploader";
 import { createExam, addFlashcard } from "@/server/actions/study";
 import { format, differenceInCalendarDays, formatDistanceToNow } from "date-fns";
+import { ContextSetter } from "@/components/ContextSetter";
+
+function summarizeCourse(
+  course: any,
+  syllabus: any[],
+  examsList: any[]
+): string {
+  const parts: string[] = [];
+  if (course.code) parts.push(`Code: ${course.code}`);
+  if (course.term) parts.push(`Term: ${course.term}`);
+  if (course.targetGrade) parts.push(`Target Grade: ${course.targetGrade}`);
+  if (course.description) parts.push(`Description: ${course.description}`);
+  if (syllabus && syllabus.length > 0) {
+    const items = syllabus
+      .map((s) => `${s.title} (${s.coverage || "uncovered"})`)
+      .slice(0, 15)
+      .join(", ");
+    parts.push(`Syllabus Modules (${syllabus.length} total): ${items}`);
+  }
+  if (examsList && examsList.length > 0) {
+    const examSummary = examsList
+      .map(
+        (e) =>
+          `${e.title} (Weight: ${e.weight ? `${e.weight}%` : "N/A"}, Date: ${
+            e.startsAt ? format(new Date(e.startsAt), "yyyy-MM-dd") : "TBD"
+          })`
+      )
+      .join(", ");
+    parts.push(`Upcoming Exams: ${examSummary}`);
+  }
+  return parts.join("\n");
+}
 
 interface CourseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -145,6 +177,12 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
   return (
     <div className="flex flex-col gap-8 pb-12">
+      <ContextSetter
+        type="Course"
+        id={course.id}
+        title={course.title}
+        data={summarizeCourse(course, courseSyllabus, courseExams)}
+      />
       {/* Back to Courses Link */}
       <div>
         <Link
