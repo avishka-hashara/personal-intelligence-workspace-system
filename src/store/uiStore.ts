@@ -25,6 +25,11 @@ interface UIState {
   elapsedSeconds: number;
   setElapsedSeconds: (seconds: number | ((prev: number) => number)) => void;
   resetTimer: () => void;
+
+  // AI Copilot State
+  isCopilotOpen: boolean;
+  setCopilotOpen: (open: boolean) => void;
+  toggleCopilot: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -61,7 +66,9 @@ export const useUIStore = create<UIState>((set) => ({
       timerStatus: "idle",
       elapsedSeconds: 0,
     }),
+
+  // AI Copilot implementation
+  isCopilotOpen: false,
+  setCopilotOpen: (open: boolean) => set({ isCopilotOpen: open }),
+  toggleCopilot: () => set((state) => ({ isCopilotOpen: !state.isCopilotOpen })),
 }));
-
-
-

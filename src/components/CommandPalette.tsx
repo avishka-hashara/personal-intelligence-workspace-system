@@ -22,12 +22,21 @@ import {
   Book,
   Settings,
   Zap,
+  Sparkles,
 } from "lucide-react";
 
 export function CommandPalette() {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const { isCommandOpen, setCommandOpen, toggleCommand, isCaptureOpen, setTimerOpen } = useUIStore();
+  const {
+    isCommandOpen,
+    setCommandOpen,
+    toggleCommand,
+    isCaptureOpen,
+    setTimerOpen,
+    isCopilotOpen,
+    setCopilotOpen,
+  } = useUIStore();
 
   useEffect(() => {
     setMounted(true);
@@ -58,8 +67,8 @@ export function CommandPalette() {
         return;
       }
 
-      // 3. Single-key navigation (only when palette & capture are closed and no modifiers pressed)
-      if (isCommandOpen || isCaptureOpen || e.metaKey || e.ctrlKey || e.altKey) {
+      // 3. Single-key navigation (only when palette, capture, & copilot are closed and no modifiers pressed)
+      if (isCommandOpen || isCaptureOpen || isCopilotOpen || e.metaKey || e.ctrlKey || e.altKey) {
         return;
       }
 
@@ -75,6 +84,13 @@ export function CommandPalette() {
       if (path) {
         e.preventDefault();
         router.push(path);
+        return;
+      }
+
+      if (e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        setCopilotOpen(true);
+        return;
       }
     };
 
@@ -82,7 +98,7 @@ export function CommandPalette() {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isCommandOpen, toggleCommand, router]);
+  }, [isCommandOpen, isCaptureOpen, isCopilotOpen, toggleCommand, setCopilotOpen, router]);
 
   if (!mounted) {
     return null;
@@ -93,6 +109,33 @@ export function CommandPalette() {
       <CommandInput placeholder="Type a command or search..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+        
+        {/* AI & Actions */}
+        <CommandGroup heading="Intelligence & Actions">
+          <CommandItem
+            onSelect={() => {
+              setCommandOpen(false);
+              setCopilotOpen(true);
+            }}
+          >
+            <Sparkles className="mr-2 h-4 w-4 text-indigo-600" />
+            <span className="font-semibold text-slate-900">Ask Copilot</span>
+            <CommandShortcut>C</CommandShortcut>
+          </CommandItem>
+
+          <CommandItem
+            onSelect={() => {
+              setCommandOpen(false);
+              setTimerOpen(true);
+            }}
+          >
+            <Zap className="mr-2 h-4 w-4 text-amber-500" />
+            <span>Focus Mode</span>
+            <CommandShortcut>F</CommandShortcut>
+          </CommandItem>
+        </CommandGroup>
+
+        {/* Navigation */}
         <CommandGroup heading="Navigation">
           <CommandItem onSelect={() => handleNavigate("/")}>
             <Home className="mr-2 h-4 w-4" />
@@ -131,18 +174,10 @@ export function CommandPalette() {
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              setCommandOpen(false);
-              setTimerOpen(true);
-            }}
-          >
-            <Zap className="mr-2 h-4 w-4 text-amber-500" />
-            <span>Focus Mode</span>
-            <CommandShortcut>F</CommandShortcut>
-          </CommandItem>
         </CommandGroup>
       </CommandList>
     </CommandDialog>
   );
 }
+
+export default CommandPalette;

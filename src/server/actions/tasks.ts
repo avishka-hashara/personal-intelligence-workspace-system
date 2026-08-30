@@ -215,6 +215,10 @@ export async function deleteTask(id: string) {
     if (!user) return { error: "Unauthorized" };
 
     try {
+        // Cascade delete subtasks
+        await db.delete(tasks)
+            .where(and(eq(tasks.parentTaskId, id), eq(tasks.userId, user.id)));
+
         await db.delete(tasks)
             .where(and(eq(tasks.id, id), eq(tasks.userId, user.id)));
 

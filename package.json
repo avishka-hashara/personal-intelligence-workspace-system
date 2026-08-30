@@ -9,12 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.52",
+    "@ai-sdk/react": "^4.0.88",
     "@base-ui/react": "^1.7.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",
+    "ai": "^7.0.85",
     "chrono-node": "^2.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

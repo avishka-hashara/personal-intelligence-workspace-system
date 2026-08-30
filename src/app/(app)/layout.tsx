@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { CommandPalette } from "@/components/CommandPalette";
 import { QuickCapture } from "@/components/QuickCapture";
 import { FocusTimer } from "@/components/FocusTimer";
+import { Copilot } from "@/components/Copilot";
 
 export default function AppLayout({
   children,
@@ -13,6 +14,7 @@ export default function AppLayout({
       <CommandPalette />
       <QuickCapture />
       <FocusTimer />
+      <Copilot />
       {/* 240px Left Rail */}
       <Sidebar />
       
