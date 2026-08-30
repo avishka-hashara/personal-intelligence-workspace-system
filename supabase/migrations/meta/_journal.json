@@ -57,6 +57,13 @@
       "when": 1788078406315,
       "tag": "0007_violet_meteorite",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788081241297,
+      "tag": "0008_worthless_mother_askani",
+      "breakpoints": true
     }
   ]
 }

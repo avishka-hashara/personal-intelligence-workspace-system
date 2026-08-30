@@ -1,6 +1,12 @@
 import { db } from "@/server/db";
-import { courses, syllabusItems, exams } from "@/server/db/schema";
-import { eq, and, isNull, asc } from "drizzle-orm";
+import {
+  courses,
+  syllabusItems,
+  exams,
+  courseResources,
+  flashcards,
+} from "@/server/db/schema";
+import { eq, and, isNull, asc, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -22,12 +28,20 @@ import {
   Zap,
   MapPin,
   Percent,
+  ExternalLink,
+  Video,
+  Link2,
+  FileCode,
+  File,
+  Download,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { SyllabusManager } from "@/components/SyllabusManager";
-import { createExam } from "@/server/actions/study";
-import { format, differenceInCalendarDays } from "date-fns";
+import { FlashcardList } from "@/components/FlashcardList";
+import { ResourceUploader } from "@/components/ResourceUploader";
+import { createExam, addFlashcard } from "@/server/actions/study";
+import { format, differenceInCalendarDays, formatDistanceToNow } from "date-fns";
 
 interface CourseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -84,6 +98,32 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     )
     .orderBy(asc(exams.startsAt));
 
+  // 4. Fetch Course Resources
+  const resources = await db
+    .select()
+    .from(courseResources)
+    .where(
+      and(
+        eq(courseResources.courseId, id),
+        eq(courseResources.userId, user.id),
+        isNull(courseResources.deletedAt)
+      )
+    )
+    .orderBy(desc(courseResources.createdAt));
+
+  // 5. Fetch Flashcards
+  const cards = await db
+    .select()
+    .from(flashcards)
+    .where(
+      and(
+        eq(flashcards.courseId, id),
+        eq(flashcards.userId, user.id),
+        isNull(flashcards.deletedAt)
+      )
+    )
+    .orderBy(desc(flashcards.createdAt));
+
   // Calculate syllabus coverage progress
   const totalItems = courseSyllabus.length;
   const coveredItems = courseSyllabus.filter(
@@ -94,6 +134,11 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
   async function handleCreateExam(formData: FormData) {
     "use server";
     await createExam(id, formData);
+  }
+
+  async function handleAddFlashcard(formData: FormData) {
+    "use server";
+    await addFlashcard(id, formData);
   }
 
   const now = new Date();
@@ -187,28 +232,28 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
         <TabsList className="bg-slate-100/80 p-1 rounded-xl border border-slate-200/80 inline-flex">
           <TabsTrigger
             value="syllabus"
-            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all"
+            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5 mr-1.5 inline" />
             Syllabus ({totalItems})
           </TabsTrigger>
           <TabsTrigger
             value="resources"
-            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all"
+            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all cursor-pointer"
           >
             <FolderArchive className="w-3.5 h-3.5 mr-1.5 inline" />
-            Resources
+            Resources ({resources.length})
           </TabsTrigger>
           <TabsTrigger
             value="cards"
-            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all"
+            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all cursor-pointer"
           >
             <CreditCard className="w-3.5 h-3.5 mr-1.5 inline" />
-            Cards
+            Cards ({cards.length})
           </TabsTrigger>
           <TabsTrigger
             value="exams"
-            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all"
+            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5 mr-1.5 inline" />
             Exams ({courseExams.length})
@@ -234,29 +279,161 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
           </section>
         </TabsContent>
 
-        {/* Tab 2: Resources Placeholder */}
-        <TabsContent value="resources" className="focus-visible:outline-none">
-          <section className="bg-white border border-slate-200 rounded-2xl p-8 shadow-xs text-center">
-            <div className="border border-dashed border-slate-200 rounded-xl p-10 flex flex-col items-center justify-center gap-2 bg-slate-50/50">
-              <FolderArchive className="w-8 h-8 text-slate-300" />
-              <h3 className="text-sm font-bold text-slate-700">Course Resources & Materials</h3>
-              <p className="text-xs text-slate-400 max-w-md">
-                Upload lecture slides, problem sets, textbook chapters, and past notes attached to this course.
-              </p>
-            </div>
+        {/* Tab 2: Resources */}
+        <TabsContent value="resources" className="focus-visible:outline-none space-y-6">
+          {/* Add / Upload Resource Component */}
+          <ResourceUploader courseId={course.id} />
+
+          {/* Resources List */}
+          <section className="space-y-4">
+            <h2 className="text-base font-bold text-slate-900">Attached Course Files & Links</h2>
+
+            {resources.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {resources.map((res) => {
+                  const type = res.resourceType || "link";
+                  
+                  let typeLabel = "Link";
+                  let typeColor = "bg-slate-100 text-slate-700 border-slate-200";
+                  let Icon = Link2;
+
+                  if (type === "pdf") {
+                    typeLabel = "PDF Document";
+                    typeColor = "bg-rose-50 text-rose-700 border-rose-200";
+                    Icon = FileText;
+                  } else if (type === "doc") {
+                    typeLabel = "Word Doc";
+                    typeColor = "bg-blue-50 text-blue-700 border-blue-200";
+                    Icon = FileText;
+                  } else if (type === "slides") {
+                    typeLabel = "Slides";
+                    typeColor = "bg-amber-50 text-amber-700 border-amber-200";
+                    Icon = FolderArchive;
+                  } else if (type === "video") {
+                    typeLabel = "Video";
+                    typeColor = "bg-purple-50 text-purple-700 border-purple-200";
+                    Icon = Video;
+                  } else if (type === "file") {
+                    typeLabel = "File";
+                    typeColor = "bg-slate-50 text-slate-700 border-slate-200";
+                    Icon = File;
+                  }
+
+                  const isUploadedFile = res.url.includes("supabase.co") || res.url.includes("/storage/");
+
+                  return (
+                    <div
+                      key={res.id}
+                      className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ${typeColor}`}
+                          >
+                            {typeLabel}
+                          </span>
+
+                          <span className="text-[11px] text-slate-400">
+                            {formatDistanceToNow(new Date(res.createdAt), { addSuffix: true })}
+                          </span>
+                        </div>
+
+                        <h3 className="text-sm font-bold text-slate-900 line-clamp-2">
+                          {res.title}
+                        </h3>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <a
+                          href={res.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline max-w-[240px] truncate"
+                        >
+                          <Icon className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">
+                            {isUploadedFile ? "Open / Download File" : res.url}
+                          </span>
+                          {isUploadedFile ? (
+                            <Download className="w-3 h-3 shrink-0 ml-0.5" />
+                          ) : (
+                            <ExternalLink className="w-3 h-3 shrink-0 ml-0.5" />
+                          )}
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="border border-dashed border-slate-200 rounded-2xl p-10 text-center bg-slate-50/50 flex flex-col items-center justify-center gap-2">
+                <FolderArchive className="w-8 h-8 text-slate-300" />
+                <h3 className="text-sm font-bold text-slate-700">No resources attached yet</h3>
+                <p className="text-xs text-slate-400 max-w-md">
+                  Upload lecture PDF slides, Word docs, past notes, or paste Google Drive links above.
+                </p>
+              </div>
+            )}
           </section>
         </TabsContent>
 
-        {/* Tab 3: Flashcards Placeholder */}
-        <TabsContent value="cards" className="focus-visible:outline-none">
-          <section className="bg-white border border-slate-200 rounded-2xl p-8 shadow-xs text-center">
-            <div className="border border-dashed border-slate-200 rounded-xl p-10 flex flex-col items-center justify-center gap-2 bg-slate-50/50">
-              <CreditCard className="w-8 h-8 text-slate-300" />
-              <h3 className="text-sm font-bold text-slate-700">Active Recall & Flashcards</h3>
-              <p className="text-xs text-slate-400 max-w-md">
-                Generate and review spaced-repetition flashcards mapped to your syllabus topics.
-              </p>
+        {/* Tab 3: Flashcards */}
+        <TabsContent value="cards" className="focus-visible:outline-none space-y-6">
+          {/* Add Flashcard Form */}
+          <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
+                <Plus className="w-4 h-4" />
+              </div>
+              <h2 className="text-sm font-bold text-slate-900">Create Flashcard</h2>
             </div>
+
+            <form action={handleAddFlashcard} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="cardFront" className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  Front (Question / Prompt) *
+                </label>
+                <textarea
+                  id="cardFront"
+                  name="front"
+                  required
+                  rows={2}
+                  placeholder="e.g. What is the time complexity of searching a balanced BST?"
+                  className="w-full px-3 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all resize-none"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="cardBack" className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                  Back (Answer / Definition) *
+                </label>
+                <textarea
+                  id="cardBack"
+                  name="back"
+                  required
+                  rows={2}
+                  placeholder="e.g. O(log n) average and worst-case for balanced BSTs."
+                  className="w-full px-3 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all resize-none"
+                />
+              </div>
+
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Flashcard</span>
+                </button>
+              </div>
+            </form>
+          </section>
+
+          {/* Flashcards Grid */}
+          <section className="space-y-4">
+            <h2 className="text-base font-bold text-slate-900">Spaced Repetition Flashcards</h2>
+            <FlashcardList cards={cards} />
           </section>
         </TabsContent>
 

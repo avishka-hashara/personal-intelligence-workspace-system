@@ -1,9 +1,16 @@
 "use server";
 
 import { db } from "@/server/db";
-import { courses, syllabusItems, exams, studySessions } from "@/server/db/schema";
+import {
+    courses,
+    syllabusItems,
+    exams,
+    studySessions,
+    courseResources,
+    flashcards,
+} from "@/server/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { getCurrentUser } from "@/utils/supabase/server";
+import { getCurrentUser, createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export interface CreateCourseInput {
@@ -288,5 +295,146 @@ export async function logStudySession(
     } catch (error) {
         console.error("Failed to log study session:", error);
         return { error: "Failed to log study session" };
+    }
+}
+
+export async function addResource(courseId: string, formData: FormData) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    const title = ((formData.get("title") as string) || "").trim();
+    const url = ((formData.get("url") as string) || "").trim();
+    const resourceType = ((formData.get("resourceType") as string) || "link").trim();
+
+    if (!title || !url) {
+        return { error: "Title and URL are required" };
+    }
+
+    try {
+        const [insertedResource] = await db
+            .insert(courseResources)
+            .values({
+                userId: user.id,
+                courseId,
+                title,
+                url,
+                resourceType,
+            })
+            .returning();
+
+        revalidatePath(`/study/courses/${courseId}`);
+        revalidatePath("/study/courses");
+        return { success: true, resource: insertedResource };
+    } catch (error) {
+        console.error("Failed to add course resource:", error);
+        return { error: "Failed to add course resource" };
+    }
+}
+
+export async function uploadResourceFile(courseId: string, formData: FormData) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    const file = formData.get("file") as File | null;
+    let title = ((formData.get("title") as string) || "").trim();
+
+    if (!file || file.size === 0) {
+        return { error: "Please select a valid file to upload" };
+    }
+
+    if (!title) {
+        title = file.name;
+    }
+
+    // Determine type from file extension
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    let resourceType = "file";
+    if (ext === "pdf") resourceType = "pdf";
+    else if (["doc", "docx"].includes(ext)) resourceType = "doc";
+    else if (["ppt", "pptx", "key"].includes(ext)) resourceType = "slides";
+    else if (["png", "jpg", "jpeg", "webp", "gif", "svg"].includes(ext)) resourceType = "image";
+    else if (["mp4", "mov", "webm", "mkv"].includes(ext)) resourceType = "video";
+    else if (["zip", "rar", "tar", "gz"].includes(ext)) resourceType = "archive";
+
+    try {
+        const supabase = await createClient();
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+        const filePath = `${user.id}/${courseId}/${Date.now()}-${safeName}`;
+
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const { error: uploadError } = await supabase.storage
+            .from("course-resources")
+            .upload(filePath, buffer, {
+                contentType: file.type || "application/octet-stream",
+                upsert: true,
+            });
+
+        if (uploadError) {
+            console.error("Supabase storage upload error:", uploadError);
+            return { error: `Upload failed: ${uploadError.message}` };
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from("course-resources")
+            .getPublicUrl(filePath);
+
+        const [insertedResource] = await db
+            .insert(courseResources)
+            .values({
+                userId: user.id,
+                courseId,
+                title,
+                url: publicUrl,
+                resourceType,
+            })
+            .returning();
+
+        revalidatePath(`/study/courses/${courseId}`);
+        revalidatePath("/study/courses");
+        return { success: true, resource: insertedResource };
+    } catch (error: any) {
+        console.error("Failed to upload resource file:", error);
+        return { error: error?.message || "Failed to upload file" };
+    }
+}
+
+export async function addFlashcard(courseId: string, formData: FormData) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    const front = ((formData.get("front") as string) || "").trim();
+    const back = ((formData.get("back") as string) || "").trim();
+
+    if (!front || !back) {
+        return { error: "Front and Back are required for flashcards" };
+    }
+
+    try {
+        const [insertedFlashcard] = await db
+            .insert(flashcards)
+            .values({
+                userId: user.id,
+                courseId,
+                front,
+                back,
+                nextReviewAt: new Date(),
+                intervalDays: 0,
+            })
+            .returning();
+
+        revalidatePath(`/study/courses/${courseId}`);
+        revalidatePath("/study/courses");
+        return { success: true, flashcard: insertedFlashcard };
+    } catch (error) {
+        console.error("Failed to add flashcard:", error);
+        return { error: "Failed to add flashcard" };
     }
 }
