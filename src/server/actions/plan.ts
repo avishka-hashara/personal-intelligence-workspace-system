@@ -5,6 +5,7 @@ import { goals, roadmaps, stages, milestones } from "@/server/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { generateNodeEmbedding } from "@/lib/embeddings";
 
 export interface CreateGoalInput {
     title: string;
@@ -94,6 +95,12 @@ export async function createGoal(input: FormData | CreateGoalInput) {
                 confidence,
             })
             .returning();
+
+        // Generate embedding for new goal
+        if (insertedGoal) {
+            const goalText = [cleanTitle, description, lifeArea].filter(Boolean).join(" - ");
+            await generateNodeEmbedding(insertedGoal.id, goalText);
+        }
 
         revalidatePath("/plan/goals");
         revalidatePath("/");

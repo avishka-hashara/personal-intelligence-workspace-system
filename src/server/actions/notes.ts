@@ -5,6 +5,7 @@ import { notes } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { generateNodeEmbedding } from "@/lib/embeddings";
 
 export async function createNote() {
     const user = await getCurrentUser();
@@ -52,6 +53,14 @@ export async function updateNote(
             })
             .where(and(eq(notes.id, id), eq(notes.userId, user.id)))
             .returning();
+
+        // Generate embedding after DB write (awaiting as per spec preference)
+        if (updatedNote && (data.title !== undefined || data.content !== undefined)) {
+            const noteText = [data.title ?? updatedNote.title, data.content ?? updatedNote.content]
+                .filter(Boolean)
+                .join("\n\n");
+            await generateNodeEmbedding(id, noteText);
+        }
 
         revalidatePath("/notes");
         revalidatePath(`/notes/${id}`);

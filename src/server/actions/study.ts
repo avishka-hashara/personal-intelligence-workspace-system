@@ -12,6 +12,7 @@ import {
 import { eq, and, desc } from "drizzle-orm";
 import { getCurrentUser, createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { generateNodeEmbedding } from "@/lib/embeddings";
 
 export interface CreateCourseInput {
     code: string;
@@ -77,6 +78,12 @@ export async function createCourse(input: FormData | CreateCourseInput) {
                 active: true,
             })
             .returning();
+
+        // Generate embedding for new course
+        if (insertedCourse) {
+            const courseText = [cleanCode, cleanTitle, instructor, term].filter(Boolean).join(" - ");
+            await generateNodeEmbedding(insertedCourse.id, courseText);
+        }
 
         revalidatePath("/study/courses");
         revalidatePath("/");

@@ -1,5 +1,5 @@
 import {
-    pgTable, uuid, text, timestamp, jsonb, time, smallint, boolean, integer, numeric, date, unique, primaryKey
+    pgTable, uuid, text, timestamp, jsonb, time, smallint, boolean, integer, numeric, date, unique, primaryKey, vector
 } from "drizzle-orm/pg-core";
 
 // ----------------------------------------------------------------------
@@ -58,7 +58,9 @@ export const nodes = pgTable("nodes", {
     title: text("title"),
     snippet: text("snippet"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
-    // search_tsv will be added as a raw SQL migration during the Search phase
+    embedding: vector("embedding", { dimensions: 1536 }),
+    embeddingHash: text("embedding_hash"),
+    embeddedAt: timestamp("embedded_at", { withTimezone: true }),
 });
 
 // ----------------------------------------------------------------------

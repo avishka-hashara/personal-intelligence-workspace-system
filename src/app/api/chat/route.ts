@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, tool } from "ai";
+import { streamText, convertToModelMessages, tool, isStepCount } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { db } from "@/server/db";
@@ -11,12 +11,13 @@ import {
   habits,
   nodes,
 } from "@/server/db/schema";
-import { eq, and, isNull, desc, asc, ilike } from "drizzle-orm";
+import { eq, and, isNull, desc, asc, ilike, sql, isNotNull, or } from "drizzle-orm";
 import { format } from "date-fns";
 import { z } from "zod";
 import * as chrono from "chrono-node";
 import { generateKeyBetween } from "fractional-indexing";
 import { revalidatePath } from "next/cache";
+import { embedText } from "@/lib/embeddings";
 import {
   buildSystemPrompt,
   detectAssistantName,
@@ -107,7 +108,7 @@ export async function POST(req: Request) {
 
     // 3. Trim conversation history (last 12 turns max within token budget)
     const trimmedRawMessages = trimConversationHistory(messages, 12, 3500);
-    const modelMessages = await convertToModelMessages(trimmedRawMessages);
+    const modelMessages = await convertToModelMessages(trimmedRawMessages as any);
 
     // 4. Trigger rolling memory in background if turn count reaches checkpoint
     maybeTriggerRollingMemory(user.id, personaSettings.memorySummary, messages);
@@ -322,7 +323,7 @@ ${
 4. You have access to tools:
    - Use 'createTask' to create a new actionable task when the user requests adding, scheduling, or reminding them of a task. When the user says "remind me to..." or "create task...", IMMEDIATELY call the createTask tool with the extracted title, due date, and priority. Do NOT ask for confirmation first.
    - Use 'completeTask' to mark an existing task as completed (done) when the user mentions finishing, checking off, completing, or marking a task as done (e.g. "mark 'submit report' as done", "completed database schema", "done with task 1"). Pass the taskId if available or the task title.
-   - Use 'searchKnowledge' to search the knowledge graph (notes, courses, goals, tasks) for context when the user asks about specific topics or information not already fully captured in the snapshot above.`;
+   - Use 'searchKnowledge' to search the user's notes, goals, and courses by meaning rather than exact wording whenever they refer to past information or topics not in the snapshot. Weave what you find directly and naturally into your answer without announcing that you searched.`;
 
     const systemPrompt = buildSystemPrompt({
       assistantName: currentAssistantName,
@@ -348,7 +349,7 @@ ${
       tools: {
         createTask: tool({
           description: "Create a new actionable task for the user.",
-          parameters: z.object({
+          inputSchema: z.object({
             title: z.string().optional().describe("The task title or description, e.g. 'Finish database schema'"),
             dueAt: z
               .union([z.string(), z.date()])
@@ -363,15 +364,25 @@ ${
               .optional()
               .describe("Task priority: 0-3 (where 3 is high/urgent) or words like 'high', 'urgent', 'medium', 'low'"),
           }),
-          execute: async (rawArgs: any) => {
-            let rawTitle = rawArgs?.title;
+          execute: async ({
+            title,
+            dueAt,
+            dueDate,
+            priority,
+          }: {
+            title?: string;
+            dueAt?: string | Date;
+            dueDate?: string | Date;
+            priority?: number | string;
+          }) => {
+            let rawTitle = title;
             if (!rawTitle || typeof rawTitle !== "string" || !rawTitle.trim()) {
               const lastMsg = messages[messages.length - 1]?.content || "";
               const lastMsgText = typeof lastMsg === "string" ? lastMsg : "";
               rawTitle = lastMsgText.replace(/^[*\s]*remind\s+me\s+to\s+/i, "").replace(/^[*\s]*create\s+task\s+/i, "").replace(/[*"]/g, "").trim() || "New Task";
             }
-            const dueAtInput = rawArgs?.dueAt || rawArgs?.dueDate;
-            const priorityInput = rawArgs?.priority;
+            const dueAtInput = dueAt || dueDate;
+            const priorityInput = priority;
 
             console.log("[createTask] Executing with args:", { rawTitle, dueAtInput, priorityInput });
 
@@ -464,11 +475,11 @@ ${
 
         completeTask: tool({
           description: "Mark an existing task as completed (done).",
-          parameters: z.object({
+          inputSchema: z.object({
             taskId: z.string().optional().describe("The UUID of the task to mark as done"),
             title: z.string().optional().describe("The title or keywords of the task to mark as done"),
           }),
-          execute: async ({ taskId, title }) => {
+          execute: async ({ taskId, title }: { taskId?: string; title?: string }) => {
             console.log("[completeTask] Executing with args:", { taskId, title });
             try {
               // 1. Fetch all user's tasks
@@ -516,7 +527,7 @@ ${
                   const queryWords = cleanQuery
                     .replace(/[^\w\s]/g, "")
                     .split(/\s+/)
-                    .filter((w) => w.length > 1 && !stopWords.has(w));
+                    .filter((w: string) => w.length > 1 && !stopWords.has(w));
 
                   if (queryWords.length > 0) {
                     let bestScore = 0;
@@ -586,47 +597,111 @@ ${
 
         searchKnowledge: tool({
           description:
-            "Search the user's knowledge graph (notes, courses, goals, tasks) for context.",
-          parameters: z.object({
+            "Search the user's own notes, goals, and courses by meaning rather than exact wording. Use this whenever they refer to something they've written before, ask what they know about a topic, or ask a question you can't answer from the current page. Prefer calling it over guessing.",
+          inputSchema: z.object({
             query: z
               .string()
-              .describe("Search query for knowledge graph nodes"),
+              .describe("Search query to find relevant notes, goals, or courses by meaning"),
           }),
-          execute: async ({ query }) => {
+          execute: async ({ query }: { query: string }) => {
+            console.log("[searchKnowledge] Executing search for query:", query);
             try {
-              const matchedNodes = await db
+              let vec: number[] | null = null;
+              let isSemantic = true;
+
+              try {
+                vec = await embedText(query);
+              } catch (embedErr) {
+                console.warn(
+                  "[searchKnowledge] Embedding generation failed, falling back to keyword search:",
+                  embedErr
+                );
+                isSemantic = false;
+              }
+
+              if (vec && isSemantic) {
+                const toVector = (v: number[]) => sql`${JSON.stringify(v)}::vector`;
+
+                const vectorResults = await db
+                  .select({
+                    id: nodes.id,
+                    title: nodes.title,
+                    entityType: nodes.entityType,
+                    snippet: nodes.snippet,
+                    similarity: sql<number>`1 - (${nodes.embedding} <=> ${toVector(vec)})`,
+                  })
+                  .from(nodes)
+                  .where(
+                    and(
+                      eq(nodes.userId, user.id), // MANDATORY
+                      isNotNull(nodes.embedding),
+                      sql`1 - (${nodes.embedding} <=> ${toVector(vec)}) > 0.25`
+                    )
+                  )
+                  .orderBy(sql`${nodes.embedding} <=> ${toVector(vec)}`) // ASC
+                  .limit(5);
+
+                const formatted = vectorResults.map((r) => ({
+                  id: r.id,
+                  title: r.title || "Untitled",
+                  entityType: r.entityType,
+                  snippet: (r.snippet || r.title || "").trim().replace(/\s+/g, " ").slice(0, 300),
+                  similarity: Number(r.similarity),
+                }));
+
+                return {
+                  success: true,
+                  query,
+                  isSemantic: true,
+                  count: formatted.length,
+                  results: formatted,
+                };
+              }
+
+              // Fallback keyword search
+              const keywordResults = await db
                 .select({
                   id: nodes.id,
                   title: nodes.title,
                   entityType: nodes.entityType,
+                  snippet: nodes.snippet,
                 })
                 .from(nodes)
                 .where(
                   and(
                     eq(nodes.userId, user.id),
-                    ilike(nodes.title, `%${query}%`)
+                    or(
+                      ilike(nodes.title, `%${query}%`),
+                      ilike(nodes.snippet, `%${query}%`)
+                    )
                   )
                 )
                 .limit(5);
 
+              const formattedFallback = keywordResults.map((r) => ({
+                id: r.id,
+                title: r.title || "Untitled",
+                entityType: r.entityType,
+                snippet: (r.snippet || r.title || "").trim().replace(/\s+/g, " ").slice(0, 300),
+                similarity: 1.0,
+              }));
+
               return {
                 success: true,
                 query,
-                results: matchedNodes.map((n) => ({
-                  id: n.id,
-                  title: n.title,
-                  entityType: n.entityType,
-                })),
-                count: matchedNodes.length,
+                isSemantic: false,
+                fallback: true,
+                count: formattedFallback.length,
+                results: formattedFallback,
               };
             } catch (err: any) {
-              console.error("Tool searchKnowledge error:", err);
+              console.error("[searchKnowledge] Error:", err);
               return { error: err?.message || "Failed to search knowledge graph" };
             }
           },
         }),
       },
-      maxSteps: 5,
+      stopWhen: isStepCount(5),
     });
 
     return result.toUIMessageStreamResponse();
