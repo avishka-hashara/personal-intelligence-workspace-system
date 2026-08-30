@@ -15,14 +15,23 @@ import {
   ArrowUpRight,
   Play,
 } from "lucide-react";
+import { HabitTracker, type Habit, type HabitLog } from "@/components/HabitTracker";
 
 interface TodayViewProps {
   initialTasks: Task[];
   initialNowTask?: Task | null;
   initialNextUpTasks?: Task[];
+  initialHabits?: Habit[];
+  initialTodayLogs?: HabitLog[];
+  todayDateStr?: string;
 }
 
-export function TodayView({ initialTasks }: TodayViewProps) {
+export function TodayView({
+  initialTasks,
+  initialHabits = [],
+  initialTodayLogs = [],
+  todayDateStr,
+}: TodayViewProps) {
   const { tasks, isInitialized, initTasks, addTask, toggleTask } = useTaskStore();
   const { setSelectedTaskId, setActiveFocusTask, setTimerOpen, setTimerStatus } = useUIStore();
   const [title, setTitle] = useState("");
@@ -188,6 +197,13 @@ export function TodayView({ initialTasks }: TodayViewProps) {
           <TaskList tasks={nextUpTasks} />
         </section>
       </div>
+
+      {/* Habits & Streaks Section */}
+      <HabitTracker
+        habits={initialHabits}
+        todayLogs={initialTodayLogs}
+        todayDateStr={todayDateStr}
+      />
 
       <TaskDrawer />
     </div>

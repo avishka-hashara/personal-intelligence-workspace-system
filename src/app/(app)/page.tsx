@@ -1,11 +1,10 @@
 import { db } from "@/server/db";
-import { tasks, users } from "@/server/db/schema";
-import { eq, asc, desc } from "drizzle-orm";
+import { tasks, users, habits, habitLogs } from "@/server/db/schema";
+import { eq, and, isNull, asc, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import TodayView from "@/components/TodayView";
 import { calculateTaskScore } from "@/lib/scoring";
-import { TaskList } from "@/components/TaskList";
 
 export default async function Today() {
   const user = await getCurrentUser();
@@ -23,12 +22,38 @@ export default async function Today() {
     })
     .onConflictDoNothing();
 
-  // Fetch all tasks for the current user ordered by sortKey
+  // 1. Fetch all tasks for the current user ordered by sortKey
   const userTasks = await db
     .select()
     .from(tasks)
     .where(eq(tasks.userId, user.id))
     .orderBy(asc(tasks.sortKey), desc(tasks.createdAt));
+
+  // 2. Fetch all active habits for the user
+  const userHabits = await db
+    .select()
+    .from(habits)
+    .where(
+      and(
+        eq(habits.userId, user.id),
+        eq(habits.active, true),
+        isNull(habits.deletedAt)
+      )
+    )
+    .orderBy(asc(habits.createdAt));
+
+  // 3. Fetch habit logs for today
+  const todayStr = new Date().toISOString().split("T")[0];
+  const userTodayLogs = await db
+    .select()
+    .from(habitLogs)
+    .where(
+      and(
+        eq(habitLogs.userId, user.id),
+        eq(habitLogs.loggedOn, todayStr),
+        isNull(habitLogs.deletedAt)
+      )
+    );
 
   // Filter pending tasks and sort by deterministic score descending
   const pendingTasks = userTasks.filter((t) => t.status !== "done" && !t.parentTaskId);
@@ -37,5 +62,14 @@ export default async function Today() {
   const nowTask = sortedTasks[0] ?? null;
   const nextUpTasks = sortedTasks.slice(1, 6);
 
-  return <TodayView initialTasks={userTasks} initialNowTask={nowTask} initialNextUpTasks={nextUpTasks} />;
+  return (
+    <TodayView
+      initialTasks={userTasks}
+      initialNowTask={nowTask}
+      initialNextUpTasks={nextUpTasks}
+      initialHabits={userHabits}
+      initialTodayLogs={userTodayLogs}
+      todayDateStr={todayStr}
+    />
+  );
 }

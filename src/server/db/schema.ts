@@ -1,5 +1,5 @@
 import {
-    pgTable, uuid, text, timestamp, jsonb, time, smallint, boolean, integer, primaryKey
+    pgTable, uuid, text, timestamp, jsonb, time, smallint, boolean, integer, numeric, date, unique, primaryKey
 } from "drizzle-orm/pg-core";
 
 // ----------------------------------------------------------------------
@@ -56,7 +56,7 @@ export const nodes = pgTable("nodes", {
 });
 
 // ----------------------------------------------------------------------
-// Section 7.2.3: Execution (Tasks, Time, Tags)
+// Section 7.2.3: Execution (Tasks, Time, Tags, Habits)
 // ----------------------------------------------------------------------
 
 export const tasks = pgTable("tasks", {
@@ -93,6 +93,58 @@ export const focusSessions = pgTable("focus_sessions", {
     endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
     minutes: integer("minutes").notNull(),
     interruptions: integer("interruptions").default(0).notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const habits = pgTable("habits", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    cadence: text("cadence").notNull().default("daily"), // daily | weekly | custom
+    rrule: text("rrule"),
+    targetCount: integer("target_count").default(1),
+    unit: text("unit"),
+    gracePerWeek: smallint("grace_per_week").default(0),
+    active: boolean("active").default(true).notNull(),
+    colour: text("colour"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const habitLogs = pgTable("habit_logs", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    habitId: uuid("habit_id").notNull().references(() => habits.id, { onDelete: "cascade" }),
+    loggedOn: date("logged_on").notNull(),
+    value: numeric("value").default("1"),
+    backfilled: boolean("backfilled").default(false).notNull(),
+    note: text("note"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+}, (t) => [
+    unique("habit_logs_user_habit_date_unique").on(t.userId, t.habitId, t.loggedOn)
+]);
+
+export const habitPauses = pgTable("habit_pauses", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    habitId: uuid("habit_id").notNull().references(() => habits.id, { onDelete: "cascade" }),
+    startOn: date("start_on").notNull(),
+    endOn: date("end_on"),
+    reason: text("reason"),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
