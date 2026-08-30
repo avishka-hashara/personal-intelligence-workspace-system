@@ -17,6 +17,17 @@ import { z } from "zod";
 import * as chrono from "chrono-node";
 import { generateKeyBetween } from "fractional-indexing";
 import { revalidatePath } from "next/cache";
+import {
+  buildSystemPrompt,
+  detectAssistantName,
+  detectUserName,
+  trimConversationHistory,
+} from "@/lib/persona";
+import {
+  getPersonaSettings,
+  updatePersonaSettings,
+} from "@/server/services/settingsService";
+import { maybeTriggerRollingMemory } from "@/server/services/memoryService";
 
 export const maxDuration = 30;
 
@@ -40,7 +51,40 @@ export async function POST(req: Request) {
     }
 
     const { messages } = await req.json();
-    const modelMessages = await convertToModelMessages(messages);
+
+    // 1. Fetch persona settings for user
+    const personaSettings = await getPersonaSettings(user.id);
+    let currentAssistantName = personaSettings.assistantName || "Copilot";
+    let currentUserName = personaSettings.userName;
+
+    // 2. Real-time Naming Flow: detect assistant and user names from latest message
+    const latestUserMessage = [...(messages || [])].reverse().find((m: any) => m.role === "user");
+    const latestUserText = typeof latestUserMessage?.content === "string"
+      ? latestUserMessage.content
+      : Array.isArray(latestUserMessage?.parts)
+      ? latestUserMessage.parts.map((p: any) => (p.type === "text" ? p.text : "")).join("")
+      : "";
+
+    const detectedAssistantName = detectAssistantName(latestUserText);
+    if (detectedAssistantName && detectedAssistantName !== currentAssistantName) {
+      currentAssistantName = detectedAssistantName;
+      await updatePersonaSettings(user.id, { assistantName: detectedAssistantName });
+      console.log(`[route] Saved assistant name "${detectedAssistantName}" for user ${user.id}`);
+    }
+
+    const detectedUserName = detectUserName(latestUserText);
+    if (detectedUserName && detectedUserName !== currentUserName) {
+      currentUserName = detectedUserName;
+      await updatePersonaSettings(user.id, { userName: detectedUserName });
+      console.log(`[route] Saved user name "${detectedUserName}" for user ${user.id}`);
+    }
+
+    // 3. Trim conversation history (last 12 turns max within token budget)
+    const trimmedRawMessages = trimConversationHistory(messages, 12, 3500);
+    const modelMessages = await convertToModelMessages(trimmedRawMessages);
+
+    // 4. Trigger rolling memory in background if turn count reaches checkpoint
+    maybeTriggerRollingMemory(user.id, personaSettings.memorySummary, messages);
 
     // Context hydration: fetch live workspace data for this user
     let userTasks: any[] = [];
@@ -154,12 +198,7 @@ export async function POST(req: Request) {
     const pendingTasks = userTasks.filter((t) => t.status !== "done");
     const completedTasks = userTasks.filter((t) => t.status === "done");
 
-    const systemPrompt = `You are the intelligent Academic and Productivity Copilot embedded directly inside the user's Personal Intelligence Workspace (PIW).
-You have real-time access to the user's live workspace data. ALWAYS inspect and reference this real data to give direct, actionable, and accurate answers.
-
-=== CURRENT SYSTEM TIME ===
-${currentDateStr}
-
+    const workspaceSnapshot = `=== LIVE WORKSPACE DATA ===
 === LIVE TASKS SNAPSHOT (${userTasks.length} total: ${pendingTasks.length} pending, ${completedTasks.length} completed) ===
 PENDING TASKS:
 ${
@@ -259,8 +298,19 @@ ${
    - Use 'completeTask' to mark an existing task as completed (done) when the user mentions finishing, checking off, completing, or marking a task as done (e.g. "mark 'submit report' as done", "completed database schema", "done with task 1"). Pass the taskId if available or the task title.
    - Use 'searchKnowledge' to search the knowledge graph (notes, courses, goals, tasks) for context when the user asks about specific topics or information not already fully captured in the snapshot above.`;
 
+    const systemPrompt = buildSystemPrompt({
+      assistantName: currentAssistantName,
+      userName: currentUserName,
+      localTime: currentDateStr,
+      memorySummary: personaSettings.memorySummary,
+      workspaceSnapshot,
+    });
+
+    const selectedModel = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
+
     const result = streamText({
-      model: openrouter.chat("google/gemini-2.5-flash"),
+      model: openrouter.chat(selectedModel),
+      temperature: 0.85,
       providerOptions: {
         openai: {
           maxCompletionTokens: 1500,

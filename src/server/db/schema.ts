@@ -34,6 +34,12 @@ export const userSettings = pgTable("user_settings", {
     theme: text("theme"),
     density: text("density"),
 
+    // Copilot Assistant Persona & Memory
+    assistantName: text("assistant_name").default("Copilot"),
+    userName: text("user_name"),
+    memorySummary: text("memory_summary"),
+    personaTone: text("persona_tone").default("warm"),
+
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
