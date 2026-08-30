@@ -56,6 +56,138 @@ export const nodes = pgTable("nodes", {
 });
 
 // ----------------------------------------------------------------------
+// Section 7.2.2: Intent (Directions, Goals, Objectives, Roadmaps, Stages, Milestones)
+// ----------------------------------------------------------------------
+
+export const directions = pgTable("directions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    narrative: text("narrative"),
+    horizonYears: smallint("horizon_years"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const goals = pgTable("goals", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    directionId: uuid("direction_id").references(() => directions.id, { onDelete: "set null" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    lifeArea: text("life_area"),
+    targetDate: timestamp("target_date", { withTimezone: true }),
+    metricName: text("metric_name"),
+    targetValue: numeric("target_value"),
+    currentValue: numeric("current_value"),
+    unit: text("unit"),
+    status: text("status").default("active"),
+    confidence: smallint("confidence"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const goalConfidenceLogs = pgTable("goal_confidence_logs", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    goalId: uuid("goal_id").notNull().references(() => goals.id, { onDelete: "cascade" }),
+    loggedOn: timestamp("logged_on", { withTimezone: true }).defaultNow().notNull(),
+    confidence: smallint("confidence").notNull(),
+    note: text("note"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const objectives = pgTable("objectives", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    goalId: uuid("goal_id").notNull().references(() => goals.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }),
+    windowEnd: timestamp("window_end", { withTimezone: true }),
+    status: text("status").default("planned"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const roadmaps = pgTable("roadmaps", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    goalId: uuid("goal_id").notNull().references(() => goals.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    generatedBy: text("generated_by"),
+    sourceRunId: uuid("source_run_id"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const stages = pgTable("stages", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    roadmapId: uuid("roadmap_id").notNull().references(() => roadmaps.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    ordinal: integer("ordinal").default(0).notNull(),
+    targetStart: timestamp("target_start", { withTimezone: true }),
+    targetEnd: timestamp("target_end", { withTimezone: true }),
+    status: text("status").default("pending"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const milestones = pgTable("milestones", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    stageId: uuid("stage_id").notNull().references(() => stages.id, { onDelete: "cascade" }),
+    objectiveId: uuid("objective_id").references(() => objectives.id, { onDelete: "set null" }),
+    title: text("title").notNull(),
+    definitionOfDone: text("definition_of_done"),
+    dueDate: timestamp("due_date", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    estHours: numeric("est_hours"),
+    ordinal: integer("ordinal").default(0).notNull(),
+    statusOverride: text("status_override"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const milestoneDependencies = pgTable("milestone_dependencies", {
+    predecessorId: uuid("predecessor_id").notNull().references(() => milestones.id, { onDelete: "cascade" }),
+    successorId: uuid("successor_id").notNull().references(() => milestones.id, { onDelete: "cascade" }),
+    kind: text("kind").default("fs"),
+}, (t) => [
+    primaryKey({ columns: [t.predecessorId, t.successorId] })
+]);
+
+// ----------------------------------------------------------------------
 // Section 7.2.3: Execution (Tasks, Time, Tags, Habits)
 // ----------------------------------------------------------------------
 
