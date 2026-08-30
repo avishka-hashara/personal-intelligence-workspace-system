@@ -1,6 +1,6 @@
 import { db } from "@/server/db";
-import { goals, roadmaps, stages, milestones } from "@/server/db/schema";
-import { eq, and, isNull, inArray, asc } from "drizzle-orm";
+import { goals, roadmaps, stages, milestones, tasks } from "@/server/db/schema";
+import { eq, and, isNull, inArray, asc, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -8,11 +8,14 @@ import {
   ArrowLeft,
   Target,
   Calendar,
-  CheckSquare,
+  CheckCircle2,
   Clock,
+  TrendingUp,
+  Activity,
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import { RoadmapView, type StageWithMilestones } from "@/components/RoadmapView";
+import { Progress } from "@/components/ui/progress";
 
 const LIFE_AREA_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   work: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
@@ -72,6 +75,7 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
     .limit(1);
 
   let stagesWithMilestones: StageWithMilestones[] = [];
+  let allMilestoneRows: (typeof milestones.$inferSelect)[] = [];
 
   // 3. If roadmap exists, fetch its stages & milestones
   if (roadmap) {
@@ -88,10 +92,9 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
       .orderBy(asc(stages.ordinal), asc(stages.createdAt));
 
     const stageIds = stageRows.map((s) => s.id);
-    let milestoneRows: (typeof milestones.$inferSelect)[] = [];
 
     if (stageIds.length > 0) {
-      milestoneRows = await db
+      allMilestoneRows = await db
         .select()
         .from(milestones)
         .where(
@@ -106,8 +109,43 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
 
     stagesWithMilestones = stageRows.map((stage) => ({
       ...stage,
-      milestones: milestoneRows.filter((m) => m.stageId === stage.id),
+      milestones: allMilestoneRows.filter((m) => m.stageId === stage.id),
     }));
+  }
+
+  // 4. Calculate Weighted Progress Roll-up
+  let totalWeight = 0;
+  let completedWeight = 0;
+
+  for (const milestone of allMilestoneRows) {
+    const weight = Number(milestone.estHours) || 1;
+    totalWeight += weight;
+    if (milestone.completedAt !== null) {
+      completedWeight += weight;
+    }
+  }
+
+  const progressPercentage =
+    totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
+
+  // 5. Query Evidence Feed (Completed tasks linked to milestones)
+  const milestoneIds = allMilestoneRows.map((m) => m.id);
+  let evidenceTasks: (typeof tasks.$inferSelect)[] = [];
+
+  if (milestoneIds.length > 0) {
+    evidenceTasks = await db
+      .select()
+      .from(tasks)
+      .where(
+        and(
+          inArray(tasks.milestoneId, milestoneIds),
+          eq(tasks.status, "done"),
+          eq(tasks.userId, user.id),
+          isNull(tasks.deletedAt)
+        )
+      )
+      .orderBy(desc(tasks.updatedAt))
+      .limit(10);
   }
 
   const badgeStyle = getAreaBadge(goal.lifeArea);
@@ -126,7 +164,7 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
         </Link>
       </div>
 
-      {/* Goal Header */}
+      {/* Goal Header with Weighted Progress Roll-up */}
       <header className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xs">
         <div className="flex items-center gap-2 mb-3">
           {goal.lifeArea ? (
@@ -156,7 +194,7 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
           </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-4 mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center gap-4 mt-5 text-xs text-slate-500">
           {targetDateObj && (
             <span className="flex items-center gap-1.5 font-medium text-slate-700">
               <Calendar className="w-4 h-4 text-indigo-500" />
@@ -174,6 +212,30 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
             </span>
           )}
         </div>
+
+        {/* Weighted Progress Roll-up Bar */}
+        <div className="mt-6 pt-6 border-t border-slate-100 space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
+              Weighted Goal Progress
+            </span>
+            <span className="font-bold text-slate-900 font-mono text-sm">
+              {progressPercentage}%
+            </span>
+          </div>
+
+          <Progress value={progressPercentage} className="h-2.5 bg-slate-100" />
+
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <span>
+              {allMilestoneRows.filter((m) => !!m.completedAt).length} of {allMilestoneRows.length} milestones complete
+            </span>
+            <span>
+              {completedWeight} / {totalWeight} weighted hours
+            </span>
+          </div>
+        </div>
       </header>
 
       {/* Main Content Sections */}
@@ -185,27 +247,71 @@ export default async function GoalDetailPage({ params }: GoalDetailPageProps) {
           stages={stagesWithMilestones}
         />
 
-        {/* Contributing Tasks Section */}
+        {/* Evidence Feed Section */}
         <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-slate-100 text-slate-700">
-                <CheckSquare className="w-5 h-5" />
+              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <Activity className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-slate-900">Contributing Tasks</h2>
-                <p className="text-xs text-slate-500">Execution tasks aligned directly to this goal.</p>
+                <h2 className="text-base font-semibold text-slate-900">Evidence of Progress</h2>
+                <p className="text-xs text-slate-500">Completed tasks verifying milestones for this goal.</p>
               </div>
             </div>
+
+            {evidenceTasks.length > 0 && (
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {evidenceTasks.length} {evidenceTasks.length === 1 ? "Evidence Item" : "Evidence Items"}
+              </span>
+            )}
           </div>
 
-          <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50/50 flex flex-col items-center justify-center gap-2">
-            <Clock className="w-8 h-8 text-slate-300" />
-            <p className="text-sm font-semibold text-slate-700">No linked tasks yet</p>
-            <p className="text-xs text-slate-400 max-w-md">
-              Tasks linked to this goal or its milestones will appear here with live execution metrics.
-            </p>
-          </div>
+          {evidenceTasks.length > 0 ? (
+            <div className="space-y-2">
+              {evidenceTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between p-3 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-3.5 h-3.5 fill-current" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-800 truncate">
+                        {task.title}
+                      </p>
+                      {task.notes && (
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                          {task.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0 text-xs text-slate-400">
+                    {task.actualMinutes && (
+                      <span className="text-[11px] px-2 py-0.5 bg-white rounded border border-slate-200 text-slate-600 font-mono">
+                        {task.actualMinutes}m focus
+                      </span>
+                    )}
+                    <span className="text-[11px]">
+                      {formatDistanceToNow(new Date(task.updatedAt), { addSuffix: true })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50/50 flex flex-col items-center justify-center gap-2">
+              <Clock className="w-8 h-8 text-slate-300" />
+              <p className="text-sm font-semibold text-slate-700">No evidence accumulated yet</p>
+              <p className="text-xs text-slate-400 max-w-md">
+                Complete tasks linked to this goal&apos;s milestones to see them here as proof of execution.
+              </p>
+            </div>
+          )}
         </section>
       </div>
     </div>

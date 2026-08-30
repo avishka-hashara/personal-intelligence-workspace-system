@@ -3,8 +3,8 @@
 import * as chrono from "chrono-node";
 import { RRule } from "rrule";
 import { db } from "@/server/db";
-import { tasks, tags, nodeTags, nodes, focusSessions } from "@/server/db/schema";
-import { eq, and, asc, isNull, sql } from "drizzle-orm";
+import { tasks, tags, nodeTags, nodes, focusSessions, milestones, stages, roadmaps, goals } from "@/server/db/schema";
+import { eq, and, asc, desc, isNull, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { generateKeyBetween } from "fractional-indexing";
@@ -108,6 +108,7 @@ export async function updateTask(
         priority?: number;
         energy?: string | null;
         dueAt?: Date | null;
+        milestoneId?: string | null;
         [key: string]: unknown;
     }
 ) {
@@ -434,5 +435,43 @@ export async function recordFocusSession(
         return { error: "Failed to record focus session" };
     }
 }
+
+export async function fetchActiveMilestones() {
+    const user = await getCurrentUser();
+    if (!user) return { error: "Unauthorized", milestones: [] };
+
+    try {
+        const userMilestones = await db
+            .select({
+                id: milestones.id,
+                title: milestones.title,
+                dueDate: milestones.dueDate,
+                completedAt: milestones.completedAt,
+                stageTitle: stages.title,
+                goalTitle: goals.title,
+                goalId: goals.id,
+            })
+            .from(milestones)
+            .innerJoin(stages, eq(milestones.stageId, stages.id))
+            .innerJoin(roadmaps, eq(stages.roadmapId, roadmaps.id))
+            .innerJoin(goals, eq(roadmaps.goalId, goals.id))
+            .where(
+                and(
+                    eq(milestones.userId, user.id),
+                    isNull(milestones.deletedAt),
+                    isNull(stages.deletedAt),
+                    isNull(roadmaps.deletedAt),
+                    isNull(goals.deletedAt)
+                )
+            )
+            .orderBy(asc(milestones.dueDate), asc(milestones.createdAt));
+
+        return { success: true, milestones: userMilestones };
+    } catch (error) {
+        console.error("Failed to fetch active milestones:", error);
+        return { error: "Failed to fetch active milestones", milestones: [] };
+    }
+}
+
 
 

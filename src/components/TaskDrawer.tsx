@@ -14,8 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckSquare, Square, Trash2, ListTree, Plus, Tag, X, Loader2, Repeat } from "lucide-react";
-import { assignTag, removeTag, fetchTagsForTask, updateTask as serverUpdateTask } from "@/server/actions/tasks";
+import { CheckSquare, Square, Trash2, ListTree, Plus, Tag, X, Loader2, Repeat, Flag } from "lucide-react";
+import { assignTag, removeTag, fetchTagsForTask, updateTask as serverUpdateTask, fetchActiveMilestones } from "@/server/actions/tasks";
 import { RecurrencePicker } from "@/components/RecurrencePicker";
 
 interface TaskDrawerProps {
@@ -26,6 +26,15 @@ interface TagItem {
   id: string;
   name: string;
   colour?: string | null;
+}
+
+interface ActiveMilestoneItem {
+  id: string;
+  title: string;
+  dueDate: Date | null;
+  stageTitle: string;
+  goalTitle: string;
+  goalId: string;
 }
 
 export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
@@ -42,6 +51,11 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [subtaskTitle, setSubtaskTitle] = useState("");
+
+  // Milestone linking state
+  const [activeMilestones, setActiveMilestones] = useState<ActiveMilestoneItem[]>([]);
+  const [isLoadingMilestones, setIsLoadingMilestones] = useState(false);
+  const [isMilestonePending, startMilestoneTransition] = useTransition();
 
   // Tag state
   const [tagsList, setTagsList] = useState<TagItem[]>([]);
@@ -81,6 +95,30 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
     }
   }, [selectedTask?.id]);
 
+  // Load active milestones dynamically when drawer opens or selected task changes
+  useEffect(() => {
+    if (selectedTask?.id) {
+      let isCancelled = false;
+      setIsLoadingMilestones(true);
+      fetchActiveMilestones().then((res) => {
+        if (!isCancelled) {
+          if (res && res.milestones) {
+            setActiveMilestones(res.milestones);
+          } else {
+            setActiveMilestones([]);
+          }
+          setIsLoadingMilestones(false);
+        }
+      });
+
+      return () => {
+        isCancelled = true;
+      };
+    } else {
+      setActiveMilestones([]);
+    }
+  }, [selectedTask?.id]);
+
   const handleTitleBlur = () => {
     if (!selectedTask) return;
     const trimmedTitle = title.trim();
@@ -98,6 +136,15 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
   };
 
   const [isRecurrencePending, startRecurrenceTransition] = useTransition();
+
+  const handleMilestoneChange = (val: string | null) => {
+    if (!selectedTask) return;
+    const newMilestoneId = val === "none" || !val ? null : val;
+    updateTask(selectedTask.id, { milestoneId: newMilestoneId });
+    startMilestoneTransition(async () => {
+      await serverUpdateTask(selectedTask.id, { milestoneId: newMilestoneId });
+    });
+  };
 
   const handleRuleChange = (newRule: string | null) => {
     if (!selectedTask) return;
@@ -229,6 +276,27 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                 onChange={(newRule) => handleRuleChange(newRule)}
                 disabled={isRecurrencePending}
               />
+            </div>
+
+            {/* Milestone Section */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Flag className="w-3.5 h-3.5 text-indigo-500" />
+                Milestone
+              </label>
+              <select
+                value={selectedTask.milestoneId || "none"}
+                onChange={(e) => handleMilestoneChange(e.target.value)}
+                disabled={isMilestonePending}
+                className="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer disabled:opacity-50"
+              >
+                <option value="none">No milestone linked</option>
+                {activeMilestones.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.goalTitle} → {m.stageTitle} → {m.title}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Tags Section */}
