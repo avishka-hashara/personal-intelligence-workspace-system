@@ -1,5 +1,5 @@
 import { db } from "@/server/db";
-import { tasks, users, habits, habitLogs, exams, courses } from "@/server/db/schema";
+import { tasks, users, habits, habitLogs, exams, courses, goals } from "@/server/db/schema";
 import { eq, and, isNull, asc, desc, gt } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
@@ -26,6 +26,31 @@ export default async function Today() {
     .onConflictDoNothing();
 
   const now = new Date();
+
+  // 0. Fetch user profile for onboarding state and greeting
+  const userProfile = await db
+    .select({
+      displayName: users.displayName,
+      onboardingState: users.onboardingState,
+    })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  // Check count of active goals
+  const activeGoals = await db
+    .select({ id: goals.id })
+    .from(goals)
+    .where(and(eq(goals.userId, user.id), isNull(goals.deletedAt)))
+    .limit(1);
+
+  // Check count of active courses
+  const activeCoursesList = await db
+    .select({ id: courses.id })
+    .from(courses)
+    .where(and(eq(courses.userId, user.id), eq(courses.active, true), isNull(courses.deletedAt)))
+    .limit(1);
 
   // 1. Fetch all tasks for the current user ordered by sortKey
   const userTasks = await db
@@ -110,6 +135,14 @@ export default async function Today() {
   const nowTask = sortedTasks[0] ?? null;
   const nextUpTasks = sortedTasks.slice(1, 6);
 
+  const onboardingState = (userProfile?.onboardingState as Record<string, any>) || {};
+  const isFirstRun =
+    pendingTasks.length === 0 &&
+    activeGoals.length === 0 &&
+    activeCoursesList.length === 0 &&
+    !onboardingState.skipped_prompts &&
+    !onboardingState.completed_prompts;
+
   return (
     <TodayView
       initialTasks={userTasks}
@@ -120,6 +153,8 @@ export default async function Today() {
       initialUpcomingExams={upcomingExams}
       initialNudge={todayNudge}
       todayDateStr={todayStr}
+      showOnboardingPrompts={isFirstRun}
+      userName={userProfile?.displayName}
     />
   );
 }

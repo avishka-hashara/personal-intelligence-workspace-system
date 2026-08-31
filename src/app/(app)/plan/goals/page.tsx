@@ -202,15 +202,44 @@ export default async function GoalsPage() {
             })}
           </div>
         ) : (
-          <div className="border border-dashed border-slate-200 rounded-2xl p-10 text-center bg-slate-50/50 flex flex-col items-center justify-center gap-3">
-            <div className="p-3 rounded-full bg-white shadow-xs text-slate-400 border border-slate-200">
-              <TrendingUp className="w-6 h-6" />
+          <div className="bg-gradient-to-b from-blue-50/40 via-white to-slate-50/50 border-2 border-dashed border-blue-200/80 rounded-3xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-6">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Target className="w-8 h-8" />
             </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-800">No goals created yet</p>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                Set your first high-level goal above (e.g., &quot;Ship MVP&quot;, &quot;Run a Marathon&quot;) to start structuring roadmaps and milestones.
+
+            <div className="max-w-lg space-y-2">
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                Turn your ambition into a staged plan
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Goals anchor your intentional life. A single high-level goal can be automatically decomposed into chronological stages, concrete milestones, and daily tasks with our AI Roadmap generator.
               </p>
+            </div>
+
+            {/* 3 Step Goal-to-Execution Flow */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl text-left pt-2">
+              <div className="p-3.5 rounded-2xl bg-white border border-blue-100 shadow-2xs">
+                <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">1. Intention</div>
+                <div className="text-xs font-semibold text-slate-900">Define the Goal</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Set a clear outcome, life area, and target horizon.</div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-blue-100 shadow-2xs">
+                <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">2. Decomposition</div>
+                <div className="text-xs font-semibold text-slate-900">Generate Roadmap</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">AI builds ordered stages and critical-path milestones.</div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-blue-100 shadow-2xs">
+                <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">3. Execution</div>
+                <div className="text-xs font-semibold text-slate-900">Daily Tasks & Logs</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Milestone tasks flow straight to your Today screen.</div>
+              </div>
+            </div>
+
+            <div className="pt-2 text-xs text-slate-500 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <span>Use the form above to set your first goal</span>
             </div>
           </div>
         )}

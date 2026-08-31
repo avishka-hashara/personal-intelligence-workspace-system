@@ -187,15 +187,44 @@ export default async function CoursesPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-12 text-center flex flex-col items-center justify-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
-              <GraduationCap className="w-6 h-6" />
+          <div className="bg-gradient-to-b from-indigo-50/40 via-white to-slate-50/50 border-2 border-dashed border-indigo-200/80 rounded-3xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-6">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <GraduationCap className="w-8 h-8" />
             </div>
-            <div className="max-w-md">
-              <h3 className="text-base font-bold text-slate-900">No courses added yet</h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Add your current courses above to start tracking topic coverage, scheduled weeks, and exam preparation.
+
+            <div className="max-w-lg space-y-2">
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                Add your first course to unlock intelligent study
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Courses are the backbone of your academic workspace. Adding a course lets you paste syllabus topics, track confidence ratings, run FSRS spaced repetition flashcards, and set up exam countdown ramps.
               </p>
+            </div>
+
+            {/* 3 Step Academic Journey */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl text-left pt-2">
+              <div className="p-3.5 rounded-2xl bg-white border border-indigo-100 shadow-2xs">
+                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">1. Structure</div>
+                <div className="text-xs font-semibold text-slate-900">Add Course & Code</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Define term, credit weight, and target grade.</div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-indigo-100 shadow-2xs">
+                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">2. Syllabus</div>
+                <div className="text-xs font-semibold text-slate-900">Map Topics & Weeks</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Track topic coverage from not started to revised.</div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white border border-indigo-100 shadow-2xs">
+                <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">3. Active Recall</div>
+                <div className="text-xs font-semibold text-slate-900">AI Quizzes & Cards</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Generate flashcards and retain knowledge with FSRS.</div>
+              </div>
+            </div>
+
+            <div className="pt-2 text-xs text-slate-500 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Use the form above to add your first course</span>
             </div>
           </div>
         )}

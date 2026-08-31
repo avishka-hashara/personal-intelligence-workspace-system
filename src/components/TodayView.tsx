@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { HabitTracker, type Habit, type HabitLog } from "@/components/HabitTracker";
 import { NudgeBanner, type NudgeData } from "@/components/NudgeBanner";
+import { OnboardingPrompts } from "@/components/OnboardingPrompts";
 
 export interface UpcomingExamItem {
   id: string;
@@ -42,6 +43,8 @@ interface TodayViewProps {
   initialUpcomingExams?: UpcomingExamItem[];
   initialNudge?: NudgeData | null;
   todayDateStr?: string;
+  showOnboardingPrompts?: boolean;
+  userName?: string | null;
 }
 
 export function TodayView({
@@ -51,6 +54,8 @@ export function TodayView({
   initialUpcomingExams = [],
   initialNudge = null,
   todayDateStr,
+  showOnboardingPrompts = false,
+  userName = null,
 }: TodayViewProps) {
   const { tasks, isInitialized, initTasks, addTask, toggleTask } = useTaskStore();
   const { setSelectedTaskId, setActiveFocusTask, setTimerOpen, setTimerStatus } = useUIStore();
@@ -98,6 +103,9 @@ export function TodayView({
     <div className="flex flex-col gap-6">
       {/* AI-10 Coaching Nudge Banner at the very top */}
       {initialNudge && <NudgeBanner nudge={initialNudge} />}
+
+      {/* First-Run Onboarding Prompts */}
+      {showOnboardingPrompts && <OnboardingPrompts userName={userName} />}
 
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Today</h1>
