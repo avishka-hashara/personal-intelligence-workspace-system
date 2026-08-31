@@ -493,4 +493,21 @@ export const coachingNudges = pgTable("coaching_nudges", {
     text: text("text").notNull(),
     ctaUrl: text("cta_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// ----------------------------------------------------------------------
+// Section 7.2.7: Offline Sync (Sync Ops Outbox Replay Log)
+// ----------------------------------------------------------------------
+
+export const syncOps = pgTable("sync_ops", {
+    opId: uuid("op_id").primaryKey(),
+    clientId: text("client_id").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: uuid("entity_id").notNull(),
+    op: jsonb("op").notNull(),
+    hlc: text("hlc").notNull(),
+    appliedAt: timestamp("applied_at", { withTimezone: true }).defaultNow().notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

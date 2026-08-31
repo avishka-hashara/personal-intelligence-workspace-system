@@ -78,6 +78,13 @@
       "when": 1788171999082,
       "tag": "0010_loud_hydra",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788177530969,
+      "tag": "0011_hard_thunderbolt_ross",
+      "breakpoints": true
     }
   ]
 }
