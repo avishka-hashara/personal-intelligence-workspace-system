@@ -510,4 +510,93 @@ export const syncOps = pgTable("sync_ops", {
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+});
+
+// ----------------------------------------------------------------------
+// Section 7.2.8: Phase 4 Extensions - Finance-lite & Health-lite
+// ----------------------------------------------------------------------
+
+export const accounts = pgTable("accounts", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    type: text("type").notNull(), // 'checking', 'savings', 'credit', 'investment', 'cash', etc.
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const transactions = pgTable("transactions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id").references(() => accounts.id, { onDelete: "set null" }),
+    amount: numeric("amount").notNull(),
+    date: timestamp("date", { withTimezone: true }).notNull(),
+    category: text("category").notNull(),
+    description: text("description"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const budgets = pgTable("budgets", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    category: text("category").notNull(),
+    monthlyLimit: numeric("monthly_limit").notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const subscriptions = pgTable("subscriptions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    amount: numeric("amount").notNull(),
+    renewalDate: timestamp("renewal_date", { withTimezone: true }).notNull(),
+    cycle: text("cycle").default("monthly"), // 'monthly', 'yearly', 'weekly', etc.
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const metricDefinitions = pgTable("metric_definitions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(), // e.g. 'Sleep', 'Water', 'Movement', 'Mood'
+    unit: text("unit").notNull(), // e.g. 'hours', 'litres', 'mins', '1-10'
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const metricLogs = pgTable("metric_logs", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    metricId: uuid("metric_id").notNull().references(() => metricDefinitions.id, { onDelete: "cascade" }),
+    loggedOn: date("logged_on").notNull(),
+    value: numeric("value").notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+

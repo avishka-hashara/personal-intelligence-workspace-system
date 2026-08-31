@@ -1,0 +1,4379 @@
+PROJECT PLAN
+
+Personal Intelligence Workspace
+
+Product Architecture & Delivery Plan
+
+A single-user, AI-native web workspace for studies, life plans, roadmaps, projects, tasks, habits, notes and reflection.
+
+Version1.0
+
+Date24 August 2026
+
+StatusApproved for build — Phase 0 commencing
+
+AuthorProduct Architecture & Technical Lead
+
+AudienceImplementing developer, reviewers
+
+Target releasev1.0, 26 weeks from Phase 0 start
+
+Table of Contents
+
+1. Executive Summary1
+
+2. Vision, Positioning and Non-Goals2
+
+2.1 Vision2
+
+2.2 Positioning2
+
+2.3 Non-Goals2
+
+3. Personas, Jobs-to-be-Done and User Stories4
+
+3.1 Primary persona — Maya, 21, penultimate-year undergraduate4
+
+3.2 Secondary persona — Daniel, 29, career-switcher4
+
+3.3 Jobs to be done4
+
+3.4 User stories with acceptance criteria5
+
+4. Feature Specification by Module7
+
+4.1 Dashboard / Today7
+
+4.2 Goals & Life Plans7
+
+4.3 Roadmaps8
+
+4.4 Study Module8
+
+4.5 Tasks & Todos9
+
+4.6 Habits & Streaks10
+
+4.7 Calendar & Time-Blocking10
+
+4.8 Reminders & Notifications11
+
+4.9 Notes and Linked Knowledge Base11
+
+4.10 Journal and Periodic Reviews12
+
+4.11 Search12
+
+4.12 Settings & Data Control13
+
+4.13 Optional: Finance-lite and Health/Routine tracking13
+
+4.14 Module priority and phase summary13
+
+5. AI Capability Map15
+
+5.1 Capability map: trigger, context and call pattern15
+
+5.2 Capability map: output, guardrails, fallback and cost16
+
+5.3 RAG design18
+
+6. Information Architecture and Navigation21
+
+6.1 Navigation model21
+
+6.2 URL structure21
+
+6.3 Content hierarchy22
+
+7. Data Model23
+
+7.1 Design decision: unified node table versus separate tables23
+
+7.2 Core entities23
+
+7.3 Entity-relationship description26
+
+7.4 Derived views27
+
+8. System Architecture28
+
+8.1 Overview28
+
+8.2 Frontend30
+
+8.3 Backend30
+
+8.4 Database, auth and storage30
+
+8.5 Background jobs and scheduling30
+
+8.6 Caching30
+
+8.7 AI gateway31
+
+8.8 Request lifecycle walkthrough31
+
+9. API Design33
+
+9.1 Conventions33
+
+9.2 Core resource endpoints33
+
+9.3 AI endpoints35
+
+10. Technology Stack37
+
+10.1 Alternatives considered37
+
+10.2 Decision37
+
+10.3 Full dependency selection38
+
+11. UX / UI Direction40
+
+11.1 Design principles40
+
+11.2 Layout patterns40
+
+11.3 Command palette and keyboard model40
+
+11.4 Mobile behaviour40
+
+11.5 Accessibility40
+
+11.6 Theming41
+
+11.7 Key screens (wireframe descriptions)41
+
+12. Offline Behaviour and Sync43
+
+12.1 Offline model43
+
+12.2 Storage budget and eviction43
+
+12.3 Sync protocol43
+
+12.4 Conflict resolution44
+
+13. Reminders and Scheduling Engine46
+
+13.1 Model46
+
+13.2 Recurrence46
+
+13.3 Timezones46
+
+13.4 Delivery46
+
+13.5 Snooze, digests and missed reminders47
+
+14. Security, Privacy and Data Ownership48
+
+14.1 Threat model48
+
+14.2 Authentication and session security48
+
+14.3 Encryption48
+
+14.4 What leaves the device48
+
+14.5 Data ownership, export and deletion49
+
+14.6 Application security practice49
+
+15. Development Roadmap51
+
+15.1 Phase overview51
+
+15.2 Phase 1 sprint breakdown51
+
+15.3 Milestones52
+
+16. MVP Definition54
+
+16.1 The smallest version worth using every day54
+
+16.2 What is deliberately cut from the MVP54
+
+17. Testing and Quality Assurance56
+
+17.1 Strategy56
+
+17.2 Critical end-to-end journeys56
+
+17.3 Data and fixtures56
+
+17.4 Performance budgets57
+
+17.5 Evaluating AI output quality57
+
+18. Deployment, CI/CD, Environments and Operations59
+
+18.1 Environments59
+
+18.2 Pipeline59
+
+18.3 Monitoring and alerting59
+
+18.4 Backups and recovery60
+
+19. Cost Estimate61
+
+19.1 AI cost model per active user61
+
+19.2 Total cost at three scales61
+
+20. Risk Register63
+
+21. Success Metrics and Instrumentation65
+
+21.1 Metric hierarchy65
+
+21.2 Instrumentation65
+
+22. Future Extensions67
+
+23. Appendix68
+
+23.1 Glossary68
+
+23.2 Sample AI system prompts68
+
+23.3 Seed data example71
+
+1. Executive Summary
+
+Personal Intelligence Workspace (PIW) is a single-user web application that holds the whole of one person’s intentional life: what they are studying, what they are building, what they intend to become over the next five years, and what they must do before Thursday. Today that person runs Notion for notes, Todoist for tasks, Anki for revision, Google Calendar for time, a habit app for streaks, and a paper journal for reflection. Nothing knows about anything else. The syllabus does not know the exam is in nine days; the task list does not know the goal it serves; the weekly review is a blank page rather than a briefing. PIW’s entire reason to exist is that these things live in one graph, and that an AI layer with read access to the whole graph can do work the user would otherwise do by hand.
+
+The product is organised as thirteen modules — Today, Goals & Life Plans, Roadmaps, Study, Tasks, Habits, Calendar, Reminders, Notes, Journal & Reviews, Search, Settings, and an optional Finance/Health-lite pair — that all write into one relational store. AI is not a chat box in the corner. It appears as ten named capabilities bound to specific surfaces: a goal becomes a staged roadmap with one click; a vague task decomposes into checkable steps; the Today screen is planned and re-planned against real calendar gaps; captured text like “remind me to email Dr. Chan about the extension on Friday morning” becomes a structured reminder; lecture PDFs become summaries, flashcards and quizzes; and Sunday evening produces a written weekly review the user edits rather than composes. Every one of those capabilities has a defined non-AI fallback, so the product remains fully usable with the AI switched off or the provider down.
+
+The recommended build is Next.js 15 on Vercel over Supabase Postgres with pgvector, Drizzle ORM, Inngest for scheduled and background jobs, Web Push via VAPID, and an internal AI gateway routing to Claude Haiku 4.5 for high-frequency small calls and Claude Sonnet 5 for synthesis. The client is local-first: IndexedDB via Dexie holds a full mirror of the user’s data, mutations are queued in an outbox, and a Hybrid Logical Clock plus field-level last-write-wins resolves conflicts on reconnect. This stack is chosen because it lets one intermediate developer ship a real-time, offline-capable, AI-backed product in six months with a monthly infrastructure bill under US$30 at single-user scale and roughly US$220 at one thousand users.
+
+Delivery runs across five phases in twenty-six weeks: Phase 0 foundations (3 weeks), Phase 1 MVP (9 weeks, six one-and-a-half-week sprints), Phase 2 AI layer (6 weeks), Phase 3 intelligence and polish (5 weeks), Phase 4 extensions (3 weeks). The MVP deliberately ships without AI, without roadmap dependency graphs, without spaced repetition and without offline write support — those are Phase 1’s explicit cuts, listed in Section 16 — because the fastest way to kill this project is to build the intelligent parts before anyone has proved they will enter data every day.
+
+The dominant risks are not technical. They are over-featuring (a scope this wide invites eighteen months of building and no users), user abandonment after week three, and AI cost or latency making the flagship features feel worse than doing it manually. Section 20 addresses each with concrete mitigations: a hard feature freeze after Phase 1, a Day-21 retention metric treated as the single north-star, and a hybrid model routing plus caching strategy that holds AI cost to roughly US$0.60 per active user per month.
+
+2. Vision, Positioning and Non-Goals
+
+2.1 Vision
+
+The vision is a workspace where intention flows downward and evidence flows upward. Downward: a five-year direction becomes a one-year goal, which becomes a roadmap of stages, which becomes milestones, which become projects and tasks, which become blocks on Tuesday afternoon. Upward: completed tasks, study sessions, habit check-ins and journal entries roll back up as evidence of progress, so that the goal page is not a static aspiration but a live instrument reading. AI is the mechanism that makes both directions cheap. Decomposition downward is tedious and people avoid it; synthesis upward requires reading three weeks of your own scattered records, and people avoid that too. A system that already holds the graph can do both in seconds.
+
+A concrete success image: it is Sunday, 20:00. The user opens PIW. The weekly review is already drafted — eleven of nineteen planned tasks done, the Databases roadmap slipped four days because two milestones were blocked on an unfinished lab, the reading habit held at a nine-day streak, three journal entries mention feeling behind on the thesis, and the exam countdown for CS3230 reads sixteen days. Below the draft, three proposed adjustments to next week’s plan, each one a button. The user reads for four minutes, edits two sentences, accepts two of the three adjustments, and closes the laptop with an accurate picture of their own life. That interaction is the product.
+
+2.2 Positioning
+
+PIW sits between the general-purpose flexible workspace (Notion, Obsidian) and the vertical single-purpose tool (Todoist, Anki, Habitica). The flexible tools are infinitely capable and structurally ignorant — they cannot reason about your semester because they do not know what a semester is. The vertical tools are structured but siloed. PIW takes the opposite bet from Notion: an opinionated, fixed schema, with named entities the system understands, which is precisely what makes automated reasoning tractable. The user does not get to design their own database; they get a system that already knows what a Milestone, a StudySession and a Habit are, and can act on them.
+
+The positioning statement: for a self-directed student or professional who is tired of stitching six tools together, PIW is a single opinionated workspace whose AI can see everything you have written and everything you have planned, and turns that into a plan for today and an honest account of last week.
+
+2.3 Non-Goals
+
+The following are explicitly out of scope for v1 and for the foreseeable roadmap. Each is listed with the reason, because an undefended non-goal is just an unwritten backlog item.
+
+Non-goal
+
+Why it is excluded
+
+Multi-user collaboration, sharing, teams
+
+Single-user assumption removes permissions, presence, comment threads, and multiplayer conflict resolution — perhaps 40% of the engineering cost of a comparable workspace. The target user’s problem is personal coherence, not coordination.
+
+A generic block editor with user-defined databases
+
+Schema flexibility directly destroys the AI layer’s leverage. A fixed ontology is the product’s core technical bet.
+
+Native iOS/Android applications
+
+A well-built PWA with Web Push and offline reads covers the mobile job (capture, check off, glance). Native shells are a Phase 4+ consideration, not a v1 commitment.
+
+Real-time collaborative editing (CRDT text)
+
+Single-user editing across at most two or three devices is served adequately by field-level last-write-wins. Full text CRDTs are a multi-month subsystem.
+
+Email client, full accounting, medical records
+
+Adjacent life-management domains that each carry their own compliance and integration burden. Finance and health stay deliberately “lite” (Section 4.13).
+
+On-device or self-hosted model inference
+
+A solo developer cannot maintain an inference stack. Provider abstraction is built in (Section 8.7) so this can change later without rewrite.
+
+Public API, plugins, third-party extensions
+
+Attracts support burden and freezes internal contracts before they have stabilised. Reconsider only after 1,000 retained users.
+
+Gamification: XP, levels, avatars, leaderboards
+
+The user is an adult with real goals. Streaks are retained because they measure something true; points are not.
+
+Table 2.1 — Explicit non-goals and their justification.
+
+3. Personas, Jobs-to-be-Done and User Stories
+
+3.1 Primary persona — Maya, 21, penultimate-year undergraduate
+
+Maya reads Computer Science at a large university, carries five modules a semester, freelances roughly eight hours a week building websites, is teaching herself Japanese, and intends to apply for a research internship next spring. She keeps a Notion page she has not opened in five weeks, a Todoist inbox with 140 undated items, an Anki deck she abandoned in March, and a Notes app full of half-captured intentions. She is not disorganised; she is fragmented. Her actual failure mode is that at 09:00 on a Tuesday she cannot answer the question “what is the single most valuable thing I could do in the next two hours?” without twenty minutes of triage across four applications, and so she defaults to whatever is loudest.
+
+Maya is technically comfortable, keyboard-fast, mobile-first for capture and desktop-first for planning, and deeply suspicious of tools that require maintenance. She will abandon anything that demands more than ninety seconds of upkeep on a bad day. She will, however, tolerate significant one-time setup if the payoff is visible within the first week.
+
+3.2 Secondary persona — Daniel, 29, career-switcher
+
+Daniel works full-time and is studying part-time toward a data-engineering role. He has an eighteen-month plan in his head and nowhere for it to live. His jobs overlap heavily with Maya’s but he weights long-horizon roadmapping and evidence-of-progress more heavily than day-planning, and he has less tolerance for anything resembling a toy. Daniel is not designed for separately; he is the sanity check that the product does not collapse into a student-only tool.
+
+3.3 Jobs to be done
+
+Each job is phrased in the standard “when … I want to … so I can …” form, and each maps to at least one module. These nine jobs are the acceptance frame for the whole product: a feature that serves none of them is a candidate for cutting.
+
+#
+
+Job
+
+Primary module(s)
+
+J1
+
+When I sit down to work, I want to be told what matters most in the time I actually have, so I can start in under a minute instead of triaging.
+
+Today, Tasks, Calendar
+
+J2
+
+When I form an ambition, I want it turned into a staged plan with dates, so it stops being a feeling and becomes a schedule.
+
+Goals, Roadmaps
+
+J3
+
+When a thought arrives at an inconvenient moment, I want to capture it in one gesture and trust it will resurface correctly.
+
+Reminders, Tasks, Notes
+
+J4
+
+When a deadline approaches, I want to know whether I am actually on track, based on evidence rather than anxiety.
+
+Roadmaps, Study, Today
+
+J5
+
+When I study, I want the material converted into retrievable memory rather than highlighted PDFs.
+
+Study, Notes
+
+J6
+
+When I have written something down, I want to find it later by meaning, not by remembering the filename.
+
+Search, Notes
+
+J7
+
+When a week ends, I want an honest account of what happened without spending an hour reconstructing it.
+
+Journal & Reviews
+
+J8
+
+When I fall behind, I want the plan to adjust rather than silently accumulate a backlog of shame.
+
+Roadmaps, Today, Tasks
+
+J9
+
+When I want to build consistency, I want low-friction tracking that survives an imperfect week.
+
+Habits
+
+Table 3.1 — Jobs to be done mapped to modules.
+
+3.4 User stories with acceptance criteria
+
+Twelve stories define the functional spine of v1. Acceptance criteria are written to be directly testable; each maps to an integration or end-to-end test in Section 17. “Given/When/Then” is compressed into prose for readability but every criterion is binary.
+
+ID
+
+Story
+
+Acceptance criteria
+
+US-01
+
+As Maya, I want to capture a task from anywhere in the app with one keystroke so that capture never interrupts what I am doing.
+
+Pressing C anywhere except inside a text field opens the quick-capture bar within 100 ms; Enter saves and closes; the task appears in Inbox with source_surface recorded; capture works offline and syncs on reconnect; Escape discards with no write.
+
+US-02
+
+As Maya, I want my Today screen to show a proposed plan for the day so that I can start working immediately.
+
+Today loads in under 1.5 s on a 4G connection; it shows overdue, due-today, scheduled blocks and habit check-ins; a Plan my day action returns an ordered proposal within 8 s; every proposed item is individually acceptable or rejectable; with AI disabled, a deterministic priority sort is shown instead and labelled as such.
+
+US-03
+
+As Maya, I want to turn a goal into a staged roadmap so that I do not have to design the plan myself.
+
+From a goal with a title and target date, Generate roadmap returns 3–6 stages, each with 2–5 milestones and suggested dates inside the goal window; the result renders in a diff-style preview; the user can edit any field before saving; nothing is written to the database until Accept; rejecting leaves zero side effects except an ai_run audit row.
+
+US-04
+
+As Maya, I want to type “remind me to email Dr. Chan Friday 9am” and get a real reminder so that I never format a date by hand.
+
+Parsed output shows title, resolved absolute datetime in the user’s timezone, and reminder channel before confirmation; ambiguous input (“next Friday” near a weekend boundary) surfaces an explicit interpretation the user can correct; a deterministic chrono-node parser handles the common 80% without an AI call; the reminder fires within 60 s of its scheduled time.
+
+US-05
+
+As Maya, I want to upload a lecture PDF and get a summary and flashcards so that revision starts from material rather than a blank deck.
+
+A PDF up to 25 MB uploads and is text-extracted; a summary of 150–400 words appears with headings; 10–30 flashcards are generated as editable drafts in a review queue; no card enters the SRS scheduler until explicitly approved; every card stores a source_ref to its origin chunk with page number.
+
+US-06
+
+As Maya, I want spaced repetition over my flashcards so that I retain material for exams weeks away.
+
+The FSRS-based scheduler assigns next_due after each grade of Again/Hard/Good/Easy; the daily due count appears on Today; a session can be completed offline and grades sync later; exam countdown for a linked course inflates due volume in the final fourteen days according to a configurable ramp.
+
+US-07
+
+As Maya, I want to search across notes, tasks, goals and journal entries by meaning so that I can find things I have forgotten the words for.
+
+A query returns keyword and semantic results in one ranked list within 800 ms p95; each result shows entity type, a matched excerpt, and its parent context; filters by type and date range are available; semantic results are never returned from another user’s namespace (verified by an automated multi-tenant test).
+
+US-08
+
+As Maya, I want a weekly review generated from my own data so that reflection takes five minutes instead of an hour.
+
+The review runs Sunday at a user-set hour and is available as a draft; it contains completion counts, roadmap drift, habit adherence, study minutes, three observations grounded in cited entities, and up to three proposed plan adjustments; every observation links to the records that produced it; the user can edit the text and it saves as a first-class journal entry.
+
+US-09
+
+As Maya, I want my habits tracked with streaks that tolerate one miss so that a bad Tuesday does not destroy eleven weeks of work.
+
+Habit check-in is one tap from Today; streak logic supports a configurable grace of 0–2 misses per rolling 7 days; the streak display distinguishes current from best; retroactive check-in is allowed for up to 48 hours and is marked as backfilled.
+
+US-10
+
+As Maya, I want to time-block tasks onto a calendar so that my intentions meet my actual available hours.
+
+A task can be dragged from the task list onto a calendar grid to create a time_block linked by task_id; overlapping blocks are visually flagged; external Google Calendar events appear read-only in the same grid; total blocked minutes for a day are compared against declared capacity and over-commitment is warned at >110%.
+
+US-11
+
+As Maya, I want the app to work on the train with no signal so that my commute is usable.
+
+With the network disabled, Today, Tasks, Notes and Study review render from IndexedDB; create, edit, complete and check-in operations are queued in an outbox; a persistent indicator shows pending operation count; on reconnect the outbox drains in order and conflicts resolve per Section 12.4 without data loss.
+
+US-12
+
+As Maya, I want to export everything and delete my account so that I am never trapped in this tool.
+
+Export produces a single ZIP containing JSON per entity plus original uploaded files plus a Markdown rendering of notes and journal, delivered within 10 minutes; import of that ZIP into an empty account reconstructs all entities and relationships; account deletion removes all rows, all storage objects and all vector rows within 30 days, with a 7-day grace window and an emailed confirmation.
+
+Table 3.2 — Twelve v1 user stories with binary acceptance criteria.
+
+4. Feature Specification by Module
+
+Each module below is specified with the same six-part frame: purpose, key screens, core interactions, data touched, the AI’s role, and priority/phase. MoSCoW priorities are assigned relative to v1 (end of Phase 3), not relative to the MVP; Section 16 defines the narrower MVP cut. “Data touched” names the actual tables from Section 7 so that the specification and the schema cannot drift apart.
+
+4.1 Dashboard / Today
+
+Purpose. Today is the answer to J1 and the only screen the product can afford to get wrong. It exists to remove the twenty-minute triage: on open, the user sees what is due, what is scheduled, what is slipping, and a proposed order of work. Every other module earns its place by feeding this screen.
+
+Key screens. A single scrolling column on mobile, a three-region layout on desktop: left rail (navigation, quick capture), centre (Now/Next stack, then Due, then Habits, then Study due), right rail (today’s calendar strip, focus timer, streak summary). One secondary screen: Plan Review, a full-width diff view shown when the user requests an AI-generated plan.
+
+Core interactions. Complete a task inline (single click, optimistic, undoable for 8 seconds). Reschedule by dragging to Tomorrow / This Week / a date. Start a focus session against a task, which opens a timer and writes a focus_session row. Check in a habit. Press P to generate a plan; the result never mutates state directly — it renders as a set of proposed changes with Accept all / Accept individually / Discard. Press C for quick capture from anywhere.
+
+Data touched. Reads tasks, time_blocks, habits, habit_logs, flashcards (due count), milestones (at-risk), calendar_events, daily_plans. Writes tasks.status, focus_sessions, habit_logs, daily_plans.
+
+AI role. Daily plan generation and mid-day re-prioritisation (AI-03). The AI receives the candidate task set, calendar gaps, declared energy level and recent completion behaviour, and returns an ordered plan with a one-line rationale per item. Fallback: a deterministic scorer (due-date proximity × priority × milestone criticality, minus staleness penalty) that runs entirely client-side.
+
+Priority: Must. Phase: 1 (deterministic) → 2 (AI planning).
+
+4.2 Goals & Life Plans
+
+Purpose. Hold intentions at three horizons — Direction (3–5 years, prose, no dates), Goal (3–12 months, measurable, dated), and Objective (4–12 weeks, the unit that owns milestones). Without this layer the rest of the app is a to-do list; with it, every task can answer “what is this for?”
+
+Key screens. Goals index (card grid, grouped by life area, each card showing progress ring, target date, and next milestone). Goal detail (header with target metric and confidence, a stage strip if a roadmap exists, linked objectives, contributing tasks, evidence feed of recent completions, and a notes pane). Life Plan canvas: a vertical timeline of all goals across the next 24 months, used quarterly rather than daily.
+
+Core interactions. Create a goal with title, life area, target date, and an optional measurable target (metric_name, target_value, unit). Attach a roadmap. Set a weekly confidence rating (1–5) which is charted over time — a deliberately cheap subjective signal that turns out to predict abandonment better than completion counts. Archive rather than delete, always.
+
+Data touched. goals, objectives, roadmaps, milestones, tasks (via parent_ref), goal_confidence_logs, notes links.
+
+AI role. Goal clarification (turning “get better at ML” into a measurable target with a suggested metric), and goal→roadmap decomposition (AI-01). Fallback: templates — six pre-written roadmap skeletons (learn a skill, pass a course, ship a project, build a habit, prepare an application, complete a research output) that the user fills in manually.
+
+Priority: Must. Phase: 1 (goals) → 2 (decomposition).
+
+4.3 Roadmaps
+
+Purpose. A roadmap is the bridge between a goal and a week. It is an ordered set of stages, each containing milestones, with optional dependencies between milestones and a timeline rendering. This is the module that makes the product feel unlike a to-do list, and it is also the one most likely to be over-built — the specification below is deliberately restrained.
+
+Key screens. Timeline view (horizontal Gantt-lite: stages as swimlanes, milestones as diamonds, today as a vertical rule, dependency arrows drawn only between milestones, slipped items in amber and blocked items in grey). Board view (stages as columns, milestones as cards, drag to reorder or move stage). Milestone detail drawer (definition of done, dependencies, linked tasks, linked study resources, completion evidence).
+
+Core interactions. Create stage; drag milestone between stages; draw a dependency by dragging from one milestone’s edge to another (cycles rejected client-side with an inline explanation); mark milestone complete, which cascades an unblocked notification to dependents; “Shift everything after this by N days” as an explicit bulk operation, because plans slip and re-dating twelve items by hand is exactly the friction that kills roadmap tools.
+
+Data touched. roadmaps, stages, milestones, milestone_dependencies, tasks, goals.
+
+Core scheduling logic. Milestone status is derived, not stored as free text: blocked if any incomplete dependency exists; at_risk if due_date is within 7 days and linked task completion is under 50%; slipped if due_date has passed and status is not done. Derivation happens in a Postgres view so the client and the AI see identical semantics.
+
+AI role. Initial decomposition (AI-01), and progress-based re-planning (AI-09): when a milestone slips, the AI proposes a revised date set that respects dependencies and does not push past the goal’s target date without saying so explicitly. Fallback: the bulk shift operation plus a critical-path highlight computed in plain TypeScript.
+
+Priority: Must (timeline, stages, milestones); Should (dependencies); Could (critical path visualisation). Phase: 1 (stages/milestones) → 2 (dependencies, AI decomposition) → 3 (re-planning).
+
+4.4 Study Module
+
+Purpose. The study module is PIW’s wedge — the reason a student picks this over Notion. It covers the full loop from enrolment to exam: courses, syllabus tracking, a resource library, study sessions, spaced repetition, and exam countdowns. It is also the module with the highest AI leverage, because turning material into practice is genuinely laborious.
+
+4.4.1 Courses and syllabus tracking
+
+A course has a code, title, term, credit weight, instructor, colour, and a target grade. Its syllabus is a list of syllabus_items — topics with an ordinal, an optional scheduled week, a coverage status (not_started, in_progress, covered, revised), and a confidence rating (1–5) the user sets from the review screen. The syllabus coverage bar on the course page is the single most useful pre-exam artefact in the product: it shows, per topic, whether the user has seen it, practised it, and how confident they felt the last time they touched it.
+
+4.4.2 Resource library
+
+Resources are uploaded PDFs and slides, pasted text, and external links, each attached to a course and optionally to syllabus items. Files are stored in Supabase Storage; text is extracted server-side (pdf-parse for text layers, tesseract.js queued as a background job for scanned pages) and chunked into the vector store. A resource carries page_count, extracted_chars, and index_status so the UI can honestly say “indexing, 40 pages of 120” rather than silently failing.
+
+4.4.3 Spaced repetition
+
+Flashcards use FSRS-5 via the ts-fsrs library rather than SM-2, because FSRS produces materially better retention-per-review and the library is small and dependency-free. A card stores stability, difficulty, due_at, reps, lapses, state, and source_ref. Grades are Again/Hard/Good/Easy. Review sessions run offline and post grades in a batch. Exam mode: within exam_ramp_days (default 14) of a linked exam, the scheduler pulls forward cards whose predicted retrievability at exam date falls below 0.85, which concentrates work where the risk is.
+
+4.4.4 Study sessions and exam countdowns
+
+A study_session records course_id, syllabus_item_id, planned and actual minutes, technique (reading, practice, recall, problem_set, project), and a post-session confidence delta. Sessions can be started from Today or from a course page and are the primary evidence source for the weekly review. exams carry a datetime, weight, venue and linked syllabus items; countdowns appear on Today from T-21 days and escalate visual prominence at T-7 and T-2.
+
+Data touched. courses, syllabus_items, resources, resource_chunks, flashcards, flashcard_reviews, study_sessions, exams, quizzes, quiz_attempts.
+
+AI role. Study-material summarisation (AI-06), automatic flashcard generation (AI-07a), quiz generation (AI-07b), and syllabus extraction from a pasted course outline. Fallback: manual card creation, a cloze-deletion helper (select text, press Ctrl+Shift+C), and manual syllabus entry — all fully functional without a model.
+
+Priority: Must (courses, syllabus, sessions, exams, manual cards); Should (SRS scheduling, AI cards); Could (quizzes, OCR). Phase: 1 (courses, syllabus, sessions, exams) → 2 (resources, summarisation, card generation) → 3 (FSRS exam ramp, quizzes).
+
+4.5 Tasks & Todos
+
+Purpose. The atomic unit of execution, and the join point between planning and doing. Tasks must be fast enough to compete with a paper list, which sets a hard performance budget: capture to persisted in under 250 ms perceived, achieved by optimistic local writes.
+
+Key screens. Inbox (undated, unsorted capture), List view with saved filters, Kanban (status columns) for project-scoped tasks, and the task detail drawer. There is no separate “projects” module: a project is a task with is_container = true, which keeps the hierarchy uniform and avoids a fourth level of nesting nobody uses.
+
+Core interactions. Quick capture with inline natural-language date parsing (chrono-node, client-side, zero-cost). Subtasks to a maximum depth of two. Drag to reorder within a list (fractional sort_key to avoid reindexing). Bulk actions on multi-select. Recurring tasks via RRULE, generating the next instance on completion rather than materialising a year of rows. Snooze to a chosen time, which is distinct from rescheduling because it preserves the original due date for slippage analytics.
+
+Data touched. tasks, task_links (task↔milestone, task↔note), tags, focus_sessions.
+
+AI role. Task breakdown (AI-02): a vague task becomes 3–7 concrete subtasks with estimated minutes. Also effort estimation from historical focus_sessions on similar tasks. Fallback: a subtask template library and a simple median-of-similar-tasks estimate computed in SQL.
+
+Priority: Must. Phase: 1 (all core) → 2 (breakdown, estimation).
+
+4.6 Habits & Streaks
+
+Purpose. Track repeated behaviours whose value is consistency rather than completion. The design principle is forgiveness: streak mechanics that punish a single miss cause abandonment, which is the opposite of the intended behaviour change.
+
+Key screens. Habits index with a 30-day heatmap per habit; habit detail with adherence percentage, current and best streak, time-of-day distribution, and a correlation strip against journal mood (Phase 3); the Today check-in row.
+
+Core interactions. One-tap check-in; long-press for a value (quantified habits store value and unit, e.g. 30 minutes, 2 litres); retroactive check-in within 48 hours, flagged backfilled = true; pause a habit for a declared period (exam week, illness) so that the streak is suspended rather than broken — this is a small feature that materially changes how the tool feels.
+
+Data touched. habits, habit_logs, habit_pauses.
+
+AI role. Pattern observations surfaced in the weekly review ("your reading habit holds on days with a morning study block and fails on days with more than four scheduled hours") — generated from aggregates, never from raw log scanning. Fallback: the same aggregates rendered as charts without narration.
+
+Priority: Should. Phase: 1 (tracking, streaks) → 3 (correlation insight).
+
+4.7 Calendar & Time-Blocking
+
+Purpose. Convert a list of intentions into hours. Over-commitment is the most common planning failure and it is invisible in a list; it is obvious in a grid.
+
+Key screens. Week grid (default), day column on mobile, and a compact agenda strip embedded in Today. Two-way visual distinction between PIW time blocks (solid, editable) and imported external events (hatched, read-only).
+
+Core interactions. Drag a task onto the grid to create a time_block; resize to change duration; drag to move. Capacity bar per day comparing blocked minutes to declared available minutes, warning above 110%. “Find me two hours this week” returns candidate gaps respecting working hours and buffer preferences. Google Calendar read-only sync via OAuth and incremental syncToken, refreshed every 15 minutes and on window focus; write-back is deliberately deferred to Phase 4 because bidirectional sync is a well-known source of duplicate-event bugs.
+
+Data touched. time_blocks, calendar_events, calendar_connections, tasks, study_sessions.
+
+AI role. Slot suggestion inside daily planning (AI-03) — the model proposes which tasks fill which gaps, but gap computation itself is deterministic. This division matters: never ask a language model to do arithmetic on time when SQL can.
+
+Priority: Must (blocks, week grid); Should (Google import); Could (find-a-gap). Phase: 1 (blocks) → 2 (import, suggestions).
+
+4.8 Reminders & Notifications
+
+Purpose. Ensure that something entered once resurfaces at the right moment on the right device. Reliability here is binary in the user’s mind: one missed reminder in the first fortnight and the feature is dead.
+
+Key screens. Reminders list grouped by upcoming/recurring/past; a per-entity reminder editor (any task, milestone, exam, habit or note can carry reminders); notification settings with quiet hours and per-channel toggles.
+
+Core interactions. Natural-language creation; recurrence via RRULE with a plain-English echo of the rule ("every 2 weeks on Tuesday, until 12 December") so the user can verify it; snooze presets (10 min, 1 hour, tonight, tomorrow morning) plus custom; a daily digest (default 07:30) and an evening wind-down digest (default 21:00) that batch low-urgency items instead of interrupting.
+
+Data touched. reminders, reminder_occurrences, notification_deliveries, push_subscriptions, user_settings.
+
+AI role. Natural-language capture parsing (AI-04) for the cases chrono-node cannot handle, and digest composition (AI-10) that turns eleven pending items into four sentences worth reading. Fallback: the deterministic parser plus a plainly formatted digest list.
+
+Priority: Must. Phase: 1 (scheduled push/email, snooze) → 2 (NL parsing, composed digests).
+
+4.9 Notes and Linked Knowledge Base
+
+Purpose. Hold everything that is not a unit of work: lecture notes, ideas, meeting records, reference material. Notes are also the substrate for semantic search and the retrieval corpus for most AI features, which makes their chunking and linking design load-bearing well beyond the note-taking experience.
+
+Key screens. Notes index (list with folders and tags, sortable by updated); the editor (Markdown-backed rich text via TipTap, with slash commands); the backlinks panel; and a lightweight local graph view showing a note’s neighbours to two hops — explicitly not a global graph, which is beautiful and useless.
+
+Core interactions. [[wiki-links]] with autocomplete that can link to any entity type, not just notes, so a note can reference a milestone or a course directly. Slash commands for headings, code, callouts, embeds. Attach a note to a course, goal or task. Daily note (/today) as an optional journalling entry point. Full-text and semantic search from within the editor via Ctrl+K.
+
+Data touched. notes, note_links, note_chunks, tags, attachments.
+
+AI role. Semantic retrieval (AI-05), summarisation of long notes, and “related notes you have forgotten” suggestions computed from embedding proximity plus a recency-decay penalty. Fallback: Postgres full-text search with trigram fuzzy matching, which covers most retrieval needs adequately.
+
+Priority: Must (editor, links, search); Should (graph view). Phase: 1 (editor, links, FTS) → 2 (embeddings, semantic search) → 3 (related-notes).
+
+4.10 Journal and Periodic Reviews
+
+Purpose. Close the loop. Daily entries capture subjective state; weekly, monthly and quarterly reviews turn accumulated evidence into a narrative and into plan changes. This module is where the product’s promise — that it knows your life — becomes visible.
+
+Key screens. Journal timeline (reverse-chronological, mood glyphs, filterable by tag); daily entry (prompted, with three rotating prompts and a mood/energy pair on a 1–5 scale); the Review screen, a two-column layout with generated content on the left and the user’s editable response on the right; and a Review archive.
+
+Core interactions. Write freely or answer prompts. Run a review manually or receive it on schedule. Inside a review, each proposed adjustment (re-date a milestone, drop a task, reduce a habit target) is an actionable button that writes the change with an audit trail. Reviews are immutable once finalised, which makes them trustworthy as a historical record; edits create a new revision.
+
+Data touched. Reads across tasks, habit_logs, study_sessions, milestones, journal_entries, goal_confidence_logs. Writes reviews, review_actions, journal_entries.
+
+AI role. Weekly review synthesis (AI-08) and coaching nudges (AI-10). Guardrail: the model may only make claims that are traceable to supplied aggregates, and each observation must carry entity references that the UI renders as links — an ungrounded observation is a rendering error, not a stylistic one. Fallback: a statistics-only review, which is genuinely useful on its own.
+
+Priority: Must (journal, weekly review shell); Should (AI synthesis, monthly/quarterly). Phase: 1 (journal, stats review) → 2 (synthesis) → 3 (actions, quarterly).
+
+4.11 Search
+
+Purpose. One entry point to everything, reachable from anywhere with Ctrl+K. Search is both a retrieval tool for the user and the retrieval layer for the AI; the same ranking service serves both, which halves the surface area to maintain and guarantees the AI cannot see something the user cannot.
+
+Key screens. The command palette overlay, which unifies navigation, actions and search; and a full search results page for refinement with facets.
+
+Core interactions. Type to search; results are grouped by entity type with the best three per group shown; Tab cycles filters; Enter opens, Cmd+Enter opens in a side panel. Query syntax supports type:task, course:CS3230, due:<7d, tag:thesis, and quoted phrases. Recent and pinned items appear on empty query.
+
+Data touched. search_index materialised view over all entities, note_chunks, resource_chunks.
+
+AI role. Hybrid semantic retrieval (AI-05): reciprocal-rank fusion of Postgres FTS (ts_rank_cd) and pgvector cosine similarity, with an optional cross-encoder rerank in Phase 3. Fallback: FTS alone, transparently, with a small indicator that semantic search is unavailable.
+
+Priority: Must. Phase: 1 (FTS, palette) → 2 (hybrid semantic).
+
+4.12 Settings & Data Control
+
+Purpose. Make the data ownership promise real and operable, and hold the preferences that everything else reads. Under-specified settings screens are the standard place where privacy commitments quietly fail to be implemented.
+
+Key screens. Profile and timezone; Notifications (channels, quiet hours, digest times); AI (master switch, per-feature toggles, model tier preference, monthly spend cap with a hard stop, redaction rules); Data (export, import, storage usage, delete account); Appearance (theme, density, accent); Integrations (Google Calendar).
+
+Core interactions. Toggle any AI feature individually and see, in plain language, exactly what data that feature transmits. Set a monthly AI spend cap; on reaching 80% the app warns, at 100% AI features degrade to their fallbacks rather than failing. Export produces the ZIP described in US-12. Deletion runs a 7-day soft-delete then a hard purge job.
+
+Data touched. user_settings, ai_preferences, export_jobs, audit_log.
+
+AI role. None, by design.
+
+Priority: Must. Phase: 0/1.
+
+4.13 Optional: Finance-lite and Health/Routine tracking
+
+Purpose. Two deliberately small modules that catch the remaining life-management spillover without becoming products of their own. Finance-lite is a manual budget-and-subscription tracker: accounts (name and type only, no bank connection), transactions entered manually or pasted from a CSV, budgets per category per month, and subscriptions with renewal reminders that flow through the standard reminder engine. Health/routine-lite tracks sleep window, water, movement minutes and weight as metric_logs — a generic time-series table — rendered as sparklines and correlated with energy ratings in the weekly review.
+
+Why they stay small. Bank aggregation (Plaid and equivalents) carries per-connection costs, regulatory exposure and a support burden that a solo developer cannot absorb; wearable integration means maintaining three OAuth flows against APIs that change. Manual entry with good ergonomics covers 80% of the reflective value at 5% of the cost. If the user wants real accounting, the correct answer is that they should use accounting software, and PIW should link to it rather than imitate it.
+
+Data touched. accounts, transactions, budgets, subscriptions, metric_definitions, metric_logs.
+
+AI role. Monthly spending summary in the periodic review; anomaly callouts ("three subscriptions renewed in the same week"). Fallback: category totals and a renewal calendar.
+
+Priority: Could (finance-lite), Could (health-lite). Phase: 4.
+
+4.14 Module priority and phase summary
+
+The table below is the single authoritative mapping of module to priority and phase. Where the narrative above assigns split priorities across sub-features, the table records the priority of the module’s must-have core.
+
+Module
+
+MoSCoW
+
+Phase
+
+Primary entities
+
+AI capability
+
+Today / Dashboard
+
+Must
+
+1 → 2
+
+tasks, time_blocks, habit_logs, daily_plans
+
+AI-03
+
+Goals & Life Plans
+
+Must
+
+1 → 2
+
+goals, objectives, goal_confidence_logs
+
+AI-01
+
+Roadmaps
+
+Must
+
+1 → 2 → 3
+
+roadmaps, stages, milestones, milestone_dependencies
+
+AI-01, AI-09
+
+Study
+
+Must
+
+1 → 2 → 3
+
+courses, syllabus_items, resources, flashcards, exams
+
+AI-06, AI-07
+
+Tasks & Todos
+
+Must
+
+1 → 2
+
+tasks, task_links, tags, focus_sessions
+
+AI-02
+
+Habits & Streaks
+
+Should
+
+1 → 3
+
+habits, habit_logs, habit_pauses
+
+AI-08 (insight)
+
+Calendar & time-blocking
+
+Must
+
+1 → 2
+
+time_blocks, calendar_events, calendar_connections
+
+AI-03
+
+Reminders & Notifications
+
+Must
+
+1 → 2
+
+reminders, reminder_occurrences, notification_deliveries
+
+AI-04, AI-10
+
+Notes / knowledge base
+
+Must
+
+1 → 2 → 3
+
+notes, note_links, note_chunks, attachments
+
+AI-05, AI-06
+
+Journal & reviews
+
+Must
+
+1 → 2 → 3
+
+journal_entries, reviews, review_actions
+
+AI-08, AI-10
+
+Search
+
+Must
+
+1 → 2
+
+search_index, note_chunks, resource_chunks
+
+AI-05
+
+Settings & data control
+
+Must
+
+0/1
+
+user_settings, ai_preferences, export_jobs
+
+—
+
+Finance-lite
+
+Could
+
+4
+
+accounts, transactions, budgets, subscriptions
+
+AI-08 (summary)
+
+Health/routine-lite
+
+Could
+
+4
+
+metric_definitions, metric_logs
+
+AI-08 (correlation)
+
+Table 4.1 — Module priority, phase, entities and AI binding.
+
+5. AI Capability Map
+
+Ten AI capabilities are specified. Each is a bounded function with a named trigger, a defined context envelope, a model tier, a schema-validated output, guardrails, and a fallback that keeps the surface functional when AI is disabled, over budget, or unavailable. There is no free-form chat assistant in v1. This is a deliberate decision: an open chat box is cheap to build, expensive to evaluate, and consistently the least-used surface in products of this shape, because a user who must describe their context has not been helped by a system that already holds it.
+
+Every capability runs through the AI gateway (Section 8.7), which enforces per-user rate limits, budget caps, prompt-cache reuse, schema validation with one repair retry, and an ai_runs audit row capturing model, token counts, latency, cost, and a hash of the input context. Two model tiers are used: Claude Haiku 4.5 ($1 per million input tokens / $5 per million output) for high-frequency structured work, and Claude Sonnet 5 ($2/$10 during the introductory period through 31 August 2026, $3/$15 thereafter) for synthesis where quality is visibly better. Embeddings use OpenAI text-embedding-3-small at $0.02 per million tokens. Prompt caching returns cached input at 10% of base rate, which matters because the system prompt plus user profile is 900–1,400 tokens on every call.
+
+5.1 Capability map: trigger, context and call pattern
+
+ID
+
+Capability
+
+Trigger
+
+Input context
+
+Model-call pattern
+
+AI-01
+
+Goal → roadmap decomposition
+
+User presses Generate roadmap on a goal
+
+Goal title, description, target date, life area; user profile (weekly hours, term dates); up to 3 similar past roadmaps as few-shot; linked course syllabus if present. ~1.8k tokens.
+
+Single call, Sonnet 5, tool-use with a strict emit_roadmap schema, temperature 0.4, max_tokens 2,000. Prompt-cached system block.
+
+AI-02
+
+Task breakdown
+
+User presses Break down on a task, or a task is estimated >120 min
+
+Task title, notes, parent milestone/goal titles, 5 recent completed sibling tasks with actual durations. ~700 tokens.
+
+Single call, Haiku 4.5, tool schema emit_subtasks, temperature 0.3, max_tokens 700.
+
+AI-03
+
+Daily plan + re-prioritisation
+
+Plan my day; or automatically at the digest hour; or on demand after 3+ completions
+
+Candidate tasks (max 40, pre-filtered and pre-scored server-side), free calendar gaps as computed intervals, declared energy 1–5, habits due, flashcards due count, at-risk milestones. ~2.2k tokens.
+
+Single call, Haiku 4.5, tool schema emit_day_plan, temperature 0.2, max_tokens 1,200. Re-prioritisation reuses the cached prefix and sends only a delta.
+
+AI-04
+
+Natural-language capture
+
+Quick-capture text that chrono-node cannot fully resolve, or that contains an entity hint
+
+Raw string, current datetime + IANA timezone, list of the user’s course codes, goals and top 20 tags for entity matching. ~500 tokens.
+
+Single call, Haiku 4.5, tool schema emit_capture, temperature 0, max_tokens 400. Skipped entirely when the deterministic parser reaches full confidence (~80% of captures).
+
+AI-05
+
+Semantic search / recall
+
+Any search where hybrid mode is on, and as the retrieval step of AI-06/08/09
+
+Query string only for embedding; retrieved chunks for synthesis
+
+Embedding call ($0.02/MTok) + pgvector ANN query. Optional answer synthesis: Haiku 4.5 over top-8 chunks, max_tokens 600, with mandatory citations.
+
+AI-06
+
+Study material summarisation
+
+Resource finishes indexing, or user presses Summarise
+
+Full extracted text, chunked; course code and syllabus item titles for framing. 3k–40k tokens.
+
+Map-reduce: Haiku 4.5 over 8k-token windows → Sonnet 5 single reduce call. Batch API used when triggered automatically (50% discount, 24h window).
+
+AI-07
+
+Flashcard and quiz generation
+
+User presses Make cards on a resource, note or syllabus item
+
+Selected chunks (max 6k tokens), existing card fronts for the same item to avoid duplication, target card count.
+
+Single call per 6k window, Haiku 4.5, tool schema emit_cards / emit_quiz, temperature 0.5, max_tokens 1,600.
+
+AI-08
+
+Weekly review synthesis
+
+Scheduled Sunday at user hour; or manual Run review
+
+Pre-computed aggregates only (completion counts, roadmap drift days, habit adherence, study minutes by course, confidence deltas) plus up to 10 journal excerpts. ~3k tokens.
+
+Single call, Sonnet 5, tool schema emit_review, temperature 0.6, max_tokens 1,800.
+
+AI-09
+
+Progress-based re-planning
+
+Milestone slips >3 days, or user presses Re-plan
+
+Roadmap graph (stages, milestones, dependencies, dates), completion velocity over 4 weeks, goal target date, blackout dates.
+
+Single call, Sonnet 5, tool schema emit_replan returning date deltas only, temperature 0.2, max_tokens 1,200.
+
+AI-10
+
+Nudges and coaching
+
+Digest composition; streak at risk; 3+ days of zero activity on an active goal
+
+Aggregates for the last 7 days, the specific trigger condition, user’s nudge tone preference.
+
+Single call, Haiku 4.5, max_tokens 220, temperature 0.7. Hard-capped at 2 nudges per day.
+
+Table 5.1 — AI capabilities: trigger, input context and model-call pattern.
+
+5.2 Capability map: output, guardrails, fallback and cost
+
+Costs assume prompt caching on the system block and are quoted per invocation at the tier named in Table 5.1. They are rounded up deliberately; Section 19 aggregates them into monthly figures with usage assumptions.
+
+ID
+
+Output shape
+
+Guardrails
+
+Fallback when AI unavailable
+
+Cost / call
+
+AI-01
+
+JSON: 3–6 stages, each 2–5 milestones with title, definition_of_done, suggested_date, est_hours, optional depends_on indices.
+
+Zod schema validation; dates clamped inside [today, goal.target_date]; cycle detection on depends_on; max 24 milestones; rendered as a preview — nothing persists until Accept.
+
+Six hand-written roadmap templates plus a manual stage/milestone editor.
+
+~$0.012
+
+AI-02
+
+JSON: 3–7 subtasks with title and estimate_minutes; optional suggested_order.
+
+Reject subtasks duplicating the parent title; cap estimate at 480 min; strip any subtask that is a restatement (cosine >0.95 against parent).
+
+Template checklists by task type + median duration of similar past tasks from SQL.
+
+~$0.002
+
+AI-03
+
+JSON: ordered plan items with task_id, suggested_start, duration_minutes, one-line reason; plus an overflow list.
+
+Every task_id must exist in the supplied candidate set (hard reject otherwise); total planned minutes ≤ available minutes; no scheduling inside quiet hours; plan is proposed, never auto-applied.
+
+Deterministic priority score: urgency × importance × milestone criticality − staleness, computed client-side; runs offline.
+
+~$0.003
+
+AI-04
+
+JSON: entity_type (task|reminder|note|event), title, due_at ISO-8601, rrule, linked_entity_id, confidence.
+
+Confidence <0.7 forces a confirmation UI; absolute datetime always echoed back in the user’s timezone; never writes directly — fills a form.
+
+chrono-node deterministic parser; on failure, the raw text is saved as an undated inbox item (never lost).
+
+~$0.0008
+
+AI-05
+
+Ranked chunk list with entity refs, scores and excerpts; optional 2–4 sentence synthesised answer with inline citations.
+
+Strict user_id filter enforced in the SQL predicate, not in application code; synthesis must cite ≥ 1 retrieved chunk or is discarded; no cross-entity inference beyond retrieved text.
+
+Postgres full-text search with pg_trgm fuzzy fallback and type facets.
+
+~$0.0004
+
+AI-06
+
+Markdown summary 150–400 words with H2 sections, plus 5–10 key-term definitions and a list of covered syllabus items.
+
+Summary must reference only supplied text; length enforced; a "source coverage" ratio below 0.6 (measured by term overlap) flags the summary as low-confidence in the UI.
+
+First-paragraph extraction plus heading outline from the PDF structure, labelled as an automatic outline.
+
+~$0.02–$0.09
+
+AI-07
+
+JSON: cards with front, back, card_type (basic|cloze), difficulty_hint, source_chunk_id, page.
+
+Every card must carry a valid source_chunk_id; duplicate detection by embedding cosine >0.92 against existing cards; cards land in a Draft queue — no card enters the scheduler unreviewed.
+
+Manual card creation plus a cloze helper that converts a selection into a cloze card in two keystrokes.
+
+~$0.006
+
+AI-08
+
+JSON: highlights[], concerns[], observations[] (each with entity_refs), proposed_adjustments[] (max 3, each an executable patch), narrative markdown.
+
+Every observation must include ≥ 1 entity_ref that resolves; unresolvable refs cause the observation to be dropped at render; no medical, diagnostic or clinical framing; tone constrained by system prompt; adjustments require one click to apply.
+
+A statistics-only review: charts and counts with no narration. Genuinely useful and shipped in Phase 1 regardless.
+
+~$0.02
+
+AI-09
+
+JSON: array of {milestone_id, new_date, reason}; a flag if the goal target date is breached; a suggested scope cut.
+
+Only milestone_ids from the supplied graph; dependency order must remain valid (re-validated server-side, rejected if not); never silently moves the goal target date.
+
+Bulk "shift everything after this by N days" plus a critical-path highlight computed in TypeScript.
+
+~$0.011
+
+AI-10
+
+Plain text, 1–3 sentences, optional single call-to-action deep link.
+
+Max 2 per day, none during quiet hours; forbidden patterns (shame, guilt, health claims, absolutes) enforced by a post-generation regex and phrase list; user can disable entirely or set tone to neutral.
+
+Fixed template strings ("Reading: 9-day streak, not yet logged today").
+
+~$0.0004
+
+Table 5.2 — AI capabilities: output shape, guardrails, fallback and unit cost.
+
+5.3 RAG design
+
+Retrieval serves two consumers: the user’s semantic search, and the context assembly step of AI-06, AI-07 and AI-08. Both use the same service, RetrievalService.hybrid(query, opts), so that anything the model can see is something the user could have found, which is both a privacy property and a debugging convenience.
+
+5.3.1 Chunking strategy
+
+Chunking is structure-aware rather than fixed-width, because the corpus is heterogeneous. Notes are Markdown and split on heading boundaries; PDFs are split on page and paragraph boundaries; short entities are not chunked at all. Every chunk carries its full breadcrumb (course → resource → section, or goal → note → heading) prepended as a context header before embedding, which measurably improves retrieval for short chunks and costs almost nothing.
+
+Source
+
+Chunk unit
+
+Target size
+
+Overlap
+
+Metadata stored
+
+Notes
+
+H2/H3 section, split further at ~1,200 chars
+
+600–900 tokens
+
+80 tokens
+
+note_id, heading_path, updated_at, tags
+
+PDF / slides
+
+Page, then paragraph groups
+
+500–800 tokens
+
+60 tokens
+
+resource_id, page, course_id, syllabus_item_id
+
+Tasks & milestones
+
+Whole record (title + notes)
+
+no split
+
+—
+
+entity_type, status, due_date, parent_ref
+
+Journal entries
+
+Whole entry, split at 1,000 tokens
+
+≤ 1,000 tokens
+
+0
+
+entry_date, mood, energy, tags
+
+Goals / roadmaps
+
+Whole record + milestone titles
+
+no split
+
+—
+
+goal_id, life_area, target_date
+
+Flashcards
+
+Not embedded for search; embedded only for duplicate detection
+
+—
+
+—
+
+card_id, deck, source_chunk_id
+
+Table 5.3 — Chunking strategy by source type.
+
+5.3.2 Embedding model and vector store
+
+The embedding model is OpenAI text-embedding-3-small at 1,536 dimensions, truncated to 768 via Matryoshka dimensionality reduction for storage and index efficiency. It is chosen over larger alternatives for a specific reason: at $0.02 per million tokens, embedding an entire year of one person’s notes and course materials — realistically 3–6 million tokens — costs under fifteen cents, and quality differences between it and models costing six times more are not detectable on a personal corpus of this size. The model_version is stored per row so that a future migration can re-embed incrementally rather than in a stop-the-world batch.
+
+The vector store is pgvector inside the same Supabase Postgres instance, not a dedicated vector database. The argument for a separate store (Pinecone, Qdrant, Weaviate) is scale and specialised index tuning; at a realistic ceiling of roughly 40,000 chunks per user, an HNSW index in pgvector answers queries in single-digit milliseconds. The argument against a separate store is decisive here: it would introduce a second system requiring its own auth, backups, deletion guarantees and consistency handling, and would make the account-deletion promise in Section 14 substantially harder to keep. One database, one backup, one delete.
+
+CREATE TABLE chunks (
+
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id       uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+  entity_type   text NOT NULL,       -- note | resource | task | journal | goal
+
+  entity_id     uuid NOT NULL,
+
+  chunk_index   int  NOT NULL,
+
+  content       text NOT NULL,
+
+  context_header text NOT NULL,      -- "CS3230 > Lecture 4 > Amortised analysis"
+
+  token_count   int  NOT NULL,
+
+  embedding     vector(768),
+
+  model_version text NOT NULL DEFAULT 'text-embedding-3-small@768',
+
+  tsv           tsvector GENERATED ALWAYS AS (to_tsvector('english', content)) STORED,
+
+  created_at    timestamptz NOT NULL DEFAULT now()
+
+);
+
+CREATE INDEX chunks_embedding_idx ON chunks
+
+  USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
+
+CREATE INDEX chunks_tsv_idx   ON chunks USING gin (tsv);
+
+CREATE INDEX chunks_user_idx  ON chunks (user_id, entity_type, entity_id);
+
+ALTER TABLE chunks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY chunks_owner ON chunks USING (user_id = auth.uid());
+
+Listing 5.1 — Vector store schema with row-level security and hybrid indexes.
+
+5.3.3 Retrieval flow
+
+Retrieval is a six-step pipeline, deliberately boring:
+
+Normalise and expand. Lower-case, strip punctuation, expand the user’s own abbreviations from a per-user alias table (e.g. 3230 → CS3230). No LLM-based query expansion in v1 — it adds 400 ms and a call to save a rare miss.
+
+Embed the query with the same model and dimensionality as the corpus (one call, ~$0.000002).
+
+Dual retrieve. Run pgvector ANN for the top 40 by cosine distance and Postgres FTS for the top 40 by ts_rank_cd, both with user_id = $1 in the WHERE clause and RLS as a second line of defence.
+
+Fuse with reciprocal rank fusion, score = Σ 1/(60 + rank_i), weighted 0.6 semantic / 0.4 lexical. RRF is used rather than score normalisation because it is robust to the two systems producing incomparable score scales.
+
+Filter and diversify. Apply hard filters (entity type, date range, course), then cap at 3 chunks per parent entity so one long PDF cannot monopolise the context window.
+
+Assemble. Take the top K until the context budget is reached, each chunk prefixed with its context header and a stable citation id ([c7]) that the model is required to use.
+
+5.3.4 Context budget
+
+Context budgets are enforced by the gateway before the call, not hoped for. The budget is expressed in tokens and split explicitly, so that a single pathological note cannot displace the instructions.
+
+Capability
+
+System + instructions
+
+Structured state
+
+Retrieved chunks
+
+Ceiling
+
+AI-01 roadmap decomposition
+
+900
+
+600 (goal + profile)
+
+1,200 (max 6 chunks)
+
+4,000
+
+AI-03 daily plan
+
+1,100
+
+1,400 (tasks, gaps)
+
+0 — no retrieval
+
+3,000
+
+AI-05 search synthesis
+
+600
+
+100
+
+4,000 (max 8 chunks)
+
+5,000
+
+AI-06 summarisation (map)
+
+400
+
+150
+
+8,000 per window
+
+9,000
+
+AI-07 card generation
+
+700
+
+300 (existing fronts)
+
+6,000
+
+7,500
+
+AI-08 weekly review
+
+1,300
+
+2,000 (aggregates)
+
+1,200 (journal excerpts)
+
+5,000
+
+Table 5.4 — Per-capability context budget in tokens.
+
+5.3.5 Per-user data scoping
+
+Since the product is single-user per account, scoping is simple, and simplicity is exactly what makes it defensible. Four independent mechanisms enforce it. First, every table carrying user content has a non-nullable user_id and a Postgres row-level security policy keyed to auth.uid(); the application connects as an authenticated role, never as the service role, for any request originating from a user session. Second, the retrieval service takes user_id as a required argument and injects it into the SQL predicate — there is no code path that constructs a retrieval query without it. Third, the AI gateway stamps a user_id on every run and refuses to execute if the assembled context contains a chunk whose user_id differs from the run’s, which turns a hypothetical leak into a 500 rather than a disclosure. Fourth, an automated test in CI creates two users, seeds each with a distinctive sentinel string, and asserts that neither user’s search or AI context can ever surface the other’s sentinel; this test is a release blocker.
+
+Background jobs, which run as the service role by necessity, always scope by an explicit user_id parameter passed in the job payload and are covered by the same sentinel test executed against the job runner.
+
+6. Information Architecture and Navigation
+
+6.1 Navigation model
+
+Navigation is two-tier and shallow by design: a persistent primary rail with eight destinations, and contextual sub-navigation inside each. Nothing in the product is more than three clicks from Today, and everything is one keystroke from the command palette. The rail is ordered by daily frequency, not by conceptual hierarchy — Today first, Settings last — because the conceptual hierarchy (Direction → Goal → Roadmap → Milestone → Task) is a data relationship, not a navigation path.
+
+PIW
+
+├─ Today                          [T]   default route
+
+│   ├─ Now / Next stack
+
+│   ├─ Due & overdue
+
+│   ├─ Habits check-in row
+
+│   ├─ Study due (flashcards, sessions)
+
+│   └─ Plan review                        (AI-03 proposal diff)
+
+├─ Plan                           [G]
+
+│   ├─ Goals index → Goal detail
+
+│   ├─ Roadmap  → Timeline | Board  → Milestone drawer
+
+│   └─ Life Plan canvas (24-month)
+
+├─ Tasks                          [K]
+
+│   ├─ Inbox | Today | Upcoming | Anytime | Someday
+
+│   ├─ Saved filters
+
+│   └─ Project (task with is_container) → List | Board
+
+├─ Study                          [S]
+
+│   ├─ Courses → Course detail → Syllabus | Resources | Cards | Exams
+
+│   ├─ Review session (SRS)
+
+│   └─ Resource viewer → Summary | Chunks | Generated cards
+
+├─ Calendar                       [C]
+
+│   └─ Week | Day | Agenda
+
+├─ Notes                          [N]
+
+│   ├─ All notes | Folders | Tags
+
+│   └─ Note editor → Backlinks | Local graph
+
+├─ Journal                        [J]
+
+│   ├─ Timeline | Daily entry
+
+│   └─ Reviews → Weekly | Monthly | Quarterly | Archive
+
+└─ Settings                       [,]
+
+    ├─ Profile & timezone   ├─ Notifications   ├─ AI & privacy
+
+    ├─ Data (export/import/delete)          ├─ Appearance
+
+    └─ Integrations (Google Calendar)
+
+Global overlays:  Command palette [Ctrl/Cmd+K]   Quick capture [C]
+
+                  Focus timer [F]                Help & shortcuts [?]
+
+Figure 6.1 — Navigation map with primary keyboard shortcuts.
+
+6.2 URL structure
+
+Routes are stable, human-readable and shareable-by-copy even though nothing is shared publicly, because a durable URL is what makes browser history and bookmarks work as navigation. Entity routes use short slugs derived from a base58 encoding of the UUID prefix, keeping links to twelve characters.
+
+Route
+
+Screen
+
+Notes
+
+/
+
+Today
+
+Redirects to /login if unauthenticated
+
+/plan/goals, /plan/goals/[slug]
+
+Goals index, Goal detail
+
+Detail supports ?tab=roadmap|tasks|notes
+
+/plan/roadmaps/[slug]
+
+Roadmap
+
+?view=timeline|board, ?milestone=[id] opens drawer
+
+/tasks, /tasks/[view]
+
+Task views
+
+view ∈ inbox|today|upcoming|anytime|someday|f/[filterId]
+
+/study/courses/[code]
+
+Course detail
+
+?tab=syllabus|resources|cards|exams
+
+/study/review
+
+SRS session
+
+Fully offline-capable route
+
+/calendar
+
+Calendar
+
+?d=YYYY-MM-DD&view=week|day
+
+/notes, /notes/[slug]
+
+Notes
+
+Editor state persisted per note
+
+/journal, /journal/reviews/[id]
+
+Journal, Review
+
+Reviews immutable once finalised
+
+/settings/[section]
+
+Settings
+
+section ∈ profile|notifications|ai|data|appearance|integrations
+
+Table 6.1 — Route map.
+
+6.3 Content hierarchy
+
+Three hierarchies coexist and must not be confused. The intent hierarchy runs Direction → Goal → Objective → Milestone → Task and expresses purpose. The time hierarchy runs Year → Quarter → Week → Day → Time block and expresses schedule. The knowledge hierarchy runs Course → Syllabus item → Resource → Chunk → Flashcard, and separately Folder → Note, with wiki-links forming a graph that cuts across all three. A task therefore has at most one intent parent, at most one time placement, and any number of knowledge links. Enforcing "at most one intent parent" is what keeps roll-up progress calculations tractable; permitting many knowledge links is what makes the graph useful.
+
+7. Data Model
+
+7.1 Design decision: unified node table versus separate tables
+
+This is the most consequential schema decision in the project, so it is settled here explicitly rather than discovered later. The two options are a single polymorphic items table with a type discriminator and a JSONB payload for type-specific fields, versus separate typed tables per entity with foreign keys between them.
+
+Dimension
+
+Unified item/node table
+
+Separate typed tables
+
+Cross-type queries
+
+Trivial — one table for search, timeline, links, tags, activity feed.
+
+Requires UNION across 12 tables or a materialised index table.
+
+Type-specific constraints
+
+Weak. NOT NULL on a JSONB key is not expressible; validation lives in application code and will drift.
+
+Strong. The database enforces that a milestone has a roadmap and a flashcard has stability.
+
+Query performance
+
+Degrades as the table grows to hold every entity; every index is on a mixed-selectivity column; JSONB GIN indexes are large.
+
+Each table is small and indexed for its own access pattern. Postgres planner has real statistics.
+
+Migration cost
+
+Adding a type is free; changing a field’s meaning inside JSONB is silent and dangerous.
+
+Adding a type is a migration; changes are explicit and reviewable.
+
+AI/tooling ergonomics
+
+A single generic tool schema can address anything, which is genuinely attractive for tool-use.
+
+Requires per-type tool schemas — more code but far better validation.
+
+Developer velocity (solo)
+
+Fast at first, then progressively slower as every read needs defensive coding.
+
+Slower for the first three weeks, faster thereafter.
+
+Table 7.1 — Trade-offs between a unified node model and typed tables.
+
+Recommendation: typed tables, plus one thin shared `nodes` index table. The pure unified model is rejected because this product’s value depends on the database knowing what things are — the AI layer’s reliability comes directly from schema constraints, and a JSONB blob provides none. The pure typed model is also rejected, because six features (global search, wiki-links between any two entities, tagging, the activity feed, reminders attachable to anything, and the audit log) genuinely need to reference "any entity" polymorphically, and implementing each as a twelve-way UNION is worse than maintaining one index table.
+
+The chosen hybrid: every user-visible entity is a typed table and additionally owns exactly one row in nodes (id, user_id, entity_type, title, snippet, updated_at, archived_at, search_tsv), maintained by a database trigger on insert/update/delete of the typed row. nodes.id is the same UUID as the typed row’s primary key, so joins are direct and no mapping table is needed. Polymorphic features reference nodes.id. This costs roughly 120 lines of trigger SQL, written once, and buys typed integrity everywhere else. The failure mode to watch — trigger drift when a new table is added — is caught by a CI test that enumerates typed tables and asserts each has a matching trigger.
+
+7.2 Core entities
+
+Field lists below give name, type and the essential constraint. All tables carry id uuid PK, user_id uuid NOT NULL, created_at timestamptz, updated_at timestamptz, and deleted_at timestamptz NULL (soft delete); these are omitted from the listings for brevity. All also carry hlc text and version int for sync (Section 12).
+
+7.2.1 Identity and configuration
+
+Table
+
+Fields
+
+Relationships
+
+users
+
+email text UNIQUE, display_name text, timezone text (IANA), locale text, onboarding_state jsonb, plan text
+
+Root of every ownership chain
+
+user_settings
+
+quiet_hours_start time, quiet_hours_end time, digest_morning time, digest_evening time, week_start smallint, available_minutes_per_day int, theme text, density text
+
+1:1 users
+
+ai_preferences
+
+ai_enabled bool, feature_flags jsonb, model_tier text, monthly_budget_cents int, spend_month_cents int, redact_journal bool, tone text
+
+1:1 users
+
+push_subscriptions
+
+endpoint text, p256dh text, auth text, user_agent text, last_seen_at timestamptz
+
+N:1 users
+
+calendar_connections
+
+provider text, external_account text, access_token_enc bytea, refresh_token_enc bytea, sync_token text, status text
+
+N:1 users
+
+7.2.2 Intent: goals, roadmaps, milestones
+
+Table
+
+Fields
+
+Relationships
+
+directions
+
+title text, narrative text, horizon_years smallint
+
+1:N goals
+
+goals
+
+title text, description text, life_area text, target_date date, metric_name text, target_value numeric, current_value numeric, unit text, status text (active|paused|achieved|abandoned), confidence smallint
+
+N:1 directions; 1:N objectives, roadmaps
+
+goal_confidence_logs
+
+logged_on date, confidence smallint, note text
+
+N:1 goals
+
+objectives
+
+title text, window_start date, window_end date, status text
+
+N:1 goals; 1:N milestones
+
+roadmaps
+
+title text, description text, generated_by text (user|ai), source_run_id uuid
+
+N:1 goals; 1:N stages
+
+stages
+
+title text, ordinal int, target_start date, target_end date, status text
+
+N:1 roadmaps; 1:N milestones
+
+milestones
+
+title text, definition_of_done text, due_date date, completed_at timestamptz, est_hours numeric, ordinal int, status_override text
+
+N:1 stages; N:1 objectives (nullable); 1:N tasks
+
+milestone_dependencies
+
+predecessor_id uuid, successor_id uuid, kind text (finish_to_start)
+
+Edge table on milestones; DAG enforced
+
+7.2.3 Execution: tasks, habits, time
+
+Table
+
+Fields
+
+Relationships
+
+tasks
+
+title text, notes text, status text (inbox|next|in_progress|blocked|done|cancelled), priority smallint (0–3), due_at timestamptz, defer_until timestamptz, estimate_minutes int, actual_minutes int, rrule text, recurrence_parent_id uuid, is_container bool, sort_key numeric, energy text, milestone_id uuid, parent_task_id uuid
+
+Self-referencing (depth ≤ 2); N:1 milestones
+
+focus_sessions
+
+task_id uuid, started_at timestamptz, ended_at timestamptz, minutes int, interruptions int
+
+N:1 tasks
+
+habits
+
+title text, cadence text (daily|weekly|custom), rrule text, target_count int, unit text, grace_per_week smallint, active bool, colour text
+
+1:N habit_logs
+
+habit_logs
+
+logged_on date, value numeric, backfilled bool, note text
+
+N:1 habits; UNIQUE(habit_id, logged_on)
+
+habit_pauses
+
+start_on date, end_on date, reason text
+
+N:1 habits
+
+time_blocks
+
+title text, start_at timestamptz, end_at timestamptz, task_id uuid, study_session_id uuid, kind text (work|study|rest|admin), locked bool
+
+N:1 tasks / study_sessions
+
+calendar_events
+
+external_id text, source text, title text, start_at timestamptz, end_at timestamptz, all_day bool, busy bool, etag text
+
+N:1 calendar_connections; read-only
+
+7.2.4 Knowledge: study and notes
+
+Table
+
+Fields
+
+Relationships
+
+courses
+
+code text, title text, term text, credits numeric, instructor text, colour text, target_grade text, active bool
+
+1:N syllabus_items, resources, exams
+
+syllabus_items
+
+title text, ordinal int, scheduled_week int, coverage text (not_started|in_progress|covered|revised), confidence smallint
+
+N:1 courses
+
+resources
+
+title text, kind text (pdf|slides|link|text), storage_path text, url text, page_count int, extracted_chars int, index_status text, summary_id uuid
+
+N:1 courses; 1:N chunks
+
+flashcards
+
+front text, back text, card_type text (basic|cloze), state text (new|learning|review|relearning), due_at timestamptz, stability numeric, difficulty numeric, reps int, lapses int, source_chunk_id uuid, approved bool
+
+N:1 courses/syllabus_items
+
+flashcard_reviews
+
+card_id uuid, reviewed_at timestamptz, grade smallint (1–4), elapsed_ms int, scheduled_days int
+
+N:1 flashcards (append-only)
+
+study_sessions
+
+course_id uuid, syllabus_item_id uuid, planned_minutes int, actual_minutes int, technique text, confidence_before smallint, confidence_after smallint, notes text
+
+N:1 courses
+
+exams
+
+course_id uuid, title text, starts_at timestamptz, venue text, weight numeric, ramp_days int
+
+N:1 courses
+
+quizzes / quiz_attempts
+
+quizzes: title, source_ref, question_count; attempts: score numeric, answers jsonb, taken_at
+
+N:1 courses
+
+notes
+
+title text, body_md text, folder_id uuid, is_daily bool, entry_date date, pinned bool
+
+1:N note_links, chunks
+
+note_links
+
+source_node_id uuid, target_node_id uuid, link_text text, context text
+
+Polymorphic via nodes
+
+attachments
+
+node_id uuid, filename text, mime text, bytes int, storage_path text
+
+Polymorphic via nodes
+
+7.2.5 Reflection, delivery and system tables
+
+Table
+
+Fields
+
+Relationships
+
+journal_entries
+
+entry_date date, body_md text, mood smallint, energy smallint, prompts jsonb, tags text[]
+
+UNIQUE(user_id, entry_date) for daily
+
+reviews
+
+period text (weekly|monthly|quarterly), period_start date, period_end date, stats jsonb, narrative_md text, ai_run_id uuid, finalised_at timestamptz, revision int
+
+1:N review_actions
+
+review_actions
+
+kind text, target_node_id uuid, patch jsonb, applied_at timestamptz, dismissed_at timestamptz
+
+N:1 reviews
+
+reminders
+
+node_id uuid, title text, fire_at timestamptz, rrule text, channel text[], snooze_until timestamptz, lead_minutes int, active bool
+
+Polymorphic via nodes
+
+reminder_occurrences
+
+reminder_id uuid, scheduled_for timestamptz, state text (pending|sent|snoozed|dismissed|missed), delivered_at timestamptz
+
+N:1 reminders
+
+notification_deliveries
+
+occurrence_id uuid, channel text, provider_message_id text, status text, error text, attempts int
+
+N:1 reminder_occurrences
+
+daily_plans
+
+plan_date date, items jsonb, generated_by text, accepted_at timestamptz, adherence numeric
+
+One per user per day
+
+nodes
+
+entity_type text, title text, snippet text, archived_at timestamptz, search_tsv tsvector
+
+Trigger-maintained index of all entities
+
+chunks
+
+See Listing 5.1
+
+N:1 nodes
+
+ai_runs
+
+capability text, model text, input_tokens int, output_tokens int, cached_tokens int, cost_cents numeric, latency_ms int, status text, schema_valid bool, context_hash text
+
+Audit trail for every AI call
+
+audit_log
+
+actor text, action text, node_id uuid, before jsonb, after jsonb
+
+Append-only
+
+sync_ops
+
+client_id text, op_id uuid, entity_type text, entity_id uuid, op jsonb, hlc text, applied_at timestamptz
+
+Outbox replay log
+
+tags / node_tags
+
+tags: name, colour; node_tags: node_id, tag_id
+
+M:N via nodes
+
+Tables 7.2–7.6 — Entity field listings by domain.
+
+7.3 Entity-relationship description
+
+The graph has one root and three trunks. users is the root; every table hangs off it by user_id, which is what makes both row-level security and account deletion single-predicate operations. The intent trunk descends directions → goals → objectives → milestones, with roadmaps → stages → milestones providing an alternate parent path for the same milestone rows — a milestone belongs to exactly one stage and optionally to one objective. The execution trunk descends milestones → tasks → subtasks, with time_blocks and focus_sessions attaching to tasks. The knowledge trunk descends courses → syllabus_items → resources → chunks → flashcards, with study_sessions and exams attaching to courses.
+
+Cutting across all three, nodes holds one row per entity and is the target of the four polymorphic relations: note_links (any node to any node), node_tags, reminders, and attachments. chunks references nodes for retrieval provenance. reviews reference no entity directly but store entity_refs inside stats and narrative_md as node ids, resolved at render time. Cardinality summary: users 1:N everything; goals 1:N roadmaps 1:N stages 1:N milestones 1:N tasks; milestones M:N milestones through milestone_dependencies (constrained to a DAG); courses 1:N flashcards 1:N flashcard_reviews; nodes 1:N chunks.
+
+erDiagram
+
+    USERS ||--o{ GOALS : owns
+
+    USERS ||--o{ COURSES : owns
+
+    USERS ||--o{ NOTES : owns
+
+    USERS ||--|| USER_SETTINGS : configures
+
+    DIRECTIONS ||--o{ GOALS : "guides"
+
+    GOALS ||--o{ OBJECTIVES : "breaks into"
+
+    GOALS ||--o{ ROADMAPS : "planned by"
+
+    ROADMAPS ||--o{ STAGES : contains
+
+    STAGES ||--o{ MILESTONES : contains
+
+    OBJECTIVES ||--o{ MILESTONES : "may group"
+
+    MILESTONES ||--o{ MILESTONE_DEPENDENCIES : "precedes"
+
+    MILESTONES ||--o{ TASKS : "realised by"
+
+    TASKS ||--o{ TASKS : "subtask of"
+
+    TASKS ||--o{ TIME_BLOCKS : "scheduled as"
+
+    TASKS ||--o{ FOCUS_SESSIONS : "worked in"
+
+    COURSES ||--o{ SYLLABUS_ITEMS : covers
+
+    COURSES ||--o{ RESOURCES : "has material"
+
+    COURSES ||--o{ EXAMS : assesses
+
+    COURSES ||--o{ STUDY_SESSIONS : "studied in"
+
+    RESOURCES ||--o{ CHUNKS : "indexed as"
+
+    SYLLABUS_ITEMS ||--o{ FLASHCARDS : "practised by"
+
+    FLASHCARDS ||--o{ FLASHCARD_REVIEWS : graded
+
+    NOTES ||--o{ CHUNKS : "indexed as"
+
+    NODES ||--o{ NOTE_LINKS : "links"
+
+    NODES ||--o{ REMINDERS : "reminds about"
+
+    NODES ||--o{ NODE_TAGS : tagged
+
+    NODES ||--o{ ATTACHMENTS : "has file"
+
+    REMINDERS ||--o{ REMINDER_OCCURRENCES : "fires as"
+
+    REMINDER_OCCURRENCES ||--o{ NOTIFICATION_DELIVERIES : "delivered by"
+
+    HABITS ||--o{ HABIT_LOGS : "checked in"
+
+    REVIEWS ||--o{ REVIEW_ACTIONS : proposes
+
+    JOURNAL_ENTRIES }o--|| USERS : "written by"
+
+Figure 7.1 — Entity-relationship diagram (Mermaid erDiagram source).
+
+7.4 Derived views
+
+Three Postgres views encode logic that must be identical for the UI, the API and the AI, and are therefore not duplicated in TypeScript. v_milestone_status derives blocked/at-risk/slipped from dependencies, dates and linked-task completion. v_goal_progress computes weighted completion up the intent tree (milestone completion weighted by est_hours, rolled into stage, roadmap and goal). v_today_candidates produces the pre-scored task set consumed by both the deterministic planner and AI-03, guaranteeing that turning AI off does not change which tasks are eligible — only how they are ordered.
+
+8. System Architecture
+
+8.1 Overview
+
+The architecture is a single Next.js application deployed on Vercel, backed by managed Postgres, with three asynchronous concerns — scheduled jobs, notification delivery, and AI/indexing work — pushed onto a durable job runner. There is no microservice decomposition, no message broker, and no separate API server. For a solo developer, every additional deployable unit is a permanent tax on velocity, and nothing in the workload justifies one.
+
+flowchart TB
+
+    subgraph Client["Client (PWA)"]
+
+        UI["Next.js App Router UI<br/>React 19 + Tailwind + shadcn/ui"]
+
+        SW["Service Worker<br/>Workbox: app shell + API cache"]
+
+        IDB[("IndexedDB (Dexie)<br/>mirror + outbox")]
+
+        UI <--> IDB
+
+        SW --> IDB
+
+    end
+
+    subgraph Edge["Vercel Edge"]
+
+        MW["Middleware<br/>auth guard, rate limit"]
+
+    end
+
+    subgraph App["Next.js Server (Node runtime)"]
+
+        RSC["Server Components<br/>+ Server Actions"]
+
+        API["Route Handlers /api/v1/*"]
+
+        SYNC["Sync Service<br/>outbox apply + HLC merge"]
+
+        RET["Retrieval Service<br/>hybrid FTS + pgvector"]
+
+        GW["AI Gateway<br/>routing, budget, schema, cache"]
+
+    end
+
+    subgraph Data["Data Layer"]
+
+        PG[("Supabase Postgres 16<br/>+ pgvector + RLS")]
+
+        OBJ[("Supabase Storage<br/>PDFs, exports")]
+
+        RDS[("Upstash Redis<br/>cache + rate limits")]
+
+    end
+
+    subgraph Jobs["Inngest Job Runner"]
+
+        SCHED["Reminder scheduler<br/>1-min tick"]
+
+        IDX["Indexing pipeline<br/>extract > chunk > embed"]
+
+        REV["Weekly review job"]
+
+        EXP["Export / purge jobs"]
+
+    end
+
+    subgraph Ext["External Providers"]
+
+        CL["Claude API<br/>Haiku 4.5 / Sonnet 5"]
+
+        EMB["OpenAI Embeddings"]
+
+        PUSH["Web Push (VAPID)"]
+
+        MAIL["Resend (email)"]
+
+        GCAL["Google Calendar API"]
+
+    end
+
+    UI --> MW --> API
+
+    UI --> RSC
+
+    API --> SYNC --> PG
+
+    API --> RET --> PG
+
+    API --> GW
+
+    RSC --> PG
+
+    GW --> CL
+
+    GW --> RDS
+
+    RET --> EMB
+
+    IDX --> OBJ
+
+    IDX --> EMB
+
+    IDX --> PG
+
+    SCHED --> PG
+
+    SCHED --> PUSH
+
+    SCHED --> MAIL
+
+    REV --> GW
+
+    REV --> PG
+
+    EXP --> OBJ
+
+    API --> GCAL
+
+    PUSH -.-> SW
+
+Figure 8.1 — System architecture (Mermaid flowchart source).
+
+8.2 Frontend
+
+Next.js 15 with the App Router, React 19, TypeScript in strict mode, Tailwind CSS v4 and shadcn/ui as an unstyled-primitive base. State is split three ways: server state through TanStack Query with a Dexie-backed persister; ephemeral UI state in React state; and a small Zustand store for cross-cutting concerns (command palette, capture bar, focus timer). Editors are TipTap for notes and a custom virtualised list for tasks. The calendar grid is hand-built on CSS grid rather than pulled from a library, because every calendar library fights you on drag semantics eventually and the grid itself is roughly 400 lines.
+
+8.3 Backend
+
+The backend is Route Handlers under /api/v1/* for anything the client calls imperatively or offline, plus Server Actions for form-shaped mutations inside React Server Components. Business logic lives in /src/server/services/* and is called by both, so there is exactly one implementation of "complete a task" regardless of entry point. Drizzle ORM provides typed queries and migrations; raw SQL is used freely for the views and the hybrid retrieval query, which is where ORMs stop helping.
+
+8.4 Database, auth and storage
+
+Supabase provides Postgres 16 with pgvector, authentication, row-level security and object storage in one managed product with a usable free tier and a US$25/month Pro tier. Auth uses email magic links plus Google OAuth; sessions are JWTs in httpOnly cookies, refreshed server-side. Storage holds uploaded PDFs and generated export bundles in a private bucket, accessed through signed URLs with a 60-second expiry. Files are namespaced {user_id}/{resource_id}/{filename}, which makes bulk deletion on account closure a single prefix delete.
+
+8.5 Background jobs and scheduling
+
+Inngest is the job runner: durable, retryable, step-based functions with cron triggers, a generous free tier, and — crucially — no infrastructure to operate. Four job families run: a one-minute reminder tick that claims due reminder_occurrences with FOR UPDATE SKIP LOCKED and dispatches deliveries; an indexing pipeline that extracts, chunks and embeds uploaded resources in steps so a failure at embedding does not repeat extraction; scheduled review generation; and maintenance jobs (exports, purges, calendar refresh, streak recomputation). Vercel Cron is deliberately not used for the one-minute tick because its minimum granularity and lack of retry semantics make missed reminders likely.
+
+8.6 Caching
+
+Upstash Redis serves three purposes: sliding-window rate limits per user per endpoint; a short-TTL cache for expensive derived reads (goal progress roll-ups, 60 s TTL, invalidated on write); and idempotency keys for AI runs so a retried request cannot double-bill. Application-level caching within a request uses React cache(); HTTP caching is limited to static assets, because almost nothing in this product is publicly cacheable.
+
+8.7 AI gateway
+
+All model traffic passes through src/server/ai/gateway.ts, which is the single place where a provider name appears. Its responsibilities, in order of execution: resolve the capability config (model tier, temperature, max tokens, budget class); check the user’s AI enablement and remaining monthly budget; check the Redis idempotency key; assemble context under the Section 5.3.4 budget; apply redaction rules; issue the call with a cached system block; validate the response against the capability’s Zod schema, retrying once with the validation error appended on failure; write the ai_runs audit row; and return either a typed result or a typed failure that the caller converts into the fallback path. Swapping providers means implementing one interface with four methods.
+
+8.8 Request lifecycle walkthrough
+
+Consider the most instructive request in the system: the user presses "Plan my day" on Today, while on a train with intermittent connectivity.
+
+The click handler first writes an optimistic daily_plans draft row into IndexedDB and renders a skeleton, so the UI responds within 16 ms regardless of network state. If the device is offline, it stops here and shows the deterministic client-side plan computed from the local mirror — the feature degrades but does not disappear.
+
+Online, the client issues POST /api/v1/ai/plan-day with the plan date, declared energy, and an Idempotency-Key header. Vercel Edge middleware validates the session cookie and applies a per-user sliding-window limit (30 requests/minute); an unauthenticated or over-limit request never reaches application code.
+
+The route handler resolves user_id from the session and calls PlanningService.proposePlan(). That service queries v_today_candidates — one indexed query returning at most 40 pre-scored tasks — and computes free calendar intervals in SQL by subtracting calendar_events and time_blocks from the user’s declared working window in their IANA timezone.
+
+The service calls the AI gateway with capability AI-03. The gateway checks ai_preferences.ai_enabled and remaining budget, finds no idempotency hit in Redis, assembles a 2.2k-token context, and issues a Haiku 4.5 tool-use call with the system block marked for prompt caching. Typical latency is 1.8–3.5 s; the route streams a "thinking" state over Server-Sent Events so the UI is never silent.
+
+The response is validated against the emit_day_plan Zod schema. A hallucinated task_id — the realistic failure — fails validation because the schema uses a runtime enum built from the candidate set; the gateway retries once with the error text, and on a second failure returns { ok: false, reason: "schema" }.
+
+On success the service persists a daily_plans row with generated_by = 'ai' and status proposed, writes the ai_runs audit row with token counts and cost, and returns the plan. Nothing has been applied to any task yet.
+
+The client renders the proposal as a diff: each item shows the task, the suggested slot, and the model’s one-line reason, with accept and reject affordances. Accepting writes time_blocks through the normal mutation path, which means the writes go into the outbox and are subject to the same sync rules as any manual edit.
+
+On failure at any step — gateway error, budget exhausted, schema failure, timeout at 20 s — the client falls back to the deterministic ordering and displays a quiet inline note that automatic planning is unavailable. The user is never blocked, and the failure is recorded for the AI quality dashboard (Section 17.5).
+
+9. API Design
+
+9.1 Conventions
+
+The API is REST-shaped, versioned at /api/v1, and consumed by the client for every mutation — including those that could have been Server Actions — because offline replay needs a uniform, serialisable representation of every write. Requests carry the session cookie; there are no API keys and no third-party clients in v1. All mutating requests accept an Idempotency-Key header (a client-generated UUID stored in Redis for 24 hours) so that outbox replay after a network failure cannot duplicate rows. Responses are JSON with { data, meta } on success and { error: { code, message, details } } on failure, using RFC 9457-style codes. Lists are cursor-paginated on (updated_at, id). Rate limits are per user, sliding window, returned in RateLimit-* headers; exceeding them yields 429 with Retry-After.
+
+9.2 Core resource endpoints
+
+The core resources follow a uniform CRUD pattern, so the table lists only the shape-defining details and the deviations. Every collection supports ?updated_since= for delta sync and ?include= for one level of relation expansion.
+
+Method & path
+
+Purpose
+
+Payload / params
+
+Rate limit
+
+GET /api/v1/tasks
+
+List tasks
+
+view, status[], due_before, milestone_id, cursor, limit≤200, updated_since
+
+120/min
+
+POST /api/v1/tasks
+
+Create task
+
+{title, notes?, due_at?, priority?, estimate_minutes?, milestone_id?, parent_task_id?, rrule?}
+
+120/min
+
+PATCH /api/v1/tasks/:id
+
+Partial update
+
+Any mutable field + version for optimistic concurrency
+
+240/min
+
+POST /api/v1/tasks/:id/complete
+
+Complete (and spawn recurrence)
+
+{completed_at, actual_minutes?} → returns the task plus any newly generated instance
+
+240/min
+
+POST /api/v1/tasks/bulk
+
+Bulk ops
+
+{op: "reschedule"|"tag"|"delete", ids[], payload}, max 200 ids
+
+20/min
+
+GET/POST /api/v1/goals
+
+Goals
+
+{title, life_area, target_date, metric_name?, target_value?, unit?}
+
+60/min
+
+GET /api/v1/goals/:id/progress
+
+Weighted roll-up
+
+Reads v_goal_progress; 60 s Redis cache
+
+60/min
+
+GET/POST /api/v1/roadmaps
+
+Roadmaps
+
+{goal_id, title, stages: [{title, ordinal, milestones: [...] }]} — accepts a whole tree in one write
+
+60/min
+
+PATCH /api/v1/milestones/:id
+
+Update milestone
+
+Fields + depends_on[]; rejects with 422 dependency_cycle
+
+120/min
+
+POST /api/v1/roadmaps/:id/shift
+
+Bulk re-date
+
+{from_milestone_id, days, respect_dependencies: true}
+
+20/min
+
+GET/POST /api/v1/habits, POST /api/v1/habits/:id/checkin
+
+Habits
+
+{logged_on, value?, backfilled?}; 409 on duplicate day
+
+120/min
+
+GET/POST /api/v1/time-blocks
+
+Time blocking
+
+{start_at, end_at, task_id?, kind}; 409 overlap unless allow_overlap=true
+
+120/min
+
+GET/POST /api/v1/notes, PATCH /api/v1/notes/:id
+
+Notes
+
+{title, body_md, folder_id?}; PATCH triggers re-chunk + re-embed as a background job
+
+120/min
+
+GET/POST /api/v1/courses, .../syllabus-items, .../exams
+
+Study structure
+
+Standard CRUD; syllabus accepts a bulk array
+
+60/min
+
+POST /api/v1/resources
+
+Upload material
+
+Multipart or signed-URL handshake; ≤25 MB; returns index_status: queued
+
+10/min
+
+POST /api/v1/flashcards/reviews
+
+Batch grade submission
+
+{reviews:[{card_id, grade, reviewed_at, elapsed_ms}]} — batched for offline replay
+
+60/min
+
+GET/POST /api/v1/reminders
+
+Reminders
+
+{node_id, title, fire_at, rrule?, channel[], lead_minutes?}
+
+60/min
+
+POST /api/v1/reminders/:id/snooze
+
+Snooze
+
+{until} or {preset: "10m"|"1h"|"tonight"|"tomorrow_am"}
+
+120/min
+
+GET/POST /api/v1/journal, /api/v1/reviews
+
+Reflection
+
+Journal upserts by entry_date; reviews are immutable after finalise
+
+60/min
+
+GET /api/v1/search
+
+Unified search
+
+q, types[], mode=keyword|hybrid, limit≤50
+
+60/min
+
+POST /api/v1/sync/pull, /api/v1/sync/push
+
+Offline sync
+
+See Section 12.3 for envelope shapes
+
+60/min
+
+POST /api/v1/export, GET /api/v1/export/:jobId
+
+Data export
+
+Async job → signed ZIP URL, 24 h expiry
+
+3/day
+
+DELETE /api/v1/account
+
+Account deletion
+
+{confirm_email}; starts 7-day grace then hard purge
+
+3/day
+
+Table 9.1 — Core resource endpoints.
+
+9.3 AI endpoints
+
+AI endpoints are grouped under /api/v1/ai/*, share a stricter rate limit, and always return a proposal rather than applying changes. Every response includes run_id, model, cost_cents and fallback_used, which the client uses to render honest UI — a plan produced by the deterministic scorer is visually distinguishable from one produced by a model.
+
+Method & path
+
+Capability
+
+Request → Response
+
+Limits
+
+POST /api/v1/ai/roadmap
+
+AI-01
+
+{goal_id, horizon_weeks?, weekly_hours?} → {stages:[{title, milestones:[{title, definition_of_done, suggested_date, est_hours, depends_on[]}]}], run_id}
+
+10/hour
+
+POST /api/v1/ai/breakdown
+
+AI-02
+
+{task_id} → {subtasks:[{title, estimate_minutes}], run_id}
+
+30/hour
+
+POST /api/v1/ai/plan-day
+
+AI-03
+
+{date, energy?, available_minutes?} → SSE stream → {items:[{task_id, suggested_start, duration_minutes, reason}], overflow[], run_id}
+
+20/hour
+
+POST /api/v1/ai/capture
+
+AI-04
+
+{text, now, tz} → {entity_type, title, due_at, rrule?, linked_node_id?, confidence}
+
+60/hour
+
+POST /api/v1/ai/summarise
+
+AI-06
+
+{resource_id|note_id, style?} → {summary_md, key_terms[], covered_syllabus_ids[], run_id} (async for >10k tokens, returns job_id)
+
+20/day
+
+POST /api/v1/ai/cards
+
+AI-07
+
+{source: {type, id}, count?, chunk_ids?} → {cards:[{front, back, card_type, source_chunk_id, page}], run_id} — cards created with approved=false
+
+20/day
+
+POST /api/v1/ai/quiz
+
+AI-07
+
+{syllabus_item_id, question_count} → {questions:[{stem, options[], answer_index, explanation, source_chunk_id}]}
+
+10/day
+
+POST /api/v1/ai/review
+
+AI-08
+
+{period, period_start} → {stats, narrative_md, observations:[{text, entity_refs[]}], proposed_adjustments:[{kind, target_node_id, patch, rationale}]}
+
+5/day
+
+POST /api/v1/ai/replan
+
+AI-09
+
+{roadmap_id, trigger} → {changes:[{milestone_id, new_date, reason}], breaches_target: bool, suggested_scope_cut?}
+
+10/day
+
+POST /api/v1/ai/nudge
+
+AI-10
+
+Internal only (job-invoked) → {text, cta_url?}
+
+2/day
+
+GET /api/v1/ai/usage
+
+—
+
+→ {month, spend_cents, budget_cents, by_capability[], runs}
+
+30/min
+
+POST /api/v1/ai/feedback
+
+—
+
+{run_id, verdict: "good"|"bad", reason?} — feeds the evaluation set in Section 17.5
+
+60/min
+
+Table 9.2 — AI endpoints.
+
+10. Technology Stack
+
+10.1 Alternatives considered
+
+Three realistic stacks were evaluated against the actual constraints: one intermediate developer, six months, low budget, offline-capable PWA, heavy AI integration, and a schema with roughly thirty tables and non-trivial relational queries.
+
+Criterion
+
+A. Next.js 15 + Supabase + Vercel
+
+B. SvelteKit + Fly.io + self-hosted Postgres
+
+C. Django + HTMX + Postgres on Render
+
+Language surface
+
+One language (TypeScript) end to end; types shared between client and server via Drizzle and Zod.
+
+One language, less boilerplate than React, but a smaller typed-ORM ecosystem.
+
+Two languages (Python + JS for any rich interaction), two type systems.
+
+Offline / PWA
+
+Excellent: mature Workbox integration, Dexie, TanStack Query persistence.
+
+Good: service worker support is first-class, but fewer worked examples for outbox sync.
+
+Poor: HTMX assumes a server round-trip; genuine offline write support would be a rewrite.
+
+Rich interactions (calendar drag, editor, timeline)
+
+Strongest ecosystem — TipTap, dnd-kit, virtualisers all React-first.
+
+Adequate; several libraries are React-only and need reimplementation.
+
+Weak; requires a separate SPA island anyway.
+
+AI ecosystem
+
+First-class: official TS SDKs, streaming, Zod tool schemas, Inngest AI steps.
+
+Same SDKs, slightly less community tooling.
+
+Excellent Python SDKs — the one clear advantage of option C.
+
+Ops burden (solo)
+
+Lowest: zero servers, managed Postgres, managed jobs.
+
+Highest: you own the machine, the backups, the TLS, the upgrades.
+
+Medium: managed platform but a stateful web process to size and monitor.
+
+Monthly cost at 100 users
+
+~$45 (Vercel Pro $20 + Supabase Pro $25, jobs and Redis free tier)
+
+~$25 (two small Fly machines + volume) — cheapest but you pay in hours
+
+~$32 (Render web + managed PG)
+
+Hiring / continuity
+
+Largest talent pool if the project ever grows.
+
+Smaller.
+
+Large, but split across two stacks.
+
+Principal risk
+
+Vendor concentration on Vercel/Supabase; App Router complexity.
+
+Operational load consumes the six-month budget.
+
+Interaction ceiling; offline is effectively unreachable.
+
+Table 10.1 — Stack comparison against project constraints.
+
+10.2 Decision
+
+Option A is selected: Next.js 15 (App Router) + TypeScript + Supabase Postgres with pgvector + Drizzle + Vercel + Inngest. The deciding factor is not performance or elegance; it is that this stack minimises the number of distinct problems the developer must solve. Offline-capable PWA and rich direct-manipulation UI are both hard requirements, and option C cannot meet the first while option B costs a month of infrastructure work that the timeline cannot absorb. A single TypeScript type flowing from the Postgres column through Drizzle, the Zod schema, the API contract and the React component eliminates an entire category of bug that a Python/TypeScript split reintroduces at every boundary.
+
+The accepted risk is vendor concentration. It is mitigated concretely rather than rhetorically: Supabase is used as plain Postgres plus auth plus storage — no Edge Functions, no realtime channels, no Supabase-specific query builder — so migrating to Neon or any managed Postgres is a connection-string change plus an auth swap. Next.js is deployed with the standard Node runtime; nothing depends on Vercel-only primitives beyond middleware, which is 60 lines.
+
+10.3 Full dependency selection
+
+Concern
+
+Choice
+
+Why this one
+
+Framework / runtime
+
+Next.js 15.x, React 19, Node 22
+
+Server Components reduce client bundle; stable App Router; long support horizon.
+
+Styling / components
+
+Tailwind CSS v4 + shadcn/ui + Radix primitives
+
+Copy-in components mean no upgrade treadmill and full control over accessibility details.
+
+ORM / migrations
+
+Drizzle ORM + drizzle-kit
+
+SQL-shaped, fully typed, trivial to drop to raw SQL for views and hybrid search. Prisma’s engine adds cold-start weight on serverless.
+
+Validation
+
+Zod v3
+
+One schema serves API validation, AI tool schemas and form validation.
+
+Server state
+
+TanStack Query v5 + persistQueryClient (Dexie)
+
+Mature offline persistence and mutation queues; avoids hand-rolling cache invalidation.
+
+Local database
+
+Dexie 4 (IndexedDB)
+
+Typed tables, live queries, and a well-trodden outbox pattern.
+
+Service worker
+
+Workbox 7 via next-pwa configuration
+
+Precache app shell, stale-while-revalidate for GETs, background sync for the outbox.
+
+Editor
+
+TipTap 2 with Markdown serialisation
+
+ProseMirror foundation, wiki-link extension is ~150 lines, exports clean Markdown for portability.
+
+Drag & drop
+
+dnd-kit
+
+Accessible keyboard drag, works for both Kanban and calendar grid.
+
+Dates & recurrence
+
+date-fns v4 + @date-fns/tz, rrule.js, chrono-node
+
+IANA-correct arithmetic; RFC 5545 recurrence; free deterministic NL date parsing.
+
+Spaced repetition
+
+ts-fsrs
+
+FSRS-5 implementation, ~15 KB, no dependencies, outperforms SM-2 measurably.
+
+Charts
+
+Recharts
+
+Sufficient for sparklines, heatmaps and progress charts; no licence cost.
+
+Jobs
+
+Inngest
+
+Durable step functions, crons, retries, replay UI, free tier covers early scale.
+
+Email / push
+
+Resend + web-push (VAPID)
+
+Resend has a clean API and 3k emails/month free; web-push needs no vendor at all.
+
+AI
+
+@anthropic-ai/sdk (Haiku 4.5, Sonnet 5) + OpenAI embeddings
+
+Tool use with strict schemas, prompt caching, batch API for background summarisation.
+
+Cache / limits
+
+@upstash/redis + @upstash/ratelimit
+
+HTTP-based, serverless-friendly, generous free tier.
+
+Testing
+
+Vitest, Testing Library, Playwright, Testcontainers
+
+Unit, component, end-to-end and real-Postgres integration respectively.
+
+Observability
+
+Sentry + Vercel Analytics + PostHog (self-serve tier)
+
+Errors, web vitals and product analytics without running anything.
+
+Table 10.2 — Library-level stack decisions.
+
+11. UX / UI Direction
+
+11.1 Design principles
+
+Five principles, each with a testable consequence. Calm by default: the interface never uses red for anything except destructive confirmation, badge counts appear only where action is genuinely required, and there is no notification bell. Keyboard-first: every primary action has a shortcut and the command palette can reach every route and every create action; the design target is that a fluent user can capture, plan and complete without touching the pointer. Show the work: anything generated is labelled, attributed to its inputs, and reversible — an AI suggestion always renders as a proposal with a visible provenance line. One place per thing: a task exists once and is viewed through filters, never duplicated across lists. Fast or nothing: interactions are optimistic and local-first; the perceived budget is 100 ms for feedback, 1 s for a view transition, and anything slower must show progress with a cancel affordance.
+
+11.2 Layout patterns
+
+The application uses a three-region shell on screens wider than 1,024 px: a 240 px collapsible left rail, a fluid centre column capped at 880 px for readability, and a 320 px contextual right rail that holds the day strip, entity details or the focus timer. Between 768 px and 1,024 px the right rail becomes a slide-over. Below 768 px the shell collapses to a single column with a five-item bottom tab bar (Today, Tasks, Study, Notes, More) and a floating capture button positioned for thumb reach. Content density is user-selectable (comfortable/compact) because a task list and a journal want different rhythms.
+
+11.3 Command palette and keyboard model
+
+Ctrl/Cmd+K opens a palette with four modes selected by prefix: no prefix searches everything; > runs commands ("complete task", "start focus", "generate roadmap"); @ jumps to an entity by type; / inserts a saved filter. Single-key shortcuts work when no text field is focused: T Today, K Tasks, S Study, N Notes, J Journal, C capture, F focus timer, ? shortcut sheet. Within lists, J/K move, X selects, E edits, Space completes, 1–4 set priority. Every shortcut is discoverable from the ? sheet and remappable in settings, and the palette shows the shortcut next to any command that has one, which is how users actually learn them.
+
+11.4 Mobile behaviour
+
+Mobile is a capture-and-glance client, not a reduced desktop. The optimised paths are: capture a task in two taps from the home screen (PWA shortcut jumps straight into the capture sheet), check off a task, check in a habit, run a flashcard review session, and read Today. Planning surfaces — roadmap timeline, calendar week grid — are present but explicitly simplified: the timeline becomes a vertical stage list with dates, and the week grid becomes a day view with horizontal date paging. Swipe gestures: right on a task completes, left reveals snooze and reschedule. The PWA is installable with a maskable icon set, a standalone display mode, and offline routes for Today, Tasks, Notes and Review.
+
+11.5 Accessibility
+
+WCAG 2.2 AA is the commitment, and it is treated as a build constraint rather than an audit at the end. Concretely: all interactive elements reachable and operable by keyboard with a visible focus ring of at least 3:1 contrast against both adjacent colours; text contrast at least 4.5:1 (verified by a CI token test that checks every semantic pair in both themes); drag-and-drop always paired with a keyboard alternative via dnd-kit’s keyboard sensor plus explicit "move to" menu items; live regions announcing optimistic saves, sync state and AI completion; prefers-reduced-motion honoured by disabling all transform transitions; forms with real labels, described errors and no placeholder-as-label; target sizes at least 44 × 44 px on touch. Axe-core runs in Playwright against the five key screens on every pull request and fails on any serious or critical violation.
+
+11.6 Theming
+
+Two base themes (light, dark) driven entirely by CSS custom properties on :root, with a neutral slate palette and a single user-selectable accent from six pre-tested hues — pre-tested meaning each has been checked for contrast in both themes, which is why the accent is a picker of six rather than a colour wheel. Semantic tokens (--surface, --surface-raised, --border, --text, --text-muted, --accent, --warning, --danger, --ai-tint) are the only colours components may reference. --ai-tint is used consistently and exclusively for generated content, so that "this came from the model" is learnable at a glance rather than needing a label every time. Typography is Inter for UI at a 1.25 modular scale, and a serif (Source Serif 4) for journal and note reading surfaces only.
+
+11.7 Key screens (wireframe descriptions)
+
+11.7.1 Today
+
+Regions. Left rail (nav, capture button, sync indicator). Centre, top to bottom: date header with a one-line summary ("6 tasks · 3 h blocked · 24 cards due · CS3230 in 16 days"); a primary "Plan my day" button; the Now card showing the single recommended next action at double the height of a list row with a Start focus affordance; Next up (3–5 tasks); Due today grouped by course or goal; Habits as a horizontal chip row with tap targets; Study with the due card count and a Review button. Right rail: vertical day strip from 08:00 to 22:00 with time blocks and external events, the focus timer when running, and a streak summary.
+
+Components. TaskRow (checkbox, title, parent breadcrumb, due chip, estimate, drag handle), NowCard, HabitChip, DayStrip, PlanProposalSheet. States. Empty (first run: three onboarding prompts instead of lists), loading (skeleton rows, never a spinner), offline (amber sync chip with a pending-operations count), planning (Now card shows a shimmer while the SSE stream is open), AI-off (the Plan button becomes "Sort by priority" with a tooltip explaining the difference), and over-committed (capacity bar turns amber above 110% with a "trim plan" action).
+
+11.7.2 Roadmap timeline
+
+Regions. Header with goal title, target date, weighted progress ring, and view toggle (Timeline/Board). A horizontally scrolling canvas with a fixed left column of stage names; time axis in weeks with a today rule; milestone diamonds positioned by due_date; dependency arrows rendered as orthogonal connectors; a bottom mini-map for long roadmaps. Right rail becomes the milestone drawer on selection: definition of done, dependencies (add/remove), linked tasks with inline completion, linked resources, and an activity trail.
+
+States. Empty (a large "Generate roadmap" affordance beside "Build manually"); generating (the proposal renders as ghosted diamonds with an accept/discard bar pinned to the bottom); slipped (amber diamonds, plus a banner offering "Re-plan" that opens the AI-09 proposal); blocked (grey with a lock glyph and a tooltip naming the blocking milestone); dense (above forty milestones the view auto-collapses to stage bars, expandable per stage).
+
+11.7.3 Course detail
+
+Regions. Header with course code, term, target grade, exam countdown badge, and a syllabus coverage bar segmented by topic with colour by confidence. Tabs: Syllabus (ordered topic list with coverage and confidence controls per row, and a "study this" action), Resources (grid of uploads with index status and a Summarise action), Cards (deck stats, due forecast chart for the next 14 days, and a draft-review queue badge), Exams. Right rail: recent study sessions with minutes and technique, plus a "start session" control.
+
+States. Indexing (per-resource progress with page counts), draft cards pending (a persistent banner "18 generated cards awaiting review" — never auto-approved), exam mode (T-14 onward, the header goes to a countdown-dominant layout and the card forecast shows the ramp), no material (a first-run state that offers syllabus paste-and-extract).
+
+11.7.4 Note editor
+
+Regions. Centre column at 680 px maximum for line length, serif body type; a slim top bar with breadcrumb, tags and a save/sync state chip; a right rail with three collapsible panels (Outline, Backlinks, Related notes). A floating selection toolbar for formatting; a / slash menu for blocks; [[ opens the entity link autocomplete showing type icons for notes, tasks, milestones and courses.
+
+States. Saving (chip cycles Saved → Saving → Saved, and never blocks typing), offline (chip reads "Saved locally"), conflict (a non-modal bar offering "Review changes" with a side-by-side diff — see Section 12.4), empty (title placeholder plus a hint about [[ linking), long-note (a floating outline appears after 1,200 words).
+
+11.7.5 Weekly review
+
+Regions. A two-column layout. Left: generated content — a stats band (tasks completed vs planned, study minutes by course, habit adherence heat strip, roadmap drift in days, average energy), then Highlights, then Concerns, then Observations where each carries inline chips linking to the entities that produced it, then up to three Proposed adjustments each with Apply and Dismiss. Right: the user’s own reflection editor with three rotating prompts, plus a confidence slider per active goal. A pinned footer holds "Finalise review", which makes the record immutable and archives it.
+
+States. Not yet generated (a Run review button with the period selector); generating (progressive reveal of the stats band first — which is computed without AI — then the narrative); AI unavailable (stats band and prompts only, with a plainly worded note); applied (adjustments show their resulting change with an undo window); finalised (read-only with a revision counter and an "amend" action that creates revision 2).
+
+12. Offline Behaviour and Sync
+
+12.1 Offline model
+
+PIW is local-first for reads and write-queued for mutations. On first authenticated load the client pulls a full snapshot of the user’s data — realistically 2–20 MB of JSON for a heavy user — into Dexie, then maintains it by delta. Every read in the application goes through TanStack Query backed by the Dexie mirror, so rendering never waits on the network. Every write goes to the mirror immediately and simultaneously into an append-only outbox table, which the service worker drains through Background Sync when connectivity returns.
+
+Capability
+
+Offline behaviour
+
+Today, Tasks, Notes, Habits, Journal
+
+Fully available: read, create, edit, complete, check in. Queued and replayed.
+
+Flashcard review
+
+Fully available. Grades are computed locally by the same ts-fsrs code the server runs, and submitted as a batch.
+
+Calendar
+
+Read-only from the mirror; blocks can be created and are reconciled on reconnect.
+
+Search
+
+Keyword search runs locally against a Dexie index over titles and bodies. Semantic search is unavailable and says so.
+
+Resource upload and indexing
+
+Queued: the file is held in IndexedDB (up to 25 MB) and uploaded on reconnect.
+
+All AI capabilities
+
+Unavailable; each surface shows its deterministic fallback with an explanatory label.
+
+Settings, export, account deletion
+
+Unavailable; these require the server and say so plainly rather than failing silently.
+
+Table 12.1 — Offline capability matrix.
+
+12.2 Storage budget and eviction
+
+The mirror is capped at 250 MB. Above 200 MB the client evicts, in order: extracted resource text older than 90 days, then chunk bodies, then journal entries older than one year, then completed tasks older than 180 days — always metadata-last, so an evicted entity still appears in lists and is fetched on demand. The outbox is never evicted. navigator.storage.persist() is requested on first install to reduce the chance of the browser reclaiming the origin’s storage, and the settings page shows actual usage from navigator.storage.estimate().
+
+12.3 Sync protocol
+
+Sync is a two-endpoint delta protocol rather than a CRDT engine, because the workload is one person on two or three devices where true concurrent editing is rare. Each client has a stable client_id (UUID in IndexedDB) and maintains a Hybrid Logical Clock — {wall_ms}:{counter}:{client_id} — which gives a total order that stays close to wall-clock time while tolerating clock skew.
+
+POST /api/v1/sync/push
+
+{ "client_id": "c-9f3…", "ops": [
+
+  { "op_id": "uuid", "entity": "tasks", "entity_id": "uuid",
+
+    "type": "update", "hlc": "1756012345678:3:c-9f3",
+
+    "base_version": 7, "fields": { "status": "done", "completed_at": "…" } }
+
+]}
+
+→ 200 { "applied": ["op_id…"], "conflicts": [
+
+     { "op_id": "…", "resolution": "server_wins" | "merged" | "needs_review",
+
+       "server_state": { … }, "field_winners": { "title": "client", "notes": "server" } }
+
+   ], "server_hlc": "…" }
+
+POST /api/v1/sync/pull
+
+{ "since": "1756000000000:0:server", "entities": ["tasks","notes",…], "limit": 500 }
+
+→ 200 { "changes": { "tasks": […], "notes": […] },
+
+        "tombstones": [{ "entity":"tasks", "id":"uuid", "deleted_at":"…" }],
+
+        "cursor": "…", "has_more": true }
+
+Listing 12.1 — Sync push/pull envelopes.
+
+Ordering rules: operations are applied server-side in HLC order within an entity; op_id provides idempotency so a replayed batch is a no-op; deletions are tombstones retained for 90 days, which is longer than any plausible offline period and bounds tombstone table growth.
+
+12.4 Conflict resolution
+
+Conflict handling is field-level and type-aware rather than a single global rule, because the correct behaviour genuinely differs by field. The policy table below is implemented once in src/server/sync/merge.ts and unit-tested against a matrix of concurrent-edit scenarios.
+
+Field class
+
+Examples
+
+Resolution
+
+Scalar state
+
+status, priority, due_at, title
+
+Last-write-wins by HLC, per field. Two devices editing different fields of the same row both succeed — the row is merged, not overwritten.
+
+Monotonic
+
+completed_at, reps, lapses, streak counters
+
+Max wins. Completion is idempotent: completing an already-completed task never resurrects it.
+
+Additive collections
+
+flashcard_reviews, habit_logs, focus_sessions, journal appends
+
+Union by natural key (card_id + reviewed_at, habit_id + logged_on). Nothing is ever lost; duplicates collapse.
+
+Long text
+
+notes.body_md, journal_entries.body_md
+
+Three-way merge against the common base using diff-match-patch. Clean merges apply silently; overlapping edits keep the server version, store the client version as a note_revisions row, and surface a non-blocking "Review changes" bar with a diff.
+
+Ordering
+
+sort_key
+
+Fractional indexing (base-62 keys between neighbours). Concurrent reorders converge without renumbering; ties break on client_id.
+
+Structural
+
+milestone dependencies, parent moves
+
+Server validates the resulting graph. An operation producing a cycle or an orphan is rejected with needs_review and shown to the user rather than being silently discarded.
+
+Deletion vs edit
+
+Delete on A, edit on B
+
+Delete wins if its HLC is later; otherwise the edit resurrects the row. Either way the losing operation is retained in sync_ops for 30 days so it can be recovered from support tooling.
+
+Table 12.2 — Field-class conflict resolution policy.
+
+The design accepts one honest limitation: two devices editing the same paragraph of the same note while both offline will produce a conflict the user must look at. That is the correct outcome for a single-user product — it happens rarely, and silently losing a paragraph would be far worse than a one-click diff review.
+
+13. Reminders and Scheduling Engine
+
+13.1 Model
+
+A reminder is a rule; a reminder_occurrence is a materialised firing of that rule. Occurrences are generated by a rolling horizon job that keeps the next 30 days materialised for every active reminder, which makes the delivery tick a simple indexed range scan rather than a recurrence evaluation across every rule on every tick. When a rule changes, its future occurrences are regenerated and any that have already been delivered are left untouched.
+
+13.2 Recurrence
+
+Recurrence uses RFC 5545 RRULE strings via rrule.js, stored alongside a dtstart and the user’s timezone. This is chosen over a bespoke recurrence format for one strong reason: RRULE is what every calendar in the world speaks, so import, export and Google Calendar interoperability come free. The UI never asks the user to write an RRULE; it offers presets (daily, weekdays, weekly on …, monthly on the nth, every N weeks, custom) and renders the resulting rule back in plain language for confirmation. Supported subset: FREQ daily/weekly/monthly/yearly, INTERVAL, BYDAY, BYMONTHDAY, BYSETPOS, COUNT, UNTIL, and EXDATE for skipped instances. BYSECOND, BYYEARDAY and unbounded BYSETPOS combinations are rejected at input with an explanation, because supporting them costs UI complexity nobody uses.
+
+13.3 Timezones
+
+All timestamps are stored as timestamptz in UTC. Every recurring rule additionally stores the IANA timezone in which it was created, and expansion happens in that zone. This distinction is the source of most reminder bugs in the wild: "every weekday at 08:00" must remain 08:00 local across a daylight-saving transition and across the user relocating, whereas "one hour before this exam" is an absolute offset from a fixed instant. The rule is therefore: floating local rules expand in the stored timezone; anchored rules compute in UTC. Non-existent local times during a spring-forward shift are moved to the following valid instant; ambiguous times during autumn fall-back use the first occurrence. Changing the profile timezone triggers regeneration of future occurrences for floating rules only, with a one-line notice telling the user exactly what changed.
+
+13.4 Delivery
+
+The scheduler ticks every 60 seconds via an Inngest cron. Each tick claims occurrences where scheduled_for <= now() AND state = 'pending' using SELECT … FOR UPDATE SKIP LOCKED LIMIT 500, which makes concurrent or overlapping ticks safe. For each occurrence it resolves the channel set, checks quiet hours and per-channel enablement, and enqueues a delivery.
+
+Channel
+
+Mechanism
+
+Behaviour and constraints
+
+Web Push
+
+VAPID via web-push to all registered subscriptions
+
+Primary channel. TTL 3,600 s so a stale reminder never arrives hours late. A 404/410 response prunes the dead subscription. Payloads carry only a title, a short body and a deep link — never note or journal content.
+
+In-app
+
+Server-Sent Events on an open session; otherwise rendered on next load
+
+Always delivered; the durable record of what fired lives in reminder_occurrences regardless of push success.
+
+Email
+
+Resend
+
+Used for digests, and as an escalation for occurrences still pending 10 minutes after a failed push. Rate-capped at 10 messages per user per day.
+
+Calendar
+
+Not a channel
+
+Explicitly excluded: writing reminders into Google Calendar duplicates state and creates a bidirectional sync problem (Section 4.7).
+
+Table 13.1 — Notification channels.
+
+13.5 Snooze, digests and missed reminders
+
+Snooze updates snooze_until on the occurrence and returns it to pending; presets are 10 minutes, 1 hour, tonight (19:00 local), and tomorrow morning (the user’s morning digest hour). Snoozing never mutates the parent rule, and a fourth consecutive snooze on the same occurrence triggers a gentle prompt asking whether the underlying task should be rescheduled or dropped — repeated snoozing is the clearest available signal that a commitment is not real.
+
+Digests batch low-urgency items. The morning digest (default 07:30 local) contains today’s due tasks, calendar blocks, habit targets, card counts and exam countdowns; the evening digest (default 21:00) contains tomorrow’s preview and any unchecked habits. Anything marked urgent bypasses digesting and fires individually. Digest composition uses AI-10 when enabled and a deterministic template otherwise, and a digest is never sent if it would be empty.
+
+Missed reminders are handled explicitly rather than dropped. If a device is offline or the job runner has an outage, occurrences accumulate in pending. On the next successful tick, any occurrence more than 30 minutes past its scheduled time is not fired individually — that would produce a burst of stale notifications, which is the behaviour users find most objectionable. Instead such occurrences are marked missed and collected into a single "3 reminders while you were away" summary delivered at most once per hour. Occurrences more than 24 hours stale are marked missed silently and appear only in the in-app list. Delivery attempts are recorded in notification_deliveries with provider ids and errors, giving a queryable answer to "did that reminder actually go out?", which is the first question asked whenever a user reports a miss.
+
+14. Security, Privacy and Data Ownership
+
+14.1 Threat model
+
+The realistic threats for a single-user personal workspace, in descending order of likelihood, are: credential compromise through a reused password or a stolen session; accidental cross-user data exposure through a missing user_id predicate; data loss through a bad migration or an accidental delete; excessive or surprising data transmission to an AI provider; and supply-chain compromise via a dependency. Sophisticated targeted attack is not the threat that will actually materialise. Controls are therefore weighted toward the first three, and the privacy design is weighted toward making the fourth legible rather than merely permitted.
+
+14.2 Authentication and session security
+
+Authentication is Supabase Auth with email magic links and Google OAuth; no password is stored, which removes an entire class of failure. Sessions are JWTs with a 1-hour access token and a 30-day refresh token in httpOnly, Secure, SameSite=Lax cookies. Refresh rotation is enabled with reuse detection: a replayed refresh token invalidates the whole family. Optional TOTP two-factor is offered from Phase 3. Every session is listed in settings with device, IP region and last-seen, and can be revoked individually. Middleware enforces authentication on every route except the marketing page, /login, and the service-worker asset paths.
+
+14.3 Encryption
+
+In transit, TLS 1.3 everywhere with HSTS at one year including subdomains. At rest, Supabase Postgres and Storage volumes are AES-256 encrypted by the provider. Two categories receive additional application-level encryption with AES-256-GCM using a key held in the platform secret store: third-party OAuth tokens (calendar_connections.access_token_enc, refresh_token_enc) and push subscription secrets. Journal bodies are not client-side end-to-end encrypted in v1, and the reason is stated plainly rather than hidden: server-side semantic search, summarisation and review synthesis all require the server to read that text. End-to-end encryption with those features intact would require client-side embedding and retrieval, which is a substantial subsystem. What is offered instead is honesty and control — a per-entity exclude_from_ai flag, a global "never send journal content to AI" toggle, and a documented statement in the privacy page. Client-side encryption of journal entries with local-only search is recorded as a Phase 4+ candidate in Section 22.
+
+14.4 What leaves the device
+
+This table is reproduced verbatim in the in-app AI settings screen, because a privacy claim the user cannot find is not a privacy control.
+
+Destination
+
+What is sent
+
+What is never sent
+
+Retention
+
+PIW server (Supabase)
+
+All application data, since the product is server-backed.
+
+—
+
+Until deletion; backups 30 days.
+
+Anthropic (Claude API)
+
+Only the assembled context for the specific capability invoked: titles, dates, task text, selected note or resource chunks, and pre-computed aggregates.
+
+Email address, user id (a per-run pseudonymous id is used), push tokens, OAuth tokens, files as binaries, any entity flagged exclude_from_ai, and journal text when the journal toggle is off.
+
+Per the provider’s API data policy — API inputs are not used to train models; PIW stores only token counts and a context hash, never the prompt body.
+
+OpenAI (embeddings)
+
+Chunk text for notes and resources at index time; query strings at search time.
+
+Any content flagged exclude_from_ai; journal text when excluded.
+
+Not retained for training under the API terms; PIW stores vectors only.
+
+Google (Calendar)
+
+An OAuth token exchange and incremental sync requests.
+
+No PIW content is ever written to Google in v1 — the integration is read-only.
+
+Tokens until disconnected.
+
+Resend (email)
+
+Email address, digest and reminder subject/body text.
+
+Note bodies, journal content, attachments.
+
+Provider log retention, ~30 days.
+
+Sentry / PostHog
+
+Error stacks and product events keyed to a pseudonymous id.
+
+PII scrubbing is enabled; entity titles and bodies are stripped by a beforeSend hook.
+
+90 days.
+
+Table 14.1 — Data egress map.
+
+14.5 Data ownership, export and deletion
+
+Export is a first-class feature, not a compliance checkbox: POST /api/v1/export enqueues a job that produces a ZIP containing one newline-delimited JSON file per entity type with all fields and foreign keys intact, a manifest.json recording schema version and export timestamp, the original uploaded files under files/, and a human-readable Markdown rendering of every note and journal entry with YAML front matter. The bundle is delivered as a signed URL valid for 24 hours. Import accepts the same bundle and reconstructs everything, remapping ids while preserving relationships — and this round trip is tested in CI on every release, because an export that has never been imported is an untested promise.
+
+Deletion runs in two stages. DELETE /api/v1/account marks the account pending_deletion, revokes all sessions, cancels scheduled jobs and sends an email with a cancellation link. After seven days a purge job deletes the users row — every content table cascades from it — removes the storage prefix {user_id}/, deletes vector rows, purges the analytics profile via the provider API, and writes a final tombstone record containing only the user id hash and a timestamp. Backups age out within 30 days, and this is stated in the privacy page rather than described as "immediate deletion", which would be false.
+
+14.6 Application security practice
+
+Row-level security enabled on every user-scoped table, with the application connecting as the authenticated role for session-originated requests; the service role is confined to job code and is never reachable from a request handler.
+
+All input validated with Zod at the boundary; database access exclusively through Drizzle’s parameterised queries or explicitly parameterised raw SQL.
+
+Content Security Policy with nonce-based scripts and no unsafe-inline; note HTML sanitised with DOMPurify on both write and render.
+
+Uploads validated by magic bytes rather than extension, capped at 25 MB, stored in a private bucket, and served only via short-lived signed URLs.
+
+Secrets in the platform secret store; a pre-commit gitleaks hook and a CI secret scan; dependency review via pnpm audit and Dependabot with a weekly cadence.
+
+A CI multi-tenancy test (Section 5.3.5) that is a release blocker, plus a migration policy of expand → backfill → contract so no deploy drops a column that running code still reads.
+
+15. Development Roadmap
+
+15.1 Phase overview
+
+Twenty-six weeks, five phases, sequenced on one principle: prove that the user enters data before building anything that reasons about the data. A solo intermediate developer is assumed at roughly 25 productive hours per week, which is realistic for someone who also has a job or a degree. Estimates already include a 25% contingency; they are not best-case figures.
+
+Phase
+
+Duration
+
+Scope
+
+Exit criteria
+
+Phase 0 — Foundations
+
+Weeks 1–3
+
+Repository, CI/CD, environments, Supabase project, auth, base schema and migrations, design tokens and component primitives, app shell and navigation, error tracking, seed script, Playwright harness.
+
+A deployed app where a real user can sign in, see an empty Today, and create one task that persists. Green pipeline from commit to production in under 8 minutes. Rollback demonstrated once.
+
+Phase 1 — MVP
+
+Weeks 4–12
+
+Tasks, Today, Goals, Roadmaps (manual), Courses/syllabus/exams, Study sessions, manual flashcards, Habits, Time blocks, Notes with links, Journal, keyword search, command palette, reminders with push and digests, settings, export.
+
+The developer uses it exclusively for 14 consecutive days with no fallback to other tools. Five external testers complete a 7-day trial with ≥ 4 active days each. p95 Today load under 1.5 s on 4G.
+
+Phase 2 — AI layer
+
+Weeks 13–18
+
+AI gateway, embeddings and indexing pipeline, hybrid search, AI-01 through AI-08, proposal UI pattern, budget controls, ai_runs audit, evaluation harness.
+
+All eight capabilities pass their golden-set thresholds (Section 17.5). Every capability demonstrably degrades to its fallback with AI disabled. Cost per active user per month under $1.00 at measured usage.
+
+Phase 3 — Intelligence & polish
+
+Weeks 19–23
+
+FSRS exam ramp, milestone dependencies and critical path, AI-09 re-planning, AI-10 nudges, quizzes, offline write support and full sync, accessibility audit and fixes, performance pass, onboarding flow.
+
+Offline scenario suite passes end to end. Axe: zero serious/critical on the five key screens. Lighthouse PWA installable, performance ≥ 90 on mobile. Day-21 retention measured on the tester cohort.
+
+Phase 4 — Extensions
+
+Weeks 24–26
+
+Finance-lite, health/routine-lite, Google Calendar write-back evaluation, quarterly review, import from Todoist/Notion/Anki, public launch preparation.
+
+v1.0 tagged and released. Import path verified for at least two external formats. Documentation and privacy page published.
+
+Table 15.1 — Phase scope and exit criteria.
+
+15.2 Phase 1 sprint breakdown
+
+Phase 1 is broken into six sprints of a week and a half each. Each sprint has a demoable outcome, because a solo developer without an external cadence will drift, and "demoable" is the cheapest available forcing function. The dependency order is deliberate: tasks before Today (Today is a view over tasks), study structure before study behaviour, and reminders last within the MVP because they are the highest-risk subsystem and benefit from the schema having settled.
+
+Sprint
+
+Weeks
+
+Deliverables
+
+Demoable outcome
+
+S1
+
+4–5
+
+Task CRUD, subtasks, quick capture with chrono-node parsing, list views and saved filters, fractional sort ordering, optimistic mutations, tags, command palette v1.
+
+Capture 20 tasks in a minute; filter, reorder and complete them.
+
+S2
+
+5–6.5
+
+Today screen with deterministic priority scoring, recurrence via RRULE, snooze vs reschedule semantics, focus timer and focus_sessions, habits with check-in and forgiving streaks.
+
+Open the app and start work without visiting another screen.
+
+S3
+
+6.5–8
+
+Goals, directions, objectives, manual roadmaps with stages and milestones, timeline view, weighted progress roll-up view, evidence feed on the goal page.
+
+Create a goal and a five-stage roadmap; watch progress move as tasks complete.
+
+S4
+
+8–9.5
+
+Courses, syllabus items with coverage and confidence, exams with countdowns, study sessions, manual flashcards with basic SM-2-compatible scheduling via ts-fsrs, resource upload and storage (indexing deferred).
+
+Track a real module end to end for a week.
+
+S5
+
+9.5–11
+
+Notes with TipTap, [[ entity links and backlinks, folders and tags, journal with daily entries and prompts, statistics-only weekly review, Postgres full-text search across all entities.
+
+Find anything by keyword; produce a real weekly review with no AI.
+
+S6
+
+11–12.5
+
+Reminders with occurrence materialisation, the 60-second scheduler tick, Web Push with VAPID, email fallback and digests, quiet hours, settings screens, export/import round trip, PWA install and offline read caching.
+
+A reminder fires on a phone with the browser closed; export and re-import the whole account.
+
+Table 15.2 — Phase 1 sprint plan.
+
+15.3 Milestones
+
+ID
+
+Milestone
+
+Week
+
+Definition of done
+
+M0
+
+Walking skeleton
+
+3
+
+Authenticated user creates a task in production; CI deploys automatically; Sentry receives a test error.
+
+M1
+
+Execution core
+
+6.5
+
+Tasks, Today and habits usable daily; the developer has stopped using their previous task manager.
+
+M2
+
+Planning core
+
+9.5
+
+Goals, roadmaps, courses and exams in use for a real semester; progress roll-up correct against a hand-computed check.
+
+M3
+
+Knowledge & reflection
+
+11
+
+Notes, links, journal, keyword search, statistics weekly review shipped.
+
+M4
+
+MVP complete
+
+12.5
+
+Reminders delivering reliably for 7 consecutive days; export/import verified; five external testers onboarded.
+
+M5
+
+AI foundation
+
+15
+
+Gateway, embeddings, indexing and hybrid search live; AI-01/02/04 passing evaluation thresholds.
+
+M6
+
+AI layer complete
+
+18
+
+AI-03, 05, 06, 07, 08 live with proposal UI, budget caps and fallbacks; cost per user measured.
+
+M7
+
+Offline & intelligence
+
+23
+
+Full offline write support with conflict resolution; re-planning and nudges live; accessibility and performance targets met.
+
+M8
+
+v1.0 release
+
+26
+
+Extensions shipped, import from two external tools, documentation and privacy page published, public launch.
+
+Table 15.3 — Milestone table.
+
+Two schedule buffers are built in rather than discovered: week 12.5–13 is unallocated between Phase 1 and Phase 2, and week 23–24 is unallocated before Phase 4. If neither is consumed, Phase 4 gains a week for import tooling. The plan assumes they will be consumed.
+
+16. MVP Definition
+
+16.1 The smallest version worth using every day
+
+The MVP test is not "does it demo well" but "would the developer, on a busy Tuesday, open this instead of the tool they already have?" That yields a narrower product than the phase-1 scope suggests at first glance, and it contains no AI at all. This is the single most important decision in the plan and it deserves its argument stated directly: an AI feature layered on an empty database produces nothing, and a workspace that nobody fills is a workspace nobody returns to. The MVP therefore optimises exclusively for daily data entry.
+
+Capture and execute. Quick capture from anywhere with natural-language dates, tasks with subtasks, priorities, due dates, estimates and recurrence, saved filters, and a Today screen with deterministic priority ordering.
+
+Intent. Goals with target dates and measurable targets; manual roadmaps with stages and milestones; a timeline view; automatic weighted progress roll-up so completing a task visibly moves a goal.
+
+Study. Courses with syllabus items, coverage and confidence tracking, exams with countdowns, study sessions, and manually created flashcards on an FSRS schedule.
+
+Consistency. Habits with one-tap check-in and forgiving streaks.
+
+Time. Time blocks on a week grid with a daily capacity warning.
+
+Knowledge. Markdown notes with [[ entity links and backlinks; keyword search across every entity via Postgres FTS; a command palette.
+
+Reflection. Daily journal with prompts and mood/energy; a statistics-only weekly review.
+
+Reliability. Reminders with Web Push, email fallback, digests, snooze and quiet hours.
+
+Ownership. Full export and re-import; account deletion; installable PWA with offline reading.
+
+16.2 What is deliberately cut from the MVP
+
+Cut
+
+Rationale
+
+Returns in
+
+Every AI capability (AI-01 to AI-10)
+
+Requires populated data to be useful, and requires an evaluation harness to be trustworthy. Building it first inverts the dependency.
+
+Phase 2
+
+Semantic search and embeddings
+
+Keyword search over one person’s corpus is genuinely adequate for months. The vector pipeline is a week of work that buys nothing at empty scale.
+
+Phase 2
+
+Offline writes and sync
+
+Offline reading covers the commute case. Full outbox sync with conflict resolution is a two-week subsystem best built once the schema has stopped moving.
+
+Phase 3
+
+Milestone dependencies and critical path
+
+A linear stage sequence is sufficient for a first real roadmap; dependency graphs invite modelling that users abandon.
+
+Phase 2–3
+
+Google Calendar integration
+
+OAuth, incremental sync tokens and event reconciliation are three days of work plus an ongoing maintenance obligation.
+
+Phase 2
+
+Quizzes, OCR, resource summarisation
+
+Downstream of the indexing pipeline that does not exist yet in the MVP.
+
+Phase 2–3
+
+Finance-lite and health-lite
+
+Neither is why anyone would adopt the product; both expand the schema and the surface area.
+
+Phase 4
+
+Monthly and quarterly reviews
+
+A weekly cadence must prove valuable before longer cadences are worth building.
+
+Phase 3–4
+
+Graph view, themes beyond light/dark, custom accents
+
+Pure polish. Cheap to add later, and easy to sink a week into.
+
+Phase 3–4
+
+Native apps, sharing, collaboration, public API
+
+Non-goals (Section 2.3).
+
+Not planned
+
+Table 16.1 — Explicit MVP cuts.
+
+17. Testing and Quality Assurance
+
+17.1 Strategy
+
+The testing budget is finite and belongs where failure is both likely and expensive. For this product that is: date and recurrence arithmetic, sync and conflict resolution, the SRS scheduler, progress roll-ups, multi-tenancy isolation, and AI output validity. Pixel-level UI testing is explicitly not pursued. The shape is a broad unit base, a thin but genuine integration layer running against real Postgres, roughly a dozen end-to-end journeys, and a separate evaluation harness for AI.
+
+Layer
+
+Tooling
+
+Coverage target
+
+Runs
+
+Unit
+
+Vitest
+
+80% on src/server/services and src/lib; 100% on recurrence, merge and FSRS modules
+
+Every commit (~40 s)
+
+Component
+
+Vitest + Testing Library
+
+The 20 components with real state logic
+
+Every commit
+
+Integration
+
+Vitest + Testcontainers (Postgres 16 + pgvector)
+
+Every API route, all RLS policies, all database views and triggers
+
+Every pull request (~4 min)
+
+End-to-end
+
+Playwright (Chromium, WebKit, mobile viewport)
+
+12 critical journeys
+
+Pull request and nightly (~7 min)
+
+Accessibility
+
+axe-core in Playwright
+
+Five key screens, both themes
+
+Every pull request
+
+Performance
+
+Lighthouse CI + k6 smoke
+
+Budgets in Section 17.4
+
+Nightly on preview
+
+AI evaluation
+
+Custom harness (Section 17.5)
+
+Golden set per capability
+
+On prompt change; nightly
+
+Table 17.1 — Test layers and cadence.
+
+17.2 Critical end-to-end journeys
+
+Twelve journeys, each mapping to a user story: sign up and complete onboarding; capture a task and complete it; create a goal and generate a roadmap (mocked model) and accept it; upload a PDF and generate cards and approve a subset; complete an SRS session and verify next-due dates; create a recurring reminder and assert it fires (with a controlled clock); time-block a task and detect over-commitment; go offline, make eight mutations, reconnect and verify convergence; produce a merge conflict on a note and resolve it; run a weekly review and apply an adjustment; export and re-import into a clean account and diff the result; delete an account and verify purge.
+
+17.3 Data and fixtures
+
+A pnpm seed --profile=heavy script generates a deterministic account with four courses, a 14-week syllabus, three goals with roadmaps, 400 tasks across six months of history, 6,000 flashcard reviews, 90 journal entries and 30 notes. Determinism matters: the same seed must produce the same database, or the evaluation harness cannot detect regressions. A second profile, --profile=empty, exercises every empty state, which is where UI bugs actually live.
+
+17.4 Performance budgets
+
+Metric
+
+Budget
+
+Enforcement
+
+Today first contentful paint (mobile 4G)
+
+≤ 1.5 s p95
+
+Lighthouse CI, fails the build
+
+Interaction to next paint
+
+≤ 200 ms p95
+
+Real-user monitoring via Vercel Analytics
+
+Task completion round trip (perceived)
+
+≤ 100 ms
+
+Optimistic write; asserted in Playwright
+
+Search response (hybrid)
+
+≤ 800 ms p95
+
+k6 against the heavy seed
+
+AI plan generation end to end
+
+≤ 6 s p90, 20 s hard timeout
+
+Gateway metric with alert
+
+Initial client bundle
+
+≤ 220 KB gzipped
+
+@next/bundle-analyzer check in CI
+
+Sync of 500 queued operations
+
+≤ 5 s
+
+Integration test
+
+Table 17.2 — Performance budgets.
+
+17.5 Evaluating AI output quality
+
+AI features cannot be tested by assertion alone, but the common conclusion — that they therefore cannot be tested — is wrong. Quality is decomposed into four layers, of which the first three are fully automatable.
+
+Layer 1: structural validity. Every response must satisfy its Zod schema. This is asserted on 100% of production runs, not just tests, and the pass rate per capability is a monitored metric with an alert below 97%. A schema failure is a defect, not a quirk.
+
+Layer 2: referential integrity. Every entity id the model returns must exist and belong to the requesting user; every citation in a summary must resolve to a supplied chunk; every date must fall in the permitted window. These are deterministic checks written per capability, and they catch the overwhelming majority of what users would call hallucination in this product, because in a system this structured most hallucinations manifest as invented identifiers.
+
+Layer 3: golden-set regression. Each capability has a frozen set of 20–40 input fixtures drawn from the seed profiles and from real (consented) runs. Outputs are scored by capability-specific rubrics: for AI-01, do stages tile the goal window without gaps or overlaps, are milestone counts within range, is every date inside bounds, and does an LLM-as-judge rubric score coherence and specificity at ≥ 4/5; for AI-02, are subtasks non-duplicative (max pairwise cosine < 0.9) and do estimates sum within ±40% of a human baseline; for AI-06, term-overlap coverage ≥ 0.6 against source and length in range; for AI-08, 100% of observations carry resolvable entity refs and zero forbidden phrases. The judge is Sonnet 5 with a fixed rubric prompt and temperature 0, run three times with the median taken — and importantly the judge itself is calibrated once against 50 human-labelled examples so its agreement rate is known rather than assumed.
+
+Layer 4: human and in-product signal. Every AI surface carries a two-state feedback control writing to POST /api/v1/ai/feedback. The more meaningful metric, though, is behavioural: acceptance rate. What proportion of generated roadmaps are accepted without edit, edited then accepted, or discarded? What proportion of proposed plan items survive to become time blocks? What proportion of generated flashcards are approved? These are computed weekly per capability and are the real quality dashboard, because they measure whether the output was worth having rather than whether it looked plausible.
+
+Regression policy. Prompts are versioned files in the repository, and any change runs the full golden set in CI. A capability regresses if its rubric score drops more than 5% or any deterministic check falls below 100%; a regression blocks merge. Model version upgrades are treated identically to prompt changes and are never adopted implicitly — the model string is pinned in configuration.
+
+18. Deployment, CI/CD, Environments and Operations
+
+18.1 Environments
+
+Environment
+
+Hosting
+
+Data
+
+Purpose
+
+Local
+
+Next dev + Supabase CLI (Docker)
+
+Seeded, disposable
+
+Development; AI calls hit a recorded-fixture provider by default
+
+Preview
+
+Vercel preview per pull request
+
+Shared preview Supabase branch, reseeded nightly
+
+Review, Playwright, Lighthouse, axe
+
+Staging
+
+Vercel (staging alias)
+
+Anonymised copy of production schema, synthetic content
+
+Migration rehearsal, job testing, load smoke
+
+Production
+
+Vercel + Supabase Pro
+
+Live
+
+Real users
+
+Table 18.1 — Environments.
+
+18.2 Pipeline
+
+GitHub Actions on every push: typecheck, lint, unit and component tests in parallel (~90 s); then integration tests against Testcontainers Postgres; then a build with bundle-size assertion; then Playwright plus axe against the preview deployment. Merges to main deploy automatically to production. Migrations run as a separate job before the application deploy, using the expand-migrate-contract discipline: a release may add columns and backfill, but may never drop or rename a column that the previously deployed version reads. Every migration file must ship with a tested down migration, and the pipeline asserts that up; down; up leaves an identical schema hash.
+
+Rollback is a Vercel instant rollback to the previous immutable deployment, which is safe precisely because migrations are backward-compatible by policy. A rollback drill is performed once during Phase 0 and once before v1.0, because an untested rollback is not a rollback.
+
+18.3 Monitoring and alerting
+
+Errors: Sentry for client and server, with release tagging, source maps, and PII scrubbing. Alert on any new issue affecting the single user, or any issue rate above 1% of sessions.
+
+Product analytics: PostHog with a fixed event taxonomy (Section 21.2), autocapture disabled to keep event volume and privacy exposure controlled.
+
+Uptime: an external check every minute against /api/health, which verifies database connectivity, Redis, and the last successful scheduler tick — the last of these being the only one that catches the failure mode that actually matters (reminders silently stopping).
+
+Job health: Inngest’s built-in failure alerts, plus a daily reconciliation job asserting that no reminder_occurrence is more than 15 minutes overdue in pending.
+
+AI health: a dashboard of runs, schema-validity rate, p50/p90 latency, cost per capability and per user, and fallback rate. Alert on schema validity below 97%, p90 latency above 8 s, or daily spend exceeding 150% of trailing average.
+
+Cost: Vercel, Supabase and provider spend checked weekly against the Section 19 model; the AI budget cap makes runaway spend structurally impossible rather than merely alerted.
+
+18.4 Backups and recovery
+
+Supabase Pro provides daily automated backups with seven-day point-in-time recovery. Because a solo project cannot rely on a single vendor’s console for its only copy, a nightly Inngest job runs pg_dump --format=custom, encrypts it with age, and writes it to a separate object store (Cloudflare R2, free tier at this volume) with a 30-day retention and a monthly copy retained for a year. Storage objects are synced weekly with the same retention. The recovery objectives are RPO ≤ 24 hours from the independent copy and ≤ 5 minutes from point-in-time recovery, with an RTO of 4 hours. A restore drill is run quarterly against a scratch project, and the drill is considered failed unless the restored database passes the integration suite — restoring bytes is not the same as restoring a working system.
+
+19. Cost Estimate
+
+19.1 AI cost model per active user
+
+Costs derive from the per-call figures in Table 5.2 multiplied by an assumed monthly usage profile for a moderately heavy user. The profile is deliberately generous: it assumes someone who plans most weekdays, uploads material weekly and reviews every week. Prompt caching on system blocks is assumed at a 70% hit rate; automatic summarisation uses the Batch API at 50% off.
+
+Capability
+
+Calls / user / month
+
+Unit cost
+
+Monthly cost
+
+AI-04 natural-language capture
+
+30
+
+$0.0008
+
+$0.024
+
+AI-02 task breakdown
+
+20
+
+$0.0020
+
+$0.040
+
+AI-03 daily plan / re-prioritise
+
+22
+
+$0.0030
+
+$0.066
+
+AI-05 semantic search
+
+60
+
+$0.0004
+
+$0.024
+
+AI-01 goal → roadmap
+
+2
+
+$0.0120
+
+$0.024
+
+AI-06 material summarisation (batched)
+
+6
+
+$0.0500
+
+$0.300
+
+AI-07 flashcard / quiz generation
+
+10
+
+$0.0060
+
+$0.060
+
+AI-08 weekly review
+
+4.3
+
+$0.0200
+
+$0.086
+
+AI-09 re-planning
+
+2
+
+$0.0110
+
+$0.022
+
+AI-10 nudges and digests
+
+30
+
+$0.0004
+
+$0.012
+
+Embeddings (indexing + queries)
+
+~500k tokens
+
+$0.02 / MTok
+
+$0.010
+
+Total AI per active user
+
+≈ $0.67
+
+Table 19.1 — AI cost per active user per month.
+
+Summarisation dominates at 45% of the total, which is why it is the one capability routed through the Batch API and gated behind an explicit user action for large documents. The default per-user budget cap is set at $2.00/month — three times the modelled figure — so that unusual usage degrades to fallbacks rather than producing a surprise bill.
+
+19.2 Total cost at three scales
+
+The 100-user and 1,000-user columns assume 60% monthly-active. Free tiers are used honestly: where a service’s free tier genuinely covers the load, the line reads $0, and the threshold at which it stops doing so is noted.
+
+Line item
+
+1 user
+
+100 users
+
+1,000 users
+
+Vercel (hosting, functions, bandwidth)
+
+$0 (Hobby)
+
+$20 (Pro)
+
+$80 (Pro + usage)
+
+Supabase (Postgres, auth, storage)
+
+$0 (Free)
+
+$25 (Pro)
+
+$135 (Pro + compute + ~500 GB storage)
+
+Upstash Redis
+
+$0
+
+$0–$5
+
+$25
+
+Inngest (jobs)
+
+$0
+
+$0 (free tier ~50k runs)
+
+$50
+
+Resend (email)
+
+$0
+
+$20 (>3k emails)
+
+$50
+
+Cloudflare R2 (independent backups)
+
+$0
+
+$1
+
+$6
+
+Sentry
+
+$0 (Developer)
+
+$26 (Team)
+
+$80
+
+PostHog
+
+$0
+
+$0 (1M events free)
+
+$50
+
+Domain + TLS
+
+$1.20
+
+$1.20
+
+$1.20
+
+Infrastructure subtotal
+
+$1.20
+
+$93–$98
+
+$477
+
+AI tokens (Claude + embeddings)
+
+$0.67
+
+$40 (60 MAU)
+
+$402 (600 MAU)
+
+Total monthly
+
+≈ $2
+
+≈ $135
+
+≈ $880
+
+Per active user
+
+—
+
+$2.25
+
+$1.47
+
+Table 19.2 — Monthly cost at 1, 100 and 1,000 users.
+
+Two observations follow. First, at single-user scale the entire product runs for the price of a coffee per month, which means the six-month build has no meaningful running cost — the real cost is time. Second, the per-user cost declines with scale but never approaches zero, because AI tokens are a genuine marginal cost. Any eventual pricing must clear roughly $1.50 per active user per month before considering the developer’s time; a $5–$8 subscription would carry a comfortable margin, and a free tier would need AI capabilities restricted to the deterministic fallbacks.
+
+20. Risk Register
+
+Likelihood and impact are scored High/Medium/Low. Risks are ordered by the product of the two, and each mitigation is something specific enough to schedule rather than an intention.
+
+#
+
+Risk
+
+L
+
+I
+
+Mitigation
+
+R1
+
+Over-featuring: the scope described here is built in full before anyone uses it
+
+H
+
+H
+
+The MVP (Section 16) is contractual, not aspirational. A written feature freeze applies from week 4 to week 12: anything new goes to a backlog file and is not discussed again until M4. Phase gates require exit criteria to be met before the next phase opens. The developer keeps a weekly one-line log of what was cut — visible evidence of restraint is what makes restraint continue.
+
+R2
+
+User abandonment after 2–3 weeks once novelty fades
+
+H
+
+H
+
+Day-21 retention is the single north-star metric (Section 21). Three structural defences: (a) the MVP is usable in 90 seconds a day, so a bad week does not break the habit; (b) forgiving streaks and habit pauses remove the all-or-nothing failure mode; (c) the weekly review is the recurring reason to return, and it ships in statistics-only form in Phase 1 so its value is proven before AI is added. If Day-21 retention among five external testers is below 40% at M4, the AI phase is delayed and the retention problem is worked instead.
+
+R3
+
+Scope creep from integrations and “just one more module”
+
+H
+
+M
+
+Section 2.3 non-goals are treated as binding. Any new integration requires a written note stating which existing feature it replaces. Finance and health stay behind a Phase 4 gate and are explicitly capped at manual entry.
+
+R4
+
+AI hallucination producing wrong dates, invented tasks or false review claims
+
+M
+
+H
+
+Four layers: strict tool schemas with runtime enums built from the supplied candidate set; referential validation rejecting any id not supplied; the universal proposal pattern (nothing generated is ever auto-applied); and mandatory entity references on every review observation, with unresolvable references dropped at render. Golden-set regression in CI (Section 17.5) catches degradation across prompt or model changes.
+
+R5
+
+AI latency making features feel worse than doing it manually
+
+M
+
+H
+
+Haiku 4.5 for all interactive capabilities; hard 20 s timeout with automatic fallback; SSE streaming so the UI is never silent; optimistic local rendering before the call returns; deterministic paths that are always available and always fast. Any capability whose p90 exceeds 8 s is re-scoped, not tolerated.
+
+R6
+
+AI cost overrun
+
+M
+
+M
+
+Per-user monthly budget cap enforced in the gateway with a hard stop at 100% and a warning at 80%; per-capability rate limits (Table 9.2); prompt caching; Batch API for background summarisation; cost recorded per run in ai_runs and alerted at 150% of trailing average. Structurally, the cap makes an unbounded bill impossible rather than merely unlikely.
+
+R7
+
+Solo-developer burnout or extended unavailability
+
+M
+
+H
+
+A 25-hour productive week is the planning assumption, not 40. Two schedule buffers are pre-allocated (Section 15.3). Phases are independently shippable, so stopping after Phase 1 leaves a working product rather than a half-built one. Documentation is written as the work happens, not deferred.
+
+R8
+
+Data loss from a bad migration, a bug, or vendor failure
+
+L
+
+H
+
+Expand-migrate-contract policy; every migration has a tested down path; up; down; up schema-hash assertion in CI; soft deletes with a 30-day window; nightly encrypted pg_dump to an independent provider; quarterly restore drills that must pass the integration suite.
+
+R9
+
+Sync conflicts causing silent data loss
+
+M
+
+H
+
+Field-level merge with an explicit per-class policy (Table 12.2); additive collections merged by natural key so review and habit history can never be lost; losing operations retained in sync_ops for 30 days; a randomised concurrent-mutation property test in CI; text conflicts surfaced to the user rather than resolved silently.
+
+R10
+
+Web Push unreliability, particularly on iOS
+
+M
+
+M
+
+Push is best-effort by design: the durable record is reminder_occurrences, so the in-app list is always correct. Email escalation after 10 minutes of undelivered push. Installation prompt explains that iOS requires adding to the Home Screen for notifications. Delivery success rate is monitored per platform.
+
+R11
+
+Browser evicting IndexedDB, losing queued offline writes
+
+L
+
+H
+
+Request navigator.storage.persist() on install; keep the outbox small and drain aggressively; never evict outbox entries during quota pressure; show pending-operation count persistently; warn if the outbox exceeds 200 operations or 24 hours of age.
+
+R12
+
+Vendor lock-in or pricing change (Vercel, Supabase, model provider)
+
+L
+
+M
+
+Supabase used as plain Postgres plus auth plus storage — no proprietary query layer; the AI gateway isolates the provider behind a four-method interface; model identifiers are configuration, not code. Migration cost is estimated at under a week for either vendor.
+
+R13
+
+Cross-user data exposure through a missing scope predicate
+
+L
+
+H
+
+RLS on every user-scoped table; retrieval service requires user_id as an argument; gateway rejects any assembled context containing a foreign user_id; a CI sentinel test across two users is a release blocker.
+
+R14
+
+The AI layer is impressive but not actually useful
+
+M
+
+M
+
+Acceptance rate per capability is measured from day one (Section 17.5). Any capability with an acceptance rate below 30% after four weeks of real use is removed rather than iterated indefinitely — a deletion budget is as important as a build budget.
+
+R15
+
+Study module underused because entering a syllabus is tedious
+
+M
+
+M
+
+Paste-and-extract syllabus parsing is prioritised early in Phase 2; the module remains fully usable with just a course and an exam date; onboarding asks for one course, not five.
+
+Table 20.1 — Risk register.
+
+21. Success Metrics and Instrumentation
+
+21.1 Metric hierarchy
+
+One north-star, four primary metrics, and a set of diagnostics. The north-star is Day-21 retention: the proportion of users who perform at least one meaningful action on at least 12 of the 21 days following signup. It is chosen over daily active use because this product’s value compounds over weeks, and over subjective satisfaction because satisfaction surveys from five testers are noise. Twenty-one days is long enough to survive the novelty period and short enough to act on.
+
+Metric
+
+Definition
+
+Target at v1
+
+Why it matters
+
+Day-21 retention (north-star)
+
+≥ 1 meaningful action on ≥ 12 of days 1–21
+
+≥ 45%
+
+The only signal that the product has become part of a life rather than a weekend experiment.
+
+Weekly review completion
+
+Reviews finalised ÷ eligible weeks
+
+≥ 60%
+
+The reflection loop is the differentiator; if it is skipped, the product is a task manager.
+
+Plan adherence
+
+Planned items completed ÷ planned items, per day
+
+≥ 55%
+
+Measures whether plans are realistic. Falling adherence predicts abandonment weeks in advance.
+
+AI acceptance rate
+
+Proposals accepted (with or without edit) ÷ proposals shown, per capability
+
+≥ 55% overall
+
+Distinguishes useful AI from impressive AI.
+
+Capture-to-completion rate
+
+Captured tasks reaching done ÷ captured
+
+≥ 65%
+
+A low rate means the inbox has become a graveyard — the classic failure of this product category.
+
+Time to first value
+
+Signup → first goal or course created with ≥ 3 tasks
+
+≤ 10 min
+
+Onboarding quality; strongly predicts Day-21.
+
+Reminder delivery success
+
+Delivered ÷ scheduled, within 60 s
+
+≥ 99%
+
+Trust is binary; one visible miss costs the feature.
+
+Fallback rate
+
+AI runs falling back ÷ total AI runs
+
+≤ 3%
+
+Health of the AI layer as experienced, not as measured at the provider.
+
+Table 21.1 — Success metrics and targets.
+
+21.2 Instrumentation
+
+Events are explicit and named, with autocapture disabled. The taxonomy is object_verb in snake case with a fixed property envelope (user_id pseudonymous, session_id, surface, client, offline, app_version). Roughly thirty events cover everything: task_created (with source_surface, had_nl_date), task_completed (age_hours, was_planned), plan_generated (mode, item_count, latency_ms), plan_item_accepted / plan_item_rejected, roadmap_generated (stage_count), roadmap_accepted (edited), card_batch_generated / card_approved / card_rejected, review_generated / review_finalised / review_action_applied, search_performed (mode, result_count, clicked_rank), reminder_delivered / reminder_snoozed (snooze_count), sync_conflict_resolved (field_class, needed_review), offline_session (duration_s, ops_queued), and ai_fallback_used (capability, reason).
+
+Three analyses run weekly from these events. A retention cohort chart by signup week, split by whether the user created a goal in week one — the hypothesis being that goal creation is the activation event, which if confirmed makes onboarding a single, obvious optimisation target. A funnel per AI capability from shown to accepted to persisted, which drives the deletion decision in R14. And a plan-adherence trend per user, which is also surfaced back to the user in their monthly review, since a metric worth watching internally is usually worth showing to the person it describes.
+
+Instrumentation is built in Phase 0, not retrofitted. The cost of adding the event taxonomy at the start is perhaps four hours; the cost of not having a retention chart at M4 is being unable to make the most important decision in the project.
+
+22. Future Extensions
+
+Recorded here so that they stay out of the v1 plan. Each is written with the condition that would justify starting it, because an extension list without preconditions is just a wish list.
+
+Client-side encrypted journal with local-only retrieval — embeddings computed in a Web Worker with a WASM model, vectors stored in IndexedDB, so journal search never leaves the device. Justified once at least a quarter of users have enabled the "never send journal to AI" toggle, which would demonstrate that the demand is real.
+
+Google Calendar write-back — two-way sync so PIW time blocks appear on a shared work calendar. Requires an idempotent reconciliation design and a duplicate-detection strategy; justified when calendar import is used by a majority of active users.
+
+Import from Todoist, Notion, Anki and Obsidian — the single highest-leverage growth feature, since switching cost is the main adoption barrier. Anki .apkg and Obsidian vault import are the two with the clearest mapping.
+
+Native shells via Capacitor — justified only if iOS Web Push delivery rates measured in Phase 3 prove inadequate, which is the one genuine reason to accept an app-store dependency.
+
+Voice capture and transcription — record a thought while walking, transcribe, and route through AI-04. Cheap to build on top of an existing capture pipeline; wait until capture volume shows it would be used.
+
+Retrieval-backed conversational review — a bounded chat scoped to a single review or goal, with citations. Deliberately deferred because an unbounded chat box is a non-goal, but a scoped one may earn its place once the structured capabilities have proven their acceptance rates.
+
+Adaptive study planning — using historical session outcomes and FSRS retrievability to recommend what to study rather than only when to review. Requires roughly six months of real review data before the recommendations would be better than a heuristic.
+
+Shared read-only progress pages — an accountability link for a specific goal. The first feature that would break the single-user assumption, and therefore requires an explicit reconsideration of Section 2.3 rather than a quiet extension.
+
+Local model fallback — a small on-device model for capture parsing and card generation when offline, via WebGPU. Interesting, currently marginal in quality, and worth revisiting annually.
+
+23. Appendix
+
+23.1 Glossary
+
+Term
+
+Definition
+
+Direction
+
+A 3–5 year prose statement of intent with no dates. The top of the intent hierarchy.
+
+Goal
+
+A dated, ideally measurable outcome spanning 3–12 months. Owns roadmaps and objectives.
+
+Objective
+
+A 4–12 week grouping of milestones inside a goal.
+
+Roadmap / Stage / Milestone
+
+A roadmap is an ordered set of stages; a stage contains milestones; a milestone is a dated, verifiable unit of progress with a definition of done.
+
+Node
+
+A row in the thin polymorphic index table holding one entry per user-visible entity, used for links, tags, reminders and search.
+
+Chunk
+
+A retrieval unit: a passage of note or resource text with its context header, token count and embedding.
+
+FSRS
+
+Free Spaced Repetition Scheduler — the algorithm scheduling flashcard reviews from stability and difficulty parameters.
+
+Retrievability
+
+FSRS’s estimate of the probability of recalling a card at a given moment; drives the exam ramp.
+
+HLC
+
+Hybrid Logical Clock — a timestamp combining wall-clock time with a counter and client id to give a total order tolerant of clock skew.
+
+Outbox
+
+The append-only queue of local mutations awaiting transmission to the server.
+
+RRULE
+
+An RFC 5545 recurrence rule string, e.g. FREQ=WEEKLY;BYDAY=TU,TH;UNTIL=20261212T000000Z.
+
+RRF
+
+Reciprocal Rank Fusion — combining two ranked lists by summing 1/(k + rank).
+
+Proposal pattern
+
+The universal rule that AI output is rendered as a reviewable change set and never written directly.
+
+Fallback
+
+The deterministic behaviour a surface exhibits when AI is disabled, over budget or unavailable.
+
+Golden set
+
+A frozen collection of input fixtures and rubrics used to detect AI quality regressions.
+
+Capacity
+
+Declared available working minutes for a day, against which blocked time is compared.
+
+Grace
+
+The number of permitted misses per rolling seven days before a habit streak breaks.
+
+23.2 Sample AI system prompts
+
+Three complete prompts are given. Each is stored as a versioned file under src/server/ai/prompts/ and is subject to golden-set regression on change. Variables in {{double braces}} are interpolated by the gateway; the tool schema is supplied separately as a Zod-derived JSON Schema.
+
+23.2.1 AI-01 — Goal to roadmap decomposition
+
+You are the planning engine inside a personal workspace. Your task is to turn one
+
+goal into a staged roadmap that a single motivated person can actually complete.
+
+CONTEXT
+
+Today: {{today_iso}} ({{timezone}})
+
+Goal: {{goal_title}}
+
+Description: {{goal_description}}
+
+Target date: {{target_date}}  (weeks available: {{weeks_available}})
+
+Life area: {{life_area}}
+
+Declared capacity: {{weekly_hours}} hours per week
+
+Known fixed dates: {{blackout_ranges}}
+
+Related material the user already has: {{context_chunks}}
+
+RULES
+
+1. Produce 3-6 stages. Each stage must be a distinct phase of work with a name a
+
+   person would use out loud, not a generic label like "Phase 2".
+
+2. Each stage contains 2-5 milestones. Every milestone must have a definition of
+
+   done that another person could verify without asking a question.
+
+3. Total estimated hours across all milestones must fit within
+
+   weeks_available x weekly_hours x 0.7. The 0.7 factor is deliberate: plans that
+
+   assume full capacity fail. If the goal cannot fit, say so in scope_warning and
+
+   propose the reduced version that does fit.
+
+4. Suggested dates must fall between today and the target date, must respect the
+
+   stage order, and must avoid the blackout ranges.
+
+5. Use depends_on only for genuine blocking relationships. If in doubt, omit it.
+
+   Sequential order is already implied by stage ordinal.
+
+6. Be concrete and domain-specific. "Study chapter 4-6 and complete problem set 3"
+
+   is useful. "Deepen understanding of the material" is not.
+
+7. Never invent facts about the user, their course, their deadlines or their prior
+
+   work. Use only what is given above.
+
+8. Front-load the smallest verifiable milestone: the first one should be
+
+   completable in under two hours so momentum starts immediately.
+
+OUTPUT
+
+Call the emit_roadmap tool exactly once. Produce no prose outside the tool call.
+
+23.2.2 AI-03 — Daily plan generation
+
+You order work for one person for one day. You do not invent work, and you do not
+
+do arithmetic on time: every interval you are given has already been computed.
+
+CONTEXT
+
+Date: {{plan_date}} ({{weekday}}, {{timezone}})
+
+Declared energy: {{energy}}/5
+
+Free intervals (local, already excludes meetings, classes and quiet hours):
+
+{{free_intervals}}
+
+Total available minutes: {{available_minutes}}
+
+Candidate tasks (id, title, parent, due, priority, estimate, energy_fit):
+
+{{candidates}}
+
+Habits due: {{habits}}
+
+Flashcards due: {{card_count}} (about {{card_minutes}} minutes)
+
+At-risk milestones: {{at_risk}}
+
+Recent pattern: completes {{avg_completed}} of {{avg_planned}} planned items per day.
+
+RULES
+
+1. You may only schedule task ids from the candidate list. Never create a task.
+
+2. Plan no more than {{available_minutes}} minutes in total, and no more than
+
+   avg_completed + 2 items. Overloading a day is the failure mode you exist to
+
+   prevent.
+
+3. Place demanding work in the first substantial interval when energy >= 3; when
+
+   energy <= 2, lead with the shortest item that produces a visible completion.
+
+4. Anything blocking an at-risk milestone outranks anything merely due soon.
+
+5. Include the flashcard review as one item if cards are due.
+
+6. Each item gets a reason of at most twelve words, stating why it is placed there.
+
+   No encouragement, no praise, no exclamation marks.
+
+7. Everything that did not fit goes in overflow, ordered by what you would add back
+
+   first if the day went well.
+
+OUTPUT
+
+Call emit_day_plan exactly once. No prose outside the tool call.
+
+23.2.3 AI-08 — Weekly review synthesis
+
+You write the weekly review for one person, using only the data provided. You are
+
+a careful analyst writing for someone who wants the truth, not a coach.
+
+CONTEXT
+
+Week: {{period_start}} to {{period_end}}
+
+Tasks: {{completed}} completed of {{planned}} planned ({{carried_over}} carried over)
+
+By goal: {{completion_by_goal}}
+
+Study: {{study_minutes_by_course}}; sessions: {{session_count}}
+
+Cards: {{cards_reviewed}} reviewed, retention {{retention_pct}}%
+
+Habits: {{habit_adherence}}
+
+Roadmap drift: {{milestone_drift}}
+
+Goal confidence changes: {{confidence_deltas}}
+
+Energy and mood: {{energy_series}}
+
+Journal excerpts (verbatim, may be empty): {{journal_excerpts}}
+
+Previous week's proposed adjustments and whether they were applied: {{prior_actions}}
+
+RULES
+
+1. Every observation must cite at least one entity_ref from the data above. An
+
+   observation you cannot ground is one you must not make.
+
+2. Distinguish what happened from why. State causes only when the data supports
+
+   them, and mark them as tentative when it does not.
+
+3. No praise inflation, no shame, no imperatives about what the person "should"
+
+   feel. Do not use the words journey, crush, smash, or amazing.
+
+4. Make no health, medical or psychological claims. If journal excerpts describe
+
+   distress, note it plainly as something the person wrote and do not interpret it.
+
+5. Propose at most three adjustments. Each must be a specific, executable change to
+
+   a named entity: re-date this milestone, drop this task, lower this habit target.
+
+   Prefer reducing commitments over adding them.
+
+6. If the week was quiet, say so briefly. Do not manufacture insight from little
+
+   data; three honest sentences beat six padded ones.
+
+7. Narrative: 150-300 words, second person, plain language.
+
+OUTPUT
+
+Call emit_review exactly once. No prose outside the tool call.
+
+23.3 Seed data example
+
+The excerpt below is from scripts/seed/profiles/heavy.ts, abbreviated to one goal, one roadmap stage, one course and a few dependent rows. It shows the relational shape the rest of the document describes, and is the fixture from which the golden evaluation sets are drawn.
+
+export const seed = {
+
+  user: {
+
+    id: "u_01", email: "maya@example.edu", display_name: "Maya",
+
+    timezone: "Asia/Singapore",
+
+  },
+
+  user_settings: {
+
+    quiet_hours_start: "22:30", quiet_hours_end: "07:00",
+
+    digest_morning: "07:30", digest_evening: "21:00",
+
+    week_start: 1, available_minutes_per_day: 300, theme: "system",
+
+  },
+
+  directions: [
+
+    { id: "d_01", title: "Become a research-capable systems engineer",
+
+      horizon_years: 4 },
+
+  ],
+
+  goals: [
+
+    { id: "g_01", direction_id: "d_01",
+
+      title: "Earn an A in CS3230 Design and Analysis of Algorithms",
+
+      life_area: "study", target_date: "2026-12-05",
+
+      metric_name: "final_grade", target_value: 85, unit: "percent",
+
+      status: "active", confidence: 3 },
+
+    { id: "g_02", direction_id: "d_01",
+
+      title: "Ship the freelance booking app to first paying client",
+
+      life_area: "work", target_date: "2026-11-15", status: "active" },
+
+  ],
+
+  roadmaps: [
+
+    { id: "r_01", goal_id: "g_01", title: "CS3230 semester plan",
+
+      generated_by: "ai", source_run_id: "run_0007" },
+
+  ],
+
+  stages: [
+
+    { id: "s_01", roadmap_id: "r_01", ordinal: 1,
+
+      title: "Rebuild the asymptotics foundation",
+
+      target_start: "2026-08-11", target_end: "2026-09-05", status: "active" },
+
+  ],
+
+  milestones: [
+
+    { id: "m_01", stage_id: "s_01", ordinal: 1,
+
+      title: "Master amortised analysis",
+
+      definition_of_done: "Solve all 8 tutorial problems unaided and explain the
+
+        potential method in writing without notes",
+
+      due_date: "2026-08-24", est_hours: 6 },
+
+    { id: "m_02", stage_id: "s_01", ordinal: 2,
+
+      title: "Complete Problem Set 1",
+
+      definition_of_done: "Submitted on LumiNUS with every proof written out",
+
+      due_date: "2026-08-31", est_hours: 8 },
+
+  ],
+
+  milestone_dependencies: [
+
+    { predecessor_id: "m_01", successor_id: "m_02", kind: "finish_to_start" },
+
+  ],
+
+  courses: [
+
+    { id: "c_01", code: "CS3230", title: "Design and Analysis of Algorithms",
+
+      term: "AY26/27 Sem 1", credits: 4, colour: "#4C6EF5",
+
+      target_grade: "A", active: true },
+
+  ],
+
+  syllabus_items: [
+
+    { id: "sy_01", course_id: "c_01", ordinal: 4,
+
+      title: "Amortised analysis: aggregate, accounting, potential",
+
+      scheduled_week: 4, coverage: "in_progress", confidence: 2 },
+
+  ],
+
+  exams: [
+
+    { id: "e_01", course_id: "c_01", title: "Midterm",
+
+      starts_at: "2026-09-30T13:00:00+08:00", weight: 30, ramp_days: 14 },
+
+  ],
+
+  tasks: [
+
+    { id: "t_01", milestone_id: "m_01",
+
+      title: "Work through CLRS 17.3 potential method examples",
+
+      status: "next", priority: 2, due_at: "2026-08-22T12:00:00+08:00",
+
+      estimate_minutes: 90, energy: "high", sort_key: "a0" },
+
+    { id: "t_02", milestone_id: "m_01",
+
+      title: "Re-derive the dynamic array amortised bound from scratch",
+
+      status: "inbox", priority: 1, estimate_minutes: 45, sort_key: "a1" },
+
+  ],
+
+  habits: [
+
+    { id: "h_01", title: "Read 20 pages", cadence: "daily",
+
+      rrule: "FREQ=DAILY", target_count: 1, grace_per_week: 1, active: true },
+
+  ],
+
+  reminders: [
+
+    { id: "rm_01", node_id: "t_01", title: "Start CLRS 17.3",
+
+      fire_at: "2026-08-22T09:00:00+08:00",
+
+      rrule: null, channel: ["push", "in_app"], lead_minutes: 0 },
+
+  ],
+
+  journal_entries: [
+
+    { entry_date: "2026-08-21", mood: 3, energy: 2,
+
+      body_md: "Tutorial made sense until the potential method. Felt behind.",
+
+      tags: ["cs3230"] },
+
+  ],
+
+};
+
+The seed intentionally contains a realistic imperfection: t_02 sits in the inbox undated while its milestone is due in three days. That is precisely the condition the Today screen, the deterministic scorer and AI-03 all need to handle well, and a seed that contains only tidy data would test none of it.

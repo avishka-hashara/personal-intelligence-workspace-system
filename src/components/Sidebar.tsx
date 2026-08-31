@@ -13,6 +13,8 @@ import {
   FileText,
   Book,
   Sparkles,
+  Wallet,
+  Heart,
 } from "lucide-react";
 
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
@@ -26,6 +28,8 @@ export function Sidebar() {
     { href: "/plan/goals", label: "Plan", icon: Map },
     { href: "/tasks", label: "Tasks", icon: CheckSquare },
     { href: "/study/courses", label: "Study", icon: BookOpen },
+    { href: "/finance", label: "Finance", icon: Wallet },
+    { href: "/health", label: "Health", icon: Heart },
     { href: "/calendar", label: "Calendar", icon: Calendar },
     { href: "/notes", label: "Notes", icon: FileText },
     { href: "/journal", label: "Journal", icon: Book },
