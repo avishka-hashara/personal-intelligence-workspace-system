@@ -4,6 +4,7 @@ import { create } from "zustand";
 import * as chrono from "chrono-node";
 import { generateKeyBetween } from "fractional-indexing";
 import type { tasks } from "@/server/db/schema";
+import { enqueueOfflineOp } from "@/lib/sync";
 import {
   createTask as serverCreateTask,
   toggleTaskStatus as serverToggleTaskStatus,
@@ -105,7 +106,19 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       tasks: [optimisticTask, ...state.tasks],
     }));
 
-    // Background server call
+    // Background server call or offline queueing
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      await enqueueOfflineOp("tasks", clientTaskId, "insert", {
+        id: clientTaskId,
+        title,
+        parentTaskId,
+        dueAt: dueAt ? dueAt.toISOString() : null,
+        sortKey,
+        status: "next",
+      });
+      return optimisticTask;
+    }
+
     try {
       const res = await serverCreateTask({
         id: clientTaskId,
@@ -122,19 +135,22 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         }));
         return serverTask;
       } else if (res && res.error) {
-        // Rollback on server error
+        // Rollback on server validation error
         set((state) => ({
           tasks: state.tasks.filter((t) => t.id !== clientTaskId),
         }));
         return null;
       }
     } catch (err) {
-      console.error("Failed to create task on server:", err);
-      // Rollback
-      set((state) => ({
-        tasks: state.tasks.filter((t) => t.id !== clientTaskId),
-      }));
-      return null;
+      console.warn("Failed to create task on server, enqueuing offline op:", err);
+      await enqueueOfflineOp("tasks", clientTaskId, "insert", {
+        id: clientTaskId,
+        title,
+        parentTaskId,
+        dueAt: dueAt ? dueAt.toISOString() : null,
+        sortKey,
+        status: "next",
+      });
     }
 
     return optimisticTask;
@@ -155,6 +171,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       ),
     }));
 
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      await enqueueOfflineOp("tasks", id, "update", { status: newStatus });
+      return;
+    }
+
     try {
       const res = await serverToggleTaskStatus(id, previousStatus);
       if (res && res.error) {
@@ -166,12 +187,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         }));
       }
     } catch (err) {
-      console.error("Failed to toggle task status:", err);
-      set((state) => ({
-        tasks: state.tasks.map((t) =>
-          t.id === id ? { ...t, status: previousStatus } : t
-        ),
-      }));
+      console.warn("Failed to toggle task on server, enqueuing offline op:", err);
+      await enqueueOfflineOp("tasks", id, "update", { status: newStatus });
     }
   },
 
@@ -183,6 +200,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       tasks: state.tasks.filter((t) => t.id !== id && t.parentTaskId !== id),
     }));
 
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      await enqueueOfflineOp("tasks", id, "delete", {});
+      return;
+    }
+
     try {
       const res = await serverDeleteTask(id);
       if (res && res.error) {
@@ -190,8 +212,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         set({ tasks: previousTasks });
       }
     } catch (err) {
-      console.error("Failed to delete task on server:", err);
-      set({ tasks: previousTasks });
+      console.warn("Failed to delete task on server, enqueuing offline op:", err);
+      await enqueueOfflineOp("tasks", id, "delete", {});
     }
   },
 
@@ -207,6 +229,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       ),
     }));
 
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      await enqueueOfflineOp("tasks", id, "update", data);
+      return;
+    }
+
     try {
       const res = await serverUpdateTask(id, data);
       if (res && res.error) {
@@ -214,8 +241,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         set({ tasks: previousTasks });
       }
     } catch (err) {
-      console.error("Failed to update task on server:", err);
-      set({ tasks: previousTasks });
+      console.warn("Failed to update task on server, enqueuing offline op:", err);
+      await enqueueOfflineOp("tasks", id, "update", data);
     }
   },
 

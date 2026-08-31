@@ -15,6 +15,8 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
+
 export function Sidebar() {
   const pathname = usePathname();
   const { toggleCopilot } = useUIStore();
@@ -77,7 +79,8 @@ export function Sidebar() {
         </div>
       </nav>
 
-      <div className="p-4 border-t border-slate-200">
+      <div className="p-4 border-t border-slate-200 space-y-2">
+        <SyncStatusIndicator />
         <Link
           href="/settings"
           className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 font-medium text-sm transition-colors"
