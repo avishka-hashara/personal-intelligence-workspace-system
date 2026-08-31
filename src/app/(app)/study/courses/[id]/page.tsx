@@ -40,7 +40,7 @@ import { Progress } from "@/components/ui/progress";
 import { SyllabusManager } from "@/components/SyllabusManager";
 import { FlashcardList } from "@/components/FlashcardList";
 import { ResourceUploader } from "@/components/ResourceUploader";
-import { createExam, addFlashcard } from "@/server/actions/study";
+import { createExam, addFlashcard, getDueFlashcards } from "@/server/actions/study";
 import { format, differenceInCalendarDays, formatDistanceToNow } from "date-fns";
 import { ContextSetter } from "@/components/ContextSetter";
 
@@ -143,18 +143,9 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     )
     .orderBy(desc(courseResources.createdAt));
 
-  // 5. Fetch Flashcards
-  const cards = await db
-    .select()
-    .from(flashcards)
-    .where(
-      and(
-        eq(flashcards.courseId, id),
-        eq(flashcards.userId, user.id),
-        isNull(flashcards.deletedAt)
-      )
-    )
-    .orderBy(desc(flashcards.createdAt));
+  // 5. Fetch Flashcards & FSRS Schedule (including Exam Ramp calculation)
+  const dueFlashcardData = await getDueFlashcards(id);
+  const cards = dueFlashcardData.allCards;
 
   // Calculate syllabus coverage progress
   const totalItems = courseSyllabus.length;
@@ -284,10 +275,15 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
           </TabsTrigger>
           <TabsTrigger
             value="cards"
-            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all cursor-pointer"
+            className="text-xs font-semibold px-4 py-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
           >
-            <CreditCard className="w-3.5 h-3.5 mr-1.5 inline" />
-            Cards ({cards.length})
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>Cards ({cards.length})</span>
+            {dueFlashcardData.dueCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+                {dueFlashcardData.dueCount} due
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger
             value="exams"
@@ -471,7 +467,12 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
           {/* Flashcards Grid */}
           <section className="space-y-4">
             <h2 className="text-base font-bold text-slate-900">Spaced Repetition Flashcards</h2>
-            <FlashcardList cards={cards} />
+            <FlashcardList
+              cards={dueFlashcardData.allCards}
+              examMode={dueFlashcardData.examMode}
+              targetExamTitle={dueFlashcardData.targetExam?.title}
+              daysUntilExam={dueFlashcardData.targetExam?.daysUntilExam}
+            />
           </section>
         </TabsContent>
 

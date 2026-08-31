@@ -437,6 +437,12 @@ export const flashcards = pgTable("flashcards", {
     back: text("back").notNull(),
     nextReviewAt: timestamp("next_review_at", { withTimezone: true }),
     intervalDays: integer("interval_days").default(0),
+    stability: numeric("stability"),
+    difficulty: numeric("difficulty"),
+    reps: integer("reps").default(0),
+    lapses: integer("lapses").default(0),
+    state: integer("state").default(0), // 0: New, 1: Learning, 2: Review, 3: Relearning
+    lastReview: timestamp("last_review", { withTimezone: true }),
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

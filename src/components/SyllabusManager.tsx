@@ -26,7 +26,9 @@ import {
   Sparkles,
   CheckCircle2,
   BookOpen,
+  BrainCircuit,
 } from "lucide-react";
+import { QuizView } from "@/components/QuizView";
 
 export type SyllabusItem = typeof syllabusItems.$inferSelect;
 
@@ -55,6 +57,9 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
   const [items, setItems] = useState<SyllabusItem[]>(initialItems);
   const [newItemTitle, setNewItemTitle] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  // Quiz Dialog State
+  const [quizItem, setQuizItem] = useState<SyllabusItem | null>(null);
 
   // Session Logging Dialog State
   const [sessionItem, setSessionItem] = useState<SyllabusItem | null>(null);
@@ -147,14 +152,14 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                 <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Topic / Concept
                 </TableHead>
-                <TableHead className="w-44 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="w-40 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Coverage Status
                 </TableHead>
-                <TableHead className="w-40 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="w-36 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Confidence (1-5)
                 </TableHead>
-                <TableHead className="w-28 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  Action
+                <TableHead className="w-48 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Actions
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -224,16 +229,29 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                       </div>
                     </TableCell>
 
-                    {/* Log Session Action */}
+                    {/* Actions: Practice Quiz & Log Session */}
                     <TableCell className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => openLogDialog(item)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer"
-                      >
-                        <Timer className="w-3 h-3" />
-                        <span>Log Session</span>
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setQuizItem(item)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer shadow-2xs"
+                          title="Generate AI Active Recall Quiz for this topic"
+                        >
+                          <Sparkles className="w-3 h-3 text-indigo-500" />
+                          <span>Practice Quiz</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => openLogDialog(item)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 border border-slate-200 transition-colors cursor-pointer"
+                          title="Log study session"
+                        >
+                          <Timer className="w-3 h-3 text-slate-400" />
+                          <span>Log</span>
+                        </button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -408,6 +426,28 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
               </button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Practice Quiz Dialog */}
+      <Dialog
+        open={!!quizItem}
+        onOpenChange={(open) => {
+          if (!open) setQuizItem(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl bg-white p-6 rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Practice Quiz: {quizItem?.title}</DialogTitle>
+            <DialogDescription>Interactive active recall practice</DialogDescription>
+          </DialogHeader>
+          {quizItem && (
+            <QuizView
+              syllabusItemId={quizItem.id}
+              topicTitle={quizItem.title}
+              onClose={() => setQuizItem(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

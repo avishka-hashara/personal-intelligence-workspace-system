@@ -9,10 +9,28 @@ import {
     courseResources,
     flashcards,
 } from "@/server/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, asc, isNull } from "drizzle-orm";
 import { getCurrentUser, createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { generateNodeEmbedding } from "@/lib/embeddings";
+import {
+    fsrs,
+    generatorParameters,
+    Rating,
+    State,
+    createEmptyCard,
+    dateDiffInDays,
+    type Card as FSRSCard,
+    type Grade,
+} from "ts-fsrs";
+import { differenceInCalendarDays } from "date-fns";
+
+const fsrsScheduler = fsrs(
+    generatorParameters({
+        request_retention: 0.9,
+        maximum_interval: 36500,
+    })
+);
 
 export interface CreateCourseInput {
     code: string;
@@ -434,6 +452,12 @@ export async function addFlashcard(courseId: string, formData: FormData) {
                 back,
                 nextReviewAt: new Date(),
                 intervalDays: 0,
+                stability: "0",
+                difficulty: "0",
+                reps: 0,
+                lapses: 0,
+                state: State.New,
+                lastReview: null,
             })
             .returning();
 
@@ -445,3 +469,296 @@ export async function addFlashcard(courseId: string, formData: FormData) {
         return { error: "Failed to add flashcard" };
     }
 }
+
+export interface DueFlashcardItem {
+    id: string;
+    userId: string;
+    courseId: string;
+    front: string;
+    back: string;
+    nextReviewAt: Date | null;
+    intervalDays: number | null;
+    stability: string | null;
+    difficulty: string | null;
+    reps: number | null;
+    lapses: number | null;
+    state: number | null;
+    lastReview: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    isDue: boolean;
+    dueReason: "standard" | "exam_ramp" | "not_due";
+    retrievabilityAtExam: number | null;
+}
+
+export interface GetDueFlashcardsResponse {
+    success: boolean;
+    error?: string;
+    examMode: boolean;
+    targetExam: {
+        id: string;
+        title: string;
+        startsAt: Date | null;
+        rampDays: number;
+        daysUntilExam: number;
+    } | null;
+    totalCards: number;
+    dueCount: number;
+    dueCards: DueFlashcardItem[];
+    allCards: DueFlashcardItem[];
+}
+
+export async function getDueFlashcards(courseId: string): Promise<GetDueFlashcardsResponse> {
+    const user = await getCurrentUser();
+    if (!user) {
+        return {
+            success: false,
+            error: "Unauthorized",
+            examMode: false,
+            targetExam: null,
+            totalCards: 0,
+            dueCount: 0,
+            dueCards: [],
+            allCards: [],
+        };
+    }
+
+    try {
+        const now = new Date();
+
+        // 1. Fetch all flashcards for this course
+        const allCardRows = await db
+            .select()
+            .from(flashcards)
+            .where(
+                and(
+                    eq(flashcards.courseId, courseId),
+                    eq(flashcards.userId, user.id),
+                    isNull(flashcards.deletedAt)
+                )
+            )
+            .orderBy(asc(flashcards.nextReviewAt), desc(flashcards.createdAt));
+
+        // 2. Query exams for this course to evaluate Exam Mode
+        const examRows = await db
+            .select()
+            .from(exams)
+            .where(
+                and(
+                    eq(exams.courseId, courseId),
+                    eq(exams.userId, user.id),
+                    isNull(exams.deletedAt)
+                )
+            )
+            .orderBy(asc(exams.startsAt));
+
+        // Find nearest upcoming exam
+        const upcomingExams = examRows.filter(
+            (e) => e.startsAt && (new Date(e.startsAt).getTime() >= now.getTime() || differenceInCalendarDays(new Date(e.startsAt), now) >= 0)
+        );
+
+        const nearestExam = upcomingExams.length > 0 ? upcomingExams[0] : null;
+        let examMode = false;
+        let targetExamInfo: GetDueFlashcardsResponse["targetExam"] = null;
+
+        if (nearestExam && nearestExam.startsAt) {
+            const examDate = new Date(nearestExam.startsAt);
+            const daysUntil = differenceInCalendarDays(examDate, now);
+            const rampDays = nearestExam.rampDays ?? 14;
+
+            if (daysUntil >= 0 && daysUntil <= rampDays) {
+                examMode = true;
+                targetExamInfo = {
+                    id: nearestExam.id,
+                    title: nearestExam.title,
+                    startsAt: examDate,
+                    rampDays,
+                    daysUntilExam: daysUntil,
+                };
+            }
+        }
+
+        // 3. Process each card with FSRS
+        const processedCards: DueFlashcardItem[] = allCardRows.map((card) => {
+            const isStandardDue =
+                !card.nextReviewAt ||
+                new Date(card.nextReviewAt).getTime() <= now.getTime() ||
+                card.state === State.New ||
+                !card.stability ||
+                card.stability === "0";
+
+            let isDue = isStandardDue;
+            let dueReason: "standard" | "exam_ramp" | "not_due" = isStandardDue
+                ? "standard"
+                : "not_due";
+            let retrievabilityAtExam: number | null = null;
+
+            if (examMode && targetExamInfo?.startsAt) {
+                const examDate = new Date(targetExamInfo.startsAt);
+
+                if (
+                    card.state === State.New ||
+                    !card.lastReview ||
+                    !card.stability ||
+                    Number(card.stability) <= 0
+                ) {
+                    // Unreviewed or new card has 0% predicted retention at exam date
+                    retrievabilityAtExam = 0;
+                    isDue = true;
+                    dueReason = isStandardDue ? "standard" : "exam_ramp";
+                } else {
+                    const fsrsCard: FSRSCard = {
+                        due: card.nextReviewAt ? new Date(card.nextReviewAt) : new Date(card.createdAt),
+                        stability: Number(card.stability),
+                        difficulty: Number(card.difficulty) || 4.0,
+                        elapsed_days: 0,
+                        scheduled_days: card.intervalDays || 0,
+                        reps: card.reps || 0,
+                        lapses: card.lapses || 0,
+                        learning_steps: 0,
+                        state: card.state ?? State.Review,
+                        last_review: card.lastReview ? new Date(card.lastReview) : new Date(card.createdAt),
+                    };
+
+                    const rRaw = fsrsScheduler.get_retrievability(fsrsCard, examDate, false);
+                    const r = typeof rRaw === "number" && !isNaN(rRaw) ? rRaw : 0;
+                    retrievabilityAtExam = Math.round(r * 1000) / 1000;
+
+                    // If retrievability is below 0.85 (85%), pull forward into due queue
+                    if (r < 0.85) {
+                        isDue = true;
+                        dueReason = isStandardDue ? "standard" : "exam_ramp";
+                    } else if (isStandardDue) {
+                        isDue = true;
+                        dueReason = "standard";
+                    } else {
+                        isDue = false;
+                        dueReason = "not_due";
+                    }
+                }
+            }
+
+            return {
+                id: card.id,
+                userId: card.userId,
+                courseId: card.courseId,
+                front: card.front,
+                back: card.back,
+                nextReviewAt: card.nextReviewAt,
+                intervalDays: card.intervalDays,
+                stability: card.stability,
+                difficulty: card.difficulty,
+                reps: card.reps,
+                lapses: card.lapses,
+                state: card.state,
+                lastReview: card.lastReview,
+                createdAt: card.createdAt,
+                updatedAt: card.updatedAt,
+                isDue,
+                dueReason,
+                retrievabilityAtExam,
+            };
+        });
+
+        const dueCards = processedCards.filter((c) => c.isDue);
+
+        return {
+            success: true,
+            examMode,
+            targetExam: targetExamInfo,
+            totalCards: processedCards.length,
+            dueCount: dueCards.length,
+            dueCards,
+            allCards: processedCards,
+        };
+    } catch (error) {
+        console.error("Failed to get due flashcards:", error);
+        return {
+            success: false,
+            error: "Failed to get due flashcards",
+            examMode: false,
+            targetExam: null,
+            totalCards: 0,
+            dueCount: 0,
+            dueCards: [],
+            allCards: [],
+        };
+    }
+}
+
+export async function reviewFlashcard(cardId: string, rating: number) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    if (![Rating.Again, Rating.Hard, Rating.Good, Rating.Easy].includes(rating as any)) {
+        return { error: "Invalid rating. Must be 1 (Again), 2 (Hard), 3 (Good), or 4 (Easy)." };
+    }
+
+    try {
+        const [card] = await db
+            .select()
+            .from(flashcards)
+            .where(
+                and(
+                    eq(flashcards.id, cardId),
+                    eq(flashcards.userId, user.id),
+                    isNull(flashcards.deletedAt)
+                )
+            )
+            .limit(1);
+
+        if (!card) {
+            return { error: "Flashcard not found" };
+        }
+
+        const now = new Date();
+        const fsrsCard: FSRSCard = {
+            due: card.nextReviewAt ? new Date(card.nextReviewAt) : now,
+            stability: card.stability ? Number(card.stability) : 0,
+            difficulty: card.difficulty ? Number(card.difficulty) : 0,
+            elapsed_days: card.lastReview
+                ? Math.max(0, differenceInCalendarDays(now, new Date(card.lastReview)))
+                : 0,
+            scheduled_days: card.intervalDays || 0,
+            reps: card.reps || 0,
+            lapses: card.lapses || 0,
+            learning_steps: 0,
+            state: card.state !== null && card.state !== undefined ? card.state : State.New,
+            last_review: card.lastReview ? new Date(card.lastReview) : undefined,
+        };
+
+        const record = fsrsScheduler.repeat(fsrsCard, now);
+        const updatedFSRS = record[rating as Grade].card;
+
+        const nextIntervalDays = Math.max(
+            0,
+            Math.round(dateDiffInDays(updatedFSRS.due, now))
+        );
+
+        const [updatedCard] = await db
+            .update(flashcards)
+            .set({
+                stability: updatedFSRS.stability.toFixed(4),
+                difficulty: updatedFSRS.difficulty.toFixed(4),
+                reps: updatedFSRS.reps,
+                lapses: updatedFSRS.lapses,
+                state: updatedFSRS.state,
+                lastReview: now,
+                nextReviewAt: updatedFSRS.due,
+                intervalDays: nextIntervalDays,
+                updatedAt: now,
+            })
+            .where(and(eq(flashcards.id, cardId), eq(flashcards.userId, user.id)))
+            .returning();
+
+        revalidatePath(`/study/courses/${card.courseId}`);
+        revalidatePath("/study/courses");
+        return { success: true, card: updatedCard };
+    } catch (error: any) {
+        console.error("Failed to review flashcard:", error);
+        return { error: error?.message || "Failed to review flashcard" };
+    }
+}
+
