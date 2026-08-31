@@ -7,6 +7,8 @@ import TodayView from "@/components/TodayView";
 import { calculateTaskScore } from "@/lib/scoring";
 import { differenceInCalendarDays } from "date-fns";
 
+import { getTodayNudge, checkAndTriggerNudge } from "@/server/actions/coaching";
+
 export default async function Today() {
   const user = await getCurrentUser();
 
@@ -91,6 +93,16 @@ export default async function Today() {
     return daysUntil >= 0 && daysUntil <= ramp;
   });
 
+  // 5. Fetch or Trigger AI-10 Coaching Nudge for Today
+  let todayNudge = await getTodayNudge();
+  if (!todayNudge) {
+    try {
+      todayNudge = await checkAndTriggerNudge();
+    } catch (e) {
+      console.warn("Failed to evaluate AI-10 coaching nudge triggers:", e);
+    }
+  }
+
   // Filter pending tasks and sort by deterministic score descending
   const pendingTasks = userTasks.filter((t) => t.status !== "done" && !t.parentTaskId);
   const sortedTasks = [...pendingTasks].sort((a, b) => calculateTaskScore(b) - calculateTaskScore(a));
@@ -106,6 +118,7 @@ export default async function Today() {
       initialHabits={userHabits}
       initialTodayLogs={userTodayLogs}
       initialUpcomingExams={upcomingExams}
+      initialNudge={todayNudge}
       todayDateStr={todayStr}
     />
   );

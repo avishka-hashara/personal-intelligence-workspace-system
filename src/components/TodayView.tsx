@@ -19,6 +19,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { HabitTracker, type Habit, type HabitLog } from "@/components/HabitTracker";
+import { NudgeBanner, type NudgeData } from "@/components/NudgeBanner";
 
 export interface UpcomingExamItem {
   id: string;
@@ -39,6 +40,7 @@ interface TodayViewProps {
   initialHabits?: Habit[];
   initialTodayLogs?: HabitLog[];
   initialUpcomingExams?: UpcomingExamItem[];
+  initialNudge?: NudgeData | null;
   todayDateStr?: string;
 }
 
@@ -47,6 +49,7 @@ export function TodayView({
   initialHabits = [],
   initialTodayLogs = [],
   initialUpcomingExams = [],
+  initialNudge = null,
   todayDateStr,
 }: TodayViewProps) {
   const { tasks, isInitialized, initTasks, addTask, toggleTask } = useTaskStore();
@@ -92,7 +95,10 @@ export function TodayView({
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
+      {/* AI-10 Coaching Nudge Banner at the very top */}
+      {initialNudge && <NudgeBanner nudge={initialNudge} />}
+
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Today</h1>
         <p className="text-slate-500 mt-2 text-sm font-medium">

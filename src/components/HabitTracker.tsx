@@ -114,7 +114,7 @@ export function HabitTracker({ habits: initialHabits, todayLogs, todayDateStr }:
   const completionPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <section className="space-y-3.5">
+    <section id="habits" className="space-y-3.5 scroll-mt-6">
       {/* Header & Progress */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

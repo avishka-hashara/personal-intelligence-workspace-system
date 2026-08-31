@@ -481,4 +481,16 @@ export const nodeLinks = pgTable("node_links", {
     version: smallint("version").default(1)
 }, (t) => [
     primaryKey({ columns: [t.sourceNodeId, t.targetNodeId] })
-]);
+]);
+
+// ----------------------------------------------------------------------
+// Section 7.2.6: AI Coaching & Nudges
+// ----------------------------------------------------------------------
+
+export const coachingNudges = pgTable("coaching_nudges", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    ctaUrl: text("cta_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});

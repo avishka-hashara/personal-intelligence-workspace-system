@@ -71,6 +71,13 @@
       "when": 1788117371742,
       "tag": "0009_melted_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788171999082,
+      "tag": "0010_loud_hydra",
+      "breakpoints": true
     }
   ]
 }
