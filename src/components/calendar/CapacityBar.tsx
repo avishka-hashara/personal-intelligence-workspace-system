@@ -1,0 +1,69 @@
+"use client";
+
+import React from "react";
+import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+
+interface CapacityBarProps {
+  blockedMinutes: number;
+  availableMinutes: number; // e.g. 300
+}
+
+export function CapacityBar({ blockedMinutes, availableMinutes }: CapacityBarProps) {
+  const cap = availableMinutes > 0 ? availableMinutes : 300;
+  const percentage = Math.round((blockedMinutes / cap) * 100);
+  const isOverCapacity = percentage > 110;
+  const isNearCapacity = percentage >= 90 && percentage <= 110;
+
+  const hours = Math.floor(blockedMinutes / 60);
+  const mins = blockedMinutes % 60;
+  const formattedTime = hours > 0 ? `${hours}h ${mins > 0 ? `${mins}m` : ""}` : `${mins}m`;
+
+  const capHours = Math.floor(cap / 60);
+  const capMins = cap % 60;
+  const formattedCap = capHours > 0 ? `${capHours}h ${capMins > 0 ? `${capMins}m` : ""}` : `${capMins}m`;
+
+  return (
+    <div className="w-full space-y-1.5 px-2 py-1.5 bg-slate-50/80 rounded-lg border border-slate-200/80 text-[11px]">
+      <div className="flex items-center justify-between font-medium">
+        <span className="flex items-center gap-1 text-slate-500">
+          <Clock className="w-3 h-3" />
+          <span>Capacity</span>
+        </span>
+        <span
+          className={`font-semibold flex items-center gap-1 ${
+            isOverCapacity
+              ? "text-amber-600 font-bold"
+              : isNearCapacity
+              ? "text-indigo-600"
+              : "text-slate-700"
+          }`}
+        >
+          {isOverCapacity && <AlertTriangle className="w-3 h-3 text-amber-500 animate-pulse" />}
+          <span>
+            {formattedTime} / {formattedCap} ({percentage}%)
+          </span>
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+        <div
+          className={`h-full transition-all duration-300 rounded-full ${
+            isOverCapacity
+              ? "bg-amber-500 shadow-xs shadow-amber-200"
+              : isNearCapacity
+              ? "bg-indigo-600"
+              : "bg-emerald-500"
+          }`}
+          style={{ width: `${Math.min(percentage, 100)}%` }}
+        />
+      </div>
+
+      {isOverCapacity && (
+        <div className="text-[10px] text-amber-600 font-medium leading-tight">
+          Over capacity (&gt;110% of budget)
+        </div>
+      )}
+    </div>
+  );
+}

@@ -318,6 +318,24 @@ export const habitPauses = pgTable("habit_pauses", {
     version: smallint("version").default(1)
 });
 
+export const timeBlocks = pgTable("time_blocks", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    title: text("title"),
+    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "set null" }),
+    studySessionId: uuid("study_session_id").references(() => studySessions.id, { onDelete: "set null" }),
+    kind: text("kind").default("work").notNull(), // 'work' | 'study' | 'rest' | 'admin'
+    locked: boolean("locked").default(false).notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
 export const tags = pgTable("tags", {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
