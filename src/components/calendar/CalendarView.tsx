@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useMemo } from "react";
+import React, { useState, useEffect, useTransition, useMemo, useId } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -64,11 +64,17 @@ export function CalendarView({
   currentView,
 }: CalendarViewProps) {
   const router = useRouter();
+  const dndId = useId();
+  const [mounted, setMounted] = useState(false);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlockWithTask[]>(initialTimeBlocks);
   const [activeTaskDrag, setActiveTaskDrag] = useState<TaskItemData | null>(null);
   const [activeBlockDrag, setActiveBlockDrag] = useState<TimeBlockWithTask | null>(null);
   const [taskSearch, setTaskSearch] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Overlap conflict state
   const [conflictModal, setConflictModal] = useState<{
@@ -311,7 +317,7 @@ export function CalendarView({
   }, [parsedCurrentDate, displayedDays, currentView]);
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext id="calendar-dnd-context" sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="space-y-6 max-w-7xl mx-auto pb-12">
         {/* Top Header & Navigation Controls */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { TimeBlockWithTask } from "@/server/actions/calendar";
 import { CapacityBar } from "@/components/calendar/CapacityBar";
@@ -70,10 +70,22 @@ export function CalendarGrid({
   onDeleteBlock,
   onSlotClick,
 }: CalendarGridProps) {
+  const [mounted, setMounted] = useState(false);
+  const [currentTimeMinutes, setCurrentTimeMinutes] = useState<number | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    const updateTime = () => {
+      const d = new Date();
+      setCurrentTimeMinutes(d.getHours() * 60 + d.getMinutes());
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const todayStr = useMemo(() => formatDateKey(new Date()), []);
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const currentTopPx = (currentMinutes / 60) * HOUR_HEIGHT_PX;
+  const currentTopPx = currentTimeMinutes !== null ? (currentTimeMinutes / 60) * HOUR_HEIGHT_PX : 0;
 
   // Group blocks by date key (YYYY-MM-DD)
   const blocksByDay = useMemo(() => {
@@ -197,8 +209,8 @@ export function CalendarGrid({
                     />
                   ))}
 
-                  {/* Red Current Time Line Indicator (if today) */}
-                  {isToday && (
+                  {/* Red Current Time Line Indicator (if today & mounted) */}
+                  {mounted && isToday && currentTimeMinutes !== null && (
                     <div
                       className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
                       style={{ top: `${currentTopPx}px` }}
