@@ -15,6 +15,7 @@ import {
   Info,
   Layers,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { importTodoistCSV, importAnkiTSV, type ImportResult } from "@/server/actions/import";
 
@@ -88,10 +89,11 @@ export function DataImportManager({ coursesList }: DataImportManagerProps) {
             <span>Data & Imports</span>
           </Link>
           <Link
-            href="/settings"
+            href="/settings/ai"
             className="pb-3 text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center gap-2 transition-colors"
           >
-            <span>General & AI Preferences</span>
+            <Sparkles className="w-4 h-4" />
+            <span>AI & Privacy Controls</span>
           </Link>
         </div>
       </div>
@@ -354,6 +356,147 @@ export function DataImportManager({ coursesList }: DataImportManagerProps) {
           </div>
         </div>
       </div>
+
+      {/* =================================================================== */}
+      {/* Section 3: Account Deletion (Danger Zone) */}
+      {/* =================================================================== */}
+      <div className="bg-white rounded-2xl border border-rose-200 p-6 shadow-xs space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-rose-600" />
+              <h2 className="text-base font-bold text-rose-950">Delete Account & Data</h2>
+            </div>
+            <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
+              Request permanent deletion of your account and all associated workspace data (tasks, habits, notes, and study decks). You have a <strong>7-day grace period</strong> before database records and storage files are permanently purged.
+            </p>
+          </div>
+        </div>
+
+        <AccountDeletionModal />
+      </div>
     </div>
   );
 }
+
+function AccountDeletionModal() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const handleDelete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.trim()) return;
+
+    setIsDeleting(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/v1/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm_email: emailInput.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.error || "Failed to delete account");
+      } else {
+        setSuccessMsg(data.message || "Account scheduled for deletion in 7 days.");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2500);
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || "An unexpected network error occurred.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs border border-rose-200 transition-colors cursor-pointer"
+      >
+        Request Account Deletion
+      </button>
+
+      {isOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">Confirm Account Deletion</h3>
+                <span className="text-xs text-slate-500">7-Day Cancellation Grace Period</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              This action will revoke your active session and mark your account as <strong>pending_deletion</strong>. All data cascades will be permanently purged after 7 days. Backups age out within 30 days.
+            </p>
+
+            <form onSubmit={handleDelete} className="space-y-4 pt-2">
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Please type your account email to confirm:
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="your.email@example.com"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                />
+              </div>
+
+              {errorMsg && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              {successMsg && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{successMsg} Redirecting...</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => {
+                    setIsOpen(false);
+                    setErrorMsg(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!emailInput.trim() || isDeleting}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  {isDeleting ? "Processing Deletion..." : "Confirm & Delete Account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
