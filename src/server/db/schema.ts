@@ -599,4 +599,27 @@ export const metricLogs = pgTable("metric_logs", {
     hlc: text("hlc"),
     version: smallint("version").default(1)
 });
+
+// ----------------------------------------------------------------------
+// Section 7.2.9: Reviews (Weekly & Quarterly Periodic Reviews - AI-08)
+// ----------------------------------------------------------------------
+
+export const reviews = pgTable("reviews", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    period: text("period").notNull(), // 'weekly' | 'quarterly'
+    periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+    periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+    stats: jsonb("stats").notNull(),
+    narrative: text("narrative").notNull(),
+    proposedAdjustments: jsonb("proposed_adjustments"),
+    userNotes: text("user_notes"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
 

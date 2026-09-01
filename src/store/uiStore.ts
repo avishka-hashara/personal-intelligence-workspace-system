@@ -44,6 +44,11 @@ interface UIState {
   isCopilotOpen: boolean;
   setCopilotOpen: (open: boolean) => void;
   toggleCopilot: () => void;
+
+  // Day Strip State
+  isDayStripOpen: boolean;
+  setDayStripOpen: (open: boolean) => void;
+  toggleDayStrip: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -91,4 +96,10 @@ export const useUIStore = create<UIState>((set) => ({
   isCopilotOpen: false,
   setCopilotOpen: (open: boolean) => set({ isCopilotOpen: open }),
   toggleCopilot: () => set((state) => ({ isCopilotOpen: !state.isCopilotOpen })),
+
+  // Day Strip implementation (defaults to open)
+  isDayStripOpen: true,
+  setDayStripOpen: (open: boolean) => set({ isDayStripOpen: open }),
+  toggleDayStrip: () => set((state) => ({ isDayStripOpen: !state.isDayStripOpen })),
 }));
+
