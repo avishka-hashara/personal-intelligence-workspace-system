@@ -318,7 +318,7 @@ export function CalendarView({
 
   return (
     <DndContext id="calendar-dnd-context" sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      <div className="space-y-6 w-full max-w-7xl mx-auto pb-12 transition-all duration-300 ease-in-out">
         {/* Top Header & Navigation Controls */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center gap-3">
@@ -392,9 +392,9 @@ export function CalendarView({
         </div>
 
         {/* Main Workspace Layout (Sidebar + CalendarGrid) */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 items-start w-full transition-all duration-300 ease-in-out">
           {/* Left Sidebar: Unscheduled Tasks */}
-          <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-4">
+          <div className="w-full lg:w-[280px] xl:w-[300px] shrink-0 min-w-[260px] bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-indigo-600" />
@@ -436,7 +436,7 @@ export function CalendarView({
           </div>
 
           {/* Center Main Area: Calendar Grid */}
-          <div className="lg:col-span-3 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             <CalendarGrid
               days={displayedDays}
               timeBlocks={timeBlocks}

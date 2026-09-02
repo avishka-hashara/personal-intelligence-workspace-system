@@ -23,26 +23,32 @@ export function CapacityBar({ blockedMinutes, availableMinutes }: CapacityBarPro
   const formattedCap = capHours > 0 ? `${capHours}h ${capMins > 0 ? `${capMins}m` : ""}` : `${capMins}m`;
 
   return (
-    <div className="w-full space-y-1.5 px-2 py-1.5 bg-slate-50/80 rounded-lg border border-slate-200/80 text-[11px]">
-      <div className="flex items-center justify-between font-medium">
-        <span className="flex items-center gap-1 text-slate-500">
-          <Clock className="w-3 h-3" />
-          <span>Capacity</span>
-        </span>
-        <span
-          className={`font-semibold flex items-center gap-1 ${
+    <div className="w-full space-y-1 px-2 py-1.5 bg-slate-50/80 rounded-lg border border-slate-200/80 text-[10px]">
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <div className="flex items-center justify-between gap-1 text-slate-500 font-medium">
+          <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider text-slate-400 shrink-0">
+            <Clock className="w-2.5 h-2.5" />
+            <span>Capacity</span>
+          </span>
+          <span className="text-[10px] font-bold text-slate-600 shrink-0">
+            {percentage}%
+          </span>
+        </div>
+        <div
+          className={`font-semibold flex items-center gap-1 text-[10px] truncate ${
             isOverCapacity
               ? "text-amber-600 font-bold"
               : isNearCapacity
               ? "text-indigo-600"
               : "text-slate-700"
           }`}
+          title={`${formattedTime} / ${formattedCap} (${percentage}%)`}
         >
-          {isOverCapacity && <AlertTriangle className="w-3 h-3 text-amber-500 animate-pulse" />}
-          <span>
-            {formattedTime} / {formattedCap} ({percentage}%)
+          {isOverCapacity && <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0 animate-pulse" />}
+          <span className="truncate">
+            {formattedTime} / {formattedCap}
           </span>
-        </span>
+        </div>
       </div>
 
       {/* Progress Bar */}
@@ -60,8 +66,8 @@ export function CapacityBar({ blockedMinutes, availableMinutes }: CapacityBarPro
       </div>
 
       {isOverCapacity && (
-        <div className="text-[10px] text-amber-600 font-medium leading-tight">
-          Over capacity (&gt;110% of budget)
+        <div className="text-[9px] text-amber-600 font-medium leading-tight truncate">
+          Over capacity (&gt;110%)
         </div>
       )}
     </div>

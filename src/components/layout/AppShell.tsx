@@ -50,8 +50,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex-1 lg:pl-[240px] flex min-h-screen relative w-full overflow-x-hidden">
       {/* Dynamic Center Column: expands smoothly when Day Strip is collapsed */}
       <main
-        className={`flex-1 w-full p-4 sm:p-6 md:p-8 transition-all duration-300 ease-in-out ${
-          isDayStripOpen ? "max-w-[1020px] mx-auto" : "max-w-7xl mx-auto"
+        className={`flex-1 min-w-0 w-full p-4 sm:p-6 md:p-8 transition-all duration-300 ease-in-out ${
+          isDayStripOpen ? "max-w-full" : "max-w-7xl mx-auto"
         }`}
       >
         {children}
