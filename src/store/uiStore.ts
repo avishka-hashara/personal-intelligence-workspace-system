@@ -11,6 +11,12 @@ export interface PageContext {
   data?: string;
 }
 
+export interface ActiveTimer {
+  taskId: string;
+  taskTitle: string;
+  startTime: Date;
+}
+
 interface UIState {
   isCommandOpen: boolean;
   setCommandOpen: (open: boolean) => void;
@@ -39,6 +45,9 @@ interface UIState {
   elapsedSeconds: number;
   setElapsedSeconds: (seconds: number | ((prev: number) => number)) => void;
   resetTimer: () => void;
+  activeTimer: ActiveTimer | null;
+  startTimer: (taskId: string, taskTitle: string) => void;
+  clearTimer: () => void;
 
   // AI Copilot State
   isCopilotOpen: boolean;
@@ -88,6 +97,23 @@ export const useUIStore = create<UIState>((set) => ({
     })),
   resetTimer: () =>
     set({
+      timerStatus: "idle",
+      elapsedSeconds: 0,
+      activeTimer: null,
+    }),
+  activeTimer: null,
+  startTimer: (taskId: string, taskTitle: string) =>
+    set({
+      activeTimer: { taskId, taskTitle, startTime: new Date() },
+      activeFocusTaskId: taskId,
+      timerStatus: "running",
+      elapsedSeconds: 0,
+      isTimerOpen: true,
+    }),
+  clearTimer: () =>
+    set({
+      activeTimer: null,
+      activeFocusTaskId: null,
       timerStatus: "idle",
       elapsedSeconds: 0,
     }),

@@ -437,3 +437,14 @@ export async function getCalendarData(
     unscheduledTasks: activeTasks,
   };
 }
+
+export async function getTodayTimeBlocks(): Promise<TimeBlockWithTask[]> {
+  const user = await getCurrentUser();
+  if (!user) return [];
+
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+  return getTimeBlocks(startOfDay, endOfDay, user.id);
+}

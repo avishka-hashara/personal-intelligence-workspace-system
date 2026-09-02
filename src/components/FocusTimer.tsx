@@ -28,6 +28,8 @@ export function FocusTimer() {
     isCommandOpen,
     isCaptureOpen,
     isCopilotOpen,
+    activeTimer,
+    clearTimer,
   } = useUIStore();
 
   const { tasks } = useTaskStore();
@@ -36,9 +38,11 @@ export function FocusTimer() {
   const sessionStartedAtRef = useRef<Date | null>(null);
 
   // Find active task if one is selected
-  const activeTask = activeFocusTaskId
-    ? tasks.find((t) => t.id === activeFocusTaskId) ?? null
+  const effectiveTaskId = activeTimer?.taskId || activeFocusTaskId;
+  const activeTask = effectiveTaskId
+    ? tasks.find((t) => t.id === effectiveTaskId) ?? null
     : null;
+  const displayTitle = activeTimer?.taskTitle || activeTask?.title || "General Focus Session";
 
   // Global 'F' keyboard shortcut
   useEffect(() => {
@@ -131,6 +135,7 @@ export function FocusTimer() {
 
   const handleReset = () => {
     resetTimer();
+    clearTimer();
     setInterruptions(0);
     sessionStartedAtRef.current = null;
   };
@@ -145,9 +150,9 @@ export function FocusTimer() {
     setIsSubmitting(true);
 
     try {
-      if (activeFocusTaskId) {
+      if (effectiveTaskId) {
         await recordFocusSession(
-          activeFocusTaskId,
+          effectiveTaskId,
           startedAt,
           endedAt,
           minutesToRecord,
@@ -159,6 +164,7 @@ export function FocusTimer() {
     } finally {
       setIsSubmitting(false);
       resetTimer();
+      clearTimer();
       setInterruptions(0);
       sessionStartedAtRef.current = null;
       setTimerOpen(false);
@@ -189,8 +195,8 @@ export function FocusTimer() {
                   F
                 </span>
               </div>
-              <div className="text-xs font-medium text-slate-200 truncate mt-0.5" title={activeTask ? activeTask.title : "No task linked"}>
-                {activeTask ? activeTask.title : "General Focus Session"}
+              <div className="text-xs font-medium text-slate-200 truncate mt-0.5" title={displayTitle}>
+                {displayTitle}
               </div>
             </div>
           </div>

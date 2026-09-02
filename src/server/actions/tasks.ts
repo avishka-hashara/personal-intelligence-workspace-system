@@ -393,6 +393,55 @@ export async function getAllUserTags() {
     }
 }
 
+export async function logFocusSession(
+    taskId: string,
+    startedAt: Date | string,
+    endedAt: Date | string,
+    interruptions: number = 0
+) {
+    const user = await getCurrentUser();
+    if (!user) return { error: "Unauthorized" };
+
+    try {
+        const start = startedAt instanceof Date ? startedAt : new Date(startedAt);
+        const end = endedAt instanceof Date ? endedAt : new Date(endedAt);
+        const elapsedMs = Math.max(0, end.getTime() - start.getTime());
+        const elapsedMinutes = Math.max(1, Math.round(elapsedMs / (1000 * 60)));
+
+        // 1. Insert row into focus_sessions
+        const [session] = await db
+            .insert(focusSessions)
+            .values({
+                userId: user.id,
+                taskId: taskId || null,
+                startedAt: start,
+                endedAt: end,
+                minutes: elapsedMinutes,
+                interruptions: interruptions ?? 0,
+            })
+            .returning();
+
+        // 2. Increment actualMinutes on the corresponding task
+        if (taskId) {
+            await db
+                .update(tasks)
+                .set({
+                    actualMinutes: sql`COALESCE(${tasks.actualMinutes}, 0) + ${elapsedMinutes}`,
+                    updatedAt: new Date(),
+                })
+                .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)));
+        }
+
+        revalidatePath("/");
+        revalidatePath("/tasks");
+        revalidatePath("/calendar");
+        return { success: true, session, elapsedMinutes };
+    } catch (error) {
+        console.error("Failed to log focus session:", error);
+        return { error: "Failed to log focus session" };
+    }
+}
+
 export async function recordFocusSession(
     taskId: string,
     startedAt: Date,

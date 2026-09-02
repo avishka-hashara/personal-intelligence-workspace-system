@@ -58,7 +58,7 @@ export function TodayView({
   userName = null,
 }: TodayViewProps) {
   const { tasks, isInitialized, initTasks, addTask, toggleTask } = useTaskStore();
-  const { setSelectedTaskId, setActiveFocusTask, setTimerOpen, setTimerStatus } = useUIStore();
+  const { setSelectedTaskId, setActiveFocusTask, setTimerOpen, setTimerStatus, startTimer } = useUIStore();
   const [title, setTitle] = useState("");
 
   useEffect(() => {
@@ -190,9 +190,7 @@ export function TodayView({
                 <button
                   type="button"
                   onClick={() => {
-                    setActiveFocusTask(nowTask.id);
-                    setTimerOpen(true);
-                    setTimerStatus("running");
+                    startTimer(nowTask.id, nowTask.title);
                   }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-sm transition-all hover:shadow cursor-pointer"
                 >

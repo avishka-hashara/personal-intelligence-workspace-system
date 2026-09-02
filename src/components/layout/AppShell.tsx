@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ChevronRight,
 } from "lucide-react";
+import { DayStrip } from "@/components/DayStrip";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { isDayStripOpen, toggleDayStrip, setDayStripOpen } = useUIStore();
@@ -101,15 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Day Strip Content Area */}
-        <div className="flex-1 w-[272px] flex flex-col gap-4">
-          <div className="flex-1 border-2 border-dashed border-slate-200/90 rounded-2xl flex flex-col items-center justify-center text-slate-400 text-xs text-center p-6 bg-white/50 space-y-2">
-            <Clock className="w-6 h-6 text-indigo-400/80 mb-1" />
-            <span className="font-semibold text-slate-700 text-sm">Daily Rail</span>
-            <p className="text-slate-500 text-xs leading-relaxed">
-              Real-time daily timeline, focus timer status, and habit streak queue.
-            </p>
-          </div>
-        </div>
+        <DayStrip />
       </aside>
     </div>
   );
