@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { TimeBlockWithTask } from "@/server/actions/calendar";
 import { CapacityBar } from "@/components/calendar/CapacityBar";
@@ -31,17 +31,19 @@ function formatDateKey(date: Date): string {
 }
 
 // Droppable individual hour slot cell
-function HourSlotCell({
-  dateKey,
-  hour,
-  onSlotClick,
-  dateObj,
-}: {
+interface HourSlotCellProps {
   dateKey: string;
   hour: number;
   onSlotClick?: (date: Date, hour: number) => void;
   dateObj: Date;
-}) {
+}
+
+const HourSlotCell = React.memo(function HourSlotCell({
+  dateKey,
+  hour,
+  onSlotClick,
+  dateObj,
+}: HourSlotCellProps) {
   const { isOver, setNodeRef } = useDroppable({
     id: `slot-${dateKey}-${hour}`,
     data: {
@@ -61,7 +63,145 @@ function HourSlotCell({
       style={{ height: `${HOUR_HEIGHT_PX}px` }}
     />
   );
+});
+
+// Memoized Day Column Header
+interface DayColumnHeaderProps {
+  dateKey: string;
+  dayName: string;
+  dayNum: number;
+  monthName: string;
+  isToday: boolean;
+  blockedMinutes: number;
+  availableMinutes: number;
 }
+
+const DayColumnHeader = React.memo(function DayColumnHeader({
+  dateKey,
+  dayName,
+  dayNum,
+  monthName,
+  isToday,
+  blockedMinutes,
+  availableMinutes,
+}: DayColumnHeaderProps) {
+  return (
+    <div key={dateKey} className="p-2 sm:p-2.5 text-center space-y-1.5 min-w-0">
+      <div className="flex items-center justify-center gap-1.5 min-w-0">
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">
+          {dayName}
+        </span>
+        <span
+          className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 ${
+            isToday
+              ? "bg-indigo-600 text-white shadow-xs"
+              : "text-slate-900 bg-slate-200/60"
+          }`}
+        >
+          {dayNum}
+        </span>
+        <span className="text-[10px] text-slate-400 font-medium hidden sm:inline truncate">
+          {monthName}
+        </span>
+      </div>
+
+      {/* Capacity Bar */}
+      <CapacityBar
+        blockedMinutes={blockedMinutes}
+        availableMinutes={availableMinutes}
+      />
+    </div>
+  );
+});
+
+// Memoized Day Column with custom arePropsEqual
+interface DayColumnProps {
+  day: Date;
+  dateKey: string;
+  isToday: boolean;
+  dayBlocks: TimeBlockWithTask[];
+  hourHeightPx: number;
+  onDeleteBlock: (id: string) => void;
+  onSlotClick?: (date: Date, hour: number) => void;
+  currentTimeMinutes: number | null;
+  mounted: boolean;
+  currentTopPx: number;
+}
+
+const areDayColumnPropsEqual = (prev: DayColumnProps, next: DayColumnProps) => {
+  if (prev.dateKey !== next.dateKey) return false;
+  if (prev.isToday !== next.isToday) return false;
+  if (prev.hourHeightPx !== next.hourHeightPx) return false;
+  if (prev.currentTopPx !== next.currentTopPx) return false;
+  if (prev.mounted !== next.mounted) return false;
+  if (prev.onDeleteBlock !== next.onDeleteBlock) return false;
+  if (prev.onSlotClick !== next.onSlotClick) return false;
+  if (prev.dayBlocks.length !== next.dayBlocks.length) return false;
+  for (let i = 0; i < prev.dayBlocks.length; i++) {
+    const pb = prev.dayBlocks[i];
+    const nb = next.dayBlocks[i];
+    if (
+      pb.id !== nb.id ||
+      pb.startAt !== nb.startAt ||
+      pb.endAt !== nb.endAt ||
+      pb.title !== nb.title ||
+      pb.kind !== nb.kind ||
+      pb.locked !== nb.locked
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const DayColumn = React.memo(function DayColumn({
+  day,
+  dateKey,
+  isToday,
+  dayBlocks,
+  hourHeightPx,
+  onDeleteBlock,
+  onSlotClick,
+  currentTimeMinutes,
+  mounted,
+  currentTopPx,
+}: DayColumnProps) {
+  return (
+    <div className="relative bg-white min-w-0">
+      {/* Hourly Droppable Slots */}
+      {HOURS.map((hour) => (
+        <HourSlotCell
+          key={hour}
+          dateKey={dateKey}
+          hour={hour}
+          onSlotClick={onSlotClick}
+          dateObj={day}
+        />
+      ))}
+
+      {/* Red Current Time Line Indicator (if today & mounted) */}
+      {mounted && isToday && currentTimeMinutes !== null && (
+        <div
+          className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
+          style={{ top: `${currentTopPx}px` }}
+        >
+          <div className="w-2 h-2 rounded-full bg-rose-500 -ml-1 shadow-xs" />
+          <div className="flex-1 h-[2px] bg-rose-500 shadow-xs" />
+        </div>
+      )}
+
+      {/* Absolutely Positioned Time Blocks */}
+      {dayBlocks.map((block) => (
+        <TimeBlockCard
+          key={block.id}
+          block={block}
+          hourHeightPx={hourHeightPx}
+          onDelete={onDeleteBlock}
+        />
+      ))}
+    </div>
+  );
+}, areDayColumnPropsEqual);
 
 export function CalendarGrid({
   days,
@@ -71,23 +211,8 @@ export function CalendarGrid({
   onSlotClick,
 }: CalendarGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState<number>(0);
   const [mounted, setMounted] = useState(false);
   const [currentTimeMinutes, setCurrentTimeMinutes] = useState<number | null>(null);
-
-  // ResizeObserver to track container width dynamically
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect) {
-          setContainerWidth(Math.round(entry.contentRect.width));
-        }
-      }
-    });
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -106,16 +231,20 @@ export function CalendarGrid({
   // Group blocks by date key (YYYY-MM-DD)
   const blocksByDay = useMemo(() => {
     const map: Record<string, TimeBlockWithTask[]> = {};
+    for (const day of days) {
+      map[formatDateKey(day)] = [];
+    }
     for (const block of timeBlocks) {
       const blockDate = new Date(block.startAt);
       const key = formatDateKey(blockDate);
-      if (!map[key]) map[key] = [];
-      map[key].push(block);
+      if (map[key]) {
+        map[key].push(block);
+      }
     }
     return map;
-  }, [timeBlocks]);
+  }, [days, timeBlocks]);
 
-  // Calculate sum of blocked minutes per day
+  // Calculate sum of blocked minutes per day (recomputed in the same frame as state updates)
   const minutesByDay = useMemo(() => {
     const map: Record<string, number> = {};
     for (const day of days) {
@@ -141,7 +270,7 @@ export function CalendarGrid({
       ref={containerRef}
       className="flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden select-none w-full transition-all duration-300 ease-in-out"
     >
-      {/* Unified Horizontal Scroll Container so Header and Body columns are always 1:1 in sync */}
+      {/* Unified Horizontal Scroll Container */}
       <div className="overflow-x-auto w-full">
         <div style={{ minWidth: `${requiredMinWidth}px`, width: "100%" }}>
           {/* Day Columns Header */}
@@ -168,31 +297,16 @@ export function CalendarGrid({
                 const monthName = day.toLocaleDateString([], { month: "short" });
 
                 return (
-                  <div key={dateKey} className="p-2 sm:p-2.5 text-center space-y-1.5 min-w-0">
-                    <div className="flex items-center justify-center gap-1.5 min-w-0">
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">
-                        {dayName}
-                      </span>
-                      <span
-                        className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 ${
-                          isToday
-                            ? "bg-indigo-600 text-white shadow-xs"
-                            : "text-slate-900 bg-slate-200/60"
-                        }`}
-                      >
-                        {dayNum}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-medium hidden sm:inline truncate">
-                        {monthName}
-                      </span>
-                    </div>
-
-                    {/* Capacity Bar */}
-                    <CapacityBar
-                      blockedMinutes={dayBlockedMinutes}
-                      availableMinutes={availableMinutesPerDay}
-                    />
-                  </div>
+                  <DayColumnHeader
+                    key={dateKey}
+                    dateKey={dateKey}
+                    dayName={dayName}
+                    dayNum={dayNum}
+                    monthName={monthName}
+                    isToday={isToday}
+                    blockedMinutes={dayBlockedMinutes}
+                    availableMinutes={availableMinutesPerDay}
+                  />
                 );
               })}
             </div>
@@ -227,39 +341,19 @@ export function CalendarGrid({
                   const dayBlocks = blocksByDay[dateKey] || [];
 
                   return (
-                    <div key={dateKey} className="relative bg-white min-w-0">
-                      {/* Hourly Droppable Slots */}
-                      {HOURS.map((hour) => (
-                        <HourSlotCell
-                          key={hour}
-                          dateKey={dateKey}
-                          hour={hour}
-                          onSlotClick={onSlotClick}
-                          dateObj={day}
-                        />
-                      ))}
-
-                      {/* Red Current Time Line Indicator (if today & mounted) */}
-                      {mounted && isToday && currentTimeMinutes !== null && (
-                        <div
-                          className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
-                          style={{ top: `${currentTopPx}px` }}
-                        >
-                          <div className="w-2 h-2 rounded-full bg-rose-500 -ml-1 shadow-xs" />
-                          <div className="flex-1 h-[2px] bg-rose-500 shadow-xs" />
-                        </div>
-                      )}
-
-                      {/* Absolutely Positioned Time Blocks */}
-                      {dayBlocks.map((block) => (
-                        <TimeBlockCard
-                          key={block.id}
-                          block={block}
-                          hourHeightPx={HOUR_HEIGHT_PX}
-                          onDelete={onDeleteBlock}
-                        />
-                      ))}
-                    </div>
+                    <DayColumn
+                      key={dateKey}
+                      day={day}
+                      dateKey={dateKey}
+                      isToday={isToday}
+                      dayBlocks={dayBlocks}
+                      hourHeightPx={HOUR_HEIGHT_PX}
+                      onDeleteBlock={onDeleteBlock}
+                      onSlotClick={onSlotClick}
+                      currentTimeMinutes={currentTimeMinutes}
+                      mounted={mounted}
+                      currentTopPx={currentTopPx}
+                    />
                   );
                 })}
               </div>

@@ -62,7 +62,7 @@ const KIND_THEMES: Record<
   },
 };
 
-export function TimeBlockCard({
+export const TimeBlockCard = React.memo(function TimeBlockCard({
   block,
   hourHeightPx,
   onDelete,
@@ -169,4 +169,4 @@ export function TimeBlockCard({
       )}
     </div>
   );
-}
+});

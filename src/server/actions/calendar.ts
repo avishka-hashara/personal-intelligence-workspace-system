@@ -214,7 +214,6 @@ export async function createTimeBlock(
       .returning();
 
     try {
-      revalidatePath("/calendar");
       revalidatePath("/");
     } catch {}
 
@@ -333,7 +332,6 @@ export async function updateTimeBlock(
       .returning();
 
     try {
-      revalidatePath("/calendar");
       revalidatePath("/");
     } catch {}
 
@@ -375,7 +373,6 @@ export async function deleteTimeBlock(
       .where(and(eq(timeBlocks.id, id), eq(timeBlocks.userId, user.id)));
 
     try {
-      revalidatePath("/calendar");
       revalidatePath("/");
     } catch {}
 

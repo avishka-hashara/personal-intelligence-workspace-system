@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useMemo, useId } from "react";
+import React, { useState, useEffect, useMemo, useId, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
@@ -8,6 +8,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  pointerWithin,
   DragStartEvent,
   DragEndEvent,
 } from "@dnd-kit/core";
@@ -70,7 +71,15 @@ export function CalendarView({
   const [activeTaskDrag, setActiveTaskDrag] = useState<TaskItemData | null>(null);
   const [activeBlockDrag, setActiveBlockDrag] = useState<TimeBlockWithTask | null>(null);
   const [taskSearch, setTaskSearch] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [toastMessage, setToastMessage] = useState<{ id: number; message: string; type: "error" | "info" } | null>(null);
+
+  const showToast = useCallback((message: string, type: "error" | "info" = "error") => {
+    const id = Date.now();
+    setToastMessage({ id, message, type });
+    setTimeout(() => {
+      setToastMessage((curr) => (curr?.id === id ? null : curr));
+    }, 4000);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -153,7 +162,7 @@ export function CalendarView({
   };
 
   // Drag & Drop Handlers
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const data = event.active.data.current;
     if (data?.type === "task") {
       setActiveTaskDrag(data.task);
@@ -162,9 +171,95 @@ export function CalendarView({
       setActiveBlockDrag(data.block);
       setActiveTaskDrag(null);
     }
-  };
+  }, []);
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const scheduleBlock = useCallback((payload: any, allowOverlap: boolean) => {
+    const tempId = `temp-${Date.now()}`;
+    const optimisticBlock: TimeBlockWithTask = {
+      id: tempId,
+      userId: "",
+      title: payload.title || "Scheduled Block",
+      startAt: new Date(payload.startAt),
+      endAt: new Date(payload.endAt),
+      taskId: payload.taskId || null,
+      studySessionId: payload.studySessionId || null,
+      kind: payload.kind || "work",
+      locked: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      task: null,
+    };
+
+    const previousBlocks = timeBlocks;
+    // 1. Instant optimistic state update
+    setTimeBlocks((prev) => [...prev, optimisticBlock]);
+    setConflictModal({ isOpen: false, pendingData: null, message: "" });
+
+    // 2. Persist in background
+    createTimeBlock({ ...payload, allowOverlap })
+      .then((res) => {
+        if (res.success && res.timeBlock) {
+          setTimeBlocks((prev) =>
+            prev.map((b) => (b.id === tempId ? res.timeBlock! : b))
+          );
+        } else if (res.error === "OVERLAP_CONFLICT") {
+          setTimeBlocks(previousBlocks);
+          setConflictModal({
+            isOpen: true,
+            pendingData: payload,
+            isUpdate: false,
+            message: res.message || "This time block overlaps with an existing scheduled block.",
+          });
+        } else {
+          setTimeBlocks(previousBlocks);
+          showToast(res.message || "Failed to create time block", "error");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to create time block:", err);
+        setTimeBlocks(previousBlocks);
+        showToast("Failed to create time block", "error");
+      });
+  }, [timeBlocks, showToast]);
+
+  const updateBlock = useCallback((payload: { id: string; data: any }, allowOverlap: boolean) => {
+    const previousBlocks = timeBlocks;
+    // 1. Instant optimistic state update
+    setTimeBlocks((prev) =>
+      prev.map((b) =>
+        b.id === payload.id ? { ...b, ...payload.data } : b
+      )
+    );
+    setConflictModal({ isOpen: false, pendingData: null, message: "" });
+
+    // 2. Persist in background
+    updateTimeBlock(payload.id, { ...payload.data, allowOverlap })
+      .then((res) => {
+        if (res.success && res.timeBlock) {
+          setTimeBlocks((prev) =>
+            prev.map((b) => (b.id === payload.id ? res.timeBlock! : b))
+          );
+        } else if (res.error === "OVERLAP_CONFLICT") {
+          setTimeBlocks(previousBlocks);
+          setConflictModal({
+            isOpen: true,
+            pendingData: payload,
+            isUpdate: true,
+            message: res.message || "This time block overlaps with an existing scheduled block.",
+          });
+        } else {
+          setTimeBlocks(previousBlocks);
+          showToast(res.message || "Failed to update time block", "error");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to update time block:", err);
+        setTimeBlocks(previousBlocks);
+        showToast("Failed to update time block", "error");
+      });
+  }, [timeBlocks, showToast]);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTaskDrag(null);
     setActiveBlockDrag(null);
@@ -201,6 +296,11 @@ export function CalendarView({
       const newStartAt = new Date(`${dateKey}T${String(hour).padStart(2, "0")}:00:00`);
       const newEndAt = new Date(newStartAt.getTime() + durationMins * 60000);
 
+      // If position hasn't changed, do nothing
+      if (newStartAt.getTime() === oldStart.getTime()) {
+        return;
+      }
+
       const updatePayload = {
         id: block.id,
         data: {
@@ -211,52 +311,25 @@ export function CalendarView({
 
       updateBlock(updatePayload, false);
     }
-  };
+  }, [scheduleBlock, updateBlock]);
 
-  const scheduleBlock = (payload: any, allowOverlap: boolean) => {
-    startTransition(async () => {
-      const res = await createTimeBlock({ ...payload, allowOverlap });
-      if (res.success && res.timeBlock) {
-        setTimeBlocks((prev) => [...prev, res.timeBlock!]);
-        setConflictModal({ isOpen: false, pendingData: null, message: "" });
-      } else if (res.error === "OVERLAP_CONFLICT") {
-        setConflictModal({
-          isOpen: true,
-          pendingData: payload,
-          isUpdate: false,
-          message: res.message || "This time block overlaps with an existing scheduled block.",
-        });
+  const handleDeleteBlock = useCallback((id: string) => {
+    const previousBlocks = timeBlocks;
+    setTimeBlocks((prev) => prev.filter((b) => b.id !== id));
+
+    deleteTimeBlock(id).then((res) => {
+      if (!res.success) {
+        setTimeBlocks(previousBlocks);
+        showToast(res.error || "Failed to delete time block", "error");
       }
+    }).catch((err) => {
+      console.error("Failed to delete time block:", err);
+      setTimeBlocks(previousBlocks);
+      showToast("Failed to delete time block", "error");
     });
-  };
+  }, [timeBlocks, showToast]);
 
-  const updateBlock = (payload: { id: string; data: any }, allowOverlap: boolean) => {
-    startTransition(async () => {
-      const res = await updateTimeBlock(payload.id, { ...payload.data, allowOverlap });
-      if (res.success && res.timeBlock) {
-        setTimeBlocks((prev) =>
-          prev.map((b) => (b.id === payload.id ? res.timeBlock! : b))
-        );
-        setConflictModal({ isOpen: false, pendingData: null, message: "" });
-      } else if (res.error === "OVERLAP_CONFLICT") {
-        setConflictModal({
-          isOpen: true,
-          pendingData: payload,
-          isUpdate: true,
-          message: res.message || "This time block overlaps with an existing scheduled block.",
-        });
-      }
-    });
-  };
-
-  const handleDeleteBlock = (id: string) => {
-    startTransition(async () => {
-      setTimeBlocks((prev) => prev.filter((b) => b.id !== id));
-      await deleteTimeBlock(id);
-    });
-  };
-
-  const handleSlotClick = (date: Date, hour: number) => {
+  const handleSlotClick = useCallback((date: Date, hour: number) => {
     setQuickCreateModal({
       isOpen: true,
       date,
@@ -265,7 +338,7 @@ export function CalendarView({
     setNewTitle("");
     setNewKind("work");
     setNewDuration(60);
-  };
+  }, []);
 
   const handleQuickCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -317,7 +390,13 @@ export function CalendarView({
   }, [parsedCurrentDate, displayedDays, currentView]);
 
   return (
-    <DndContext id="calendar-dnd-context" sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext
+      id="calendar-dnd-context"
+      sensors={sensors}
+      collisionDetection={pointerWithin}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className="space-y-6 w-full max-w-7xl mx-auto pb-12 transition-all duration-300 ease-in-out">
         {/* Top Header & Navigation Controls */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -605,6 +684,24 @@ export function CalendarView({
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {/* Toast Notification for rollback/error feedback */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-900 text-white shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-bottom-2 text-xs font-medium backdrop-blur-md">
+          {toastMessage.type === "error" ? (
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          )}
+          <span>{toastMessage.message}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </DndContext>
