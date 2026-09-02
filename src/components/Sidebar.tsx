@@ -105,6 +105,7 @@ export function Sidebar() {
               <Link
                 key={link.href}
                 href={link.href}
+                prefetch={true}
                 onClick={() => setIsMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer ${
                   isActive
@@ -143,6 +144,7 @@ export function Sidebar() {
           <SyncStatusIndicator />
           <Link
             href="/settings/data"
+            prefetch={true}
             onClick={() => setIsMobileOpen(false)}
             className={`flex items-center gap-3 px-3 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer ${
               isSettingsActive

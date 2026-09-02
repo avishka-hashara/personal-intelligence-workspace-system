@@ -20,14 +20,19 @@ import {
   Sliders,
   History,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
+import dynamic from "next/dynamic";
+
+const HealthMetricChart = dynamic(
+  () => import("@/components/health/HealthMetricChart"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full flex items-center justify-center bg-slate-50/50 rounded-lg">
+        <div className="h-1.5 w-24 bg-slate-200 rounded-full animate-pulse" />
+      </div>
+    ),
+  }
+);
 import {
   createMetricLog,
   deleteMetricLog,
@@ -393,82 +398,12 @@ export function HealthDashboard({ metrics, logs }: HealthDashboardProps) {
 
                   <div className="h-28 w-full">
                     {mounted ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart
-                          data={chartData}
-                          margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
-                        >
-                          <defs>
-                            <linearGradient
-                              id={`grad-${metric.id}`}
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="5%"
-                                stopColor={theme.stroke}
-                                stopOpacity={0.3}
-                              />
-                              <stop
-                                offset="95%"
-                                stopColor={theme.stroke}
-                                stopOpacity={0.0}
-                              />
-                            </linearGradient>
-                          </defs>
-                          <XAxis
-                            dataKey="label"
-                            tickLine={false}
-                            axisLine={false}
-                            tick={{ fontSize: 9, fill: "#94a3b8" }}
-                            interval={3}
-                          />
-                          <YAxis
-                            tickLine={false}
-                            axisLine={false}
-                            tick={{ fontSize: 9, fill: "#94a3b8" }}
-                            domain={["dataMin - 1", "dataMax + 1"]}
-                          />
-                          <Tooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const dataPoint = payload[0].payload;
-                                return (
-                                  <div className="bg-slate-900 text-white px-2.5 py-1 rounded-lg text-xs shadow-lg">
-                                    <div className="text-[10px] text-slate-400">
-                                      {dataPoint.label}
-                                    </div>
-                                    <div className="font-bold">
-                                      {dataPoint.value !== null
-                                        ? `${dataPoint.value} ${metric.unit}`
-                                        : "No entry"}
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            stroke={theme.stroke}
-                            strokeWidth={2}
-                            fillOpacity={1}
-                            fill={`url(#grad-${metric.id})`}
-                            connectNulls
-                            dot={{
-                              r: 2.5,
-                              fill: theme.stroke,
-                              strokeWidth: 1,
-                              stroke: "#fff",
-                            }}
-                            activeDot={{ r: 5, strokeWidth: 0 }}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
+                      <HealthMetricChart
+                        data={chartData}
+                        metricId={metric.id}
+                        metricUnit={metric.unit}
+                        stroke={theme.stroke}
+                      />
                     ) : (
                       <div className="h-full bg-slate-50 rounded-lg animate-pulse" />
                     )}
