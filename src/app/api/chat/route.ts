@@ -10,6 +10,8 @@ import {
   notes,
   habits,
   nodes,
+  chunks,
+  courseResources,
 } from "@/server/db/schema";
 import { eq, and, isNull, desc, asc, ilike, sql, isNotNull, or } from "drizzle-orm";
 import { format } from "date-fns";
@@ -323,7 +325,8 @@ ${
 4. You have access to tools:
    - Use 'createTask' to create a new actionable task when the user requests adding, scheduling, or reminding them of a task. When the user says "remind me to..." or "create task...", IMMEDIATELY call the createTask tool with the extracted title, due date, and priority. Do NOT ask for confirmation first.
    - Use 'completeTask' to mark an existing task as completed (done) when the user mentions finishing, checking off, completing, or marking a task as done (e.g. "mark 'submit report' as done", "completed database schema", "done with task 1"). Pass the taskId if available or the task title.
-   - Use 'searchKnowledge' to search the user's notes, goals, and courses by meaning rather than exact wording whenever they refer to past information or topics not in the snapshot. Weave what you find directly and naturally into your answer without announcing that you searched.`;
+   - Use 'searchKnowledge' to search the user's unified knowledge chunks (course resources, uploaded PDFs, notes, documents). ALWAYS call searchKnowledge when the user asks questions about their notes, uploaded documents, course concepts, protocols, or factual topics.
+5. When the searchKnowledge tool returns relevant context from course materials or notes, you MUST base your answer on the retrieved excerpts, mention the specific protocol/term names from the documents, and cite the source file.`;
 
     const systemPrompt = buildSystemPrompt({
       assistantName: currentAssistantName,
@@ -593,11 +596,11 @@ ${
 
         searchKnowledge: tool({
           description:
-            "Search the user's own notes, goals, and courses by meaning rather than exact wording. Use this whenever they refer to something they've written before, ask what they know about a topic, or ask a question you can't answer from the current page. Prefer calling it over guessing.",
+            "Search across the user's unified knowledge chunks (including course materials, uploaded PDFs, notes, and study resources) by meaning. Use this whenever the user asks questions about their notes, uploaded documents, course concepts, terminology, protocols, or past information. When relevant excerpts are returned, base your answer directly on them, mention specific terms or protocol names, and cite the source file.",
           inputSchema: z.object({
             query: z
               .string()
-              .describe("Search query to find relevant notes, goals, or courses by meaning"),
+              .describe("Search query to find relevant excerpts from course materials, uploaded PDFs, or notes"),
           }),
           execute: async ({ query }: { query: string }) => {
             console.log("[searchKnowledge] Executing search for query:", query);
@@ -618,32 +621,80 @@ ${
               if (vec && isSemantic) {
                 const toVector = (v: number[]) => sql`${JSON.stringify(v)}::vector`;
 
-                const vectorResults = await db
+                // Task 1 & 2: Query unified chunks table (matching both 'resource' and 'note' entity_types)
+                // using pgvector cosine similarity with calibrated cutoff > 0.35, top 5 ordered by distance
+                const chunkVectorResults = await db
                   .select({
-                    id: nodes.id,
-                    title: nodes.title,
-                    entityType: nodes.entityType,
-                    snippet: nodes.snippet,
-                    similarity: sql<number>`1 - (${nodes.embedding} <=> ${toVector(vec)})`,
+                    id: chunks.id,
+                    entityId: chunks.entityId,
+                    entityType: chunks.entityType,
+                    chunkIndex: chunks.chunkIndex,
+                    content: chunks.content,
+                    contextHeader: chunks.contextHeader,
+                    resourceTitle: courseResources.title,
+                    resourceUrl: courseResources.url,
+                    similarity: sql<number>`1 - (${chunks.embedding} <=> ${toVector(vec)})`,
                   })
-                  .from(nodes)
+                  .from(chunks)
+                  .leftJoin(courseResources, eq(chunks.entityId, courseResources.id))
                   .where(
                     and(
-                      eq(nodes.userId, user.id), // MANDATORY
-                      isNotNull(nodes.embedding),
-                      sql`1 - (${nodes.embedding} <=> ${toVector(vec)}) > 0.25`
+                      eq(chunks.userId, user.id),
+                      isNotNull(chunks.embedding),
+                      sql`1 - (${chunks.embedding} <=> ${toVector(vec)}) > 0.35`
                     )
                   )
-                  .orderBy(sql`${nodes.embedding} <=> ${toVector(vec)}`) // ASC
+                  .orderBy(sql`${chunks.embedding} <=> ${toVector(vec)}`)
                   .limit(5);
 
-                const formatted = vectorResults.map((r) => ({
-                  id: r.id,
-                  title: r.title || "Untitled",
-                  entityType: r.entityType,
-                  snippet: (r.snippet || r.title || "").trim().replace(/\s+/g, " ").slice(0, 300),
-                  similarity: Number(r.similarity),
-                }));
+                // Supplement with nodes table if chunk matches are fewer than 5
+                let nodeResults: any[] = [];
+                if (chunkVectorResults.length < 5) {
+                  nodeResults = await db
+                    .select({
+                      id: nodes.id,
+                      title: nodes.title,
+                      entityType: nodes.entityType,
+                      snippet: nodes.snippet,
+                      similarity: sql<number>`1 - (${nodes.embedding} <=> ${toVector(vec)})`,
+                    })
+                    .from(nodes)
+                    .where(
+                      and(
+                        eq(nodes.userId, user.id),
+                        isNotNull(nodes.embedding),
+                        sql`1 - (${nodes.embedding} <=> ${toVector(vec)}) > 0.35`
+                      )
+                    )
+                    .orderBy(sql`${nodes.embedding} <=> ${toVector(vec)}`)
+                    .limit(5 - chunkVectorResults.length);
+                }
+
+                const formatted = [
+                  ...chunkVectorResults.map((r) => {
+                    let sourceFile = r.resourceTitle || "Document";
+                    if (r.resourceUrl) {
+                      const rawFileName = r.resourceUrl.split("/").pop()?.split("?")[0] || "";
+                      sourceFile = rawFileName.replace(/^\d+-/, "") || sourceFile;
+                    }
+                    return {
+                      id: r.id,
+                      entity_type: r.entityType,
+                      source_file: sourceFile,
+                      context_header: r.contextHeader,
+                      content: r.content,
+                      similarity: Number(Number(r.similarity).toFixed(4)),
+                    };
+                  }),
+                  ...nodeResults.map((r) => ({
+                    id: r.id,
+                    entity_type: r.entityType,
+                    source_file: r.title || "Note",
+                    context_header: r.title || "Note",
+                    content: (r.snippet || r.title || "").trim().replace(/\s+/g, " "),
+                    similarity: Number(Number(r.similarity).toFixed(4)),
+                  })),
+                ];
 
                 return {
                   success: true,
@@ -654,33 +705,79 @@ ${
                 };
               }
 
-              // Fallback keyword search
-              const keywordResults = await db
+              // Fallback keyword search across unified chunks
+              const keywordChunkResults = await db
                 .select({
-                  id: nodes.id,
-                  title: nodes.title,
-                  entityType: nodes.entityType,
-                  snippet: nodes.snippet,
+                  id: chunks.id,
+                  entityId: chunks.entityId,
+                  entityType: chunks.entityType,
+                  chunkIndex: chunks.chunkIndex,
+                  content: chunks.content,
+                  contextHeader: chunks.contextHeader,
+                  resourceTitle: courseResources.title,
+                  resourceUrl: courseResources.url,
                 })
-                .from(nodes)
+                .from(chunks)
+                .leftJoin(courseResources, eq(chunks.entityId, courseResources.id))
                 .where(
                   and(
-                    eq(nodes.userId, user.id),
+                    eq(chunks.userId, user.id),
                     or(
-                      ilike(nodes.title, `%${query}%`),
-                      ilike(nodes.snippet, `%${query}%`)
+                      ilike(chunks.content, `%${query}%`),
+                      ilike(chunks.contextHeader, `%${query}%`)
                     )
                   )
                 )
                 .limit(5);
 
-              const formattedFallback = keywordResults.map((r) => ({
-                id: r.id,
-                title: r.title || "Untitled",
-                entityType: r.entityType,
-                snippet: (r.snippet || r.title || "").trim().replace(/\s+/g, " ").slice(0, 300),
-                similarity: 1.0,
-              }));
+              // Also check nodes table for keyword fallback
+              let keywordNodeResults: any[] = [];
+              if (keywordChunkResults.length < 5) {
+                keywordNodeResults = await db
+                  .select({
+                    id: nodes.id,
+                    title: nodes.title,
+                    entityType: nodes.entityType,
+                    snippet: nodes.snippet,
+                  })
+                  .from(nodes)
+                  .where(
+                    and(
+                      eq(nodes.userId, user.id),
+                      or(
+                        ilike(nodes.title, `%${query}%`),
+                        ilike(nodes.snippet, `%${query}%`)
+                      )
+                    )
+                  )
+                  .limit(5 - keywordChunkResults.length);
+              }
+
+              const formattedFallback = [
+                ...keywordChunkResults.map((r) => {
+                  let sourceFile = r.resourceTitle || "Document";
+                  if (r.resourceUrl) {
+                    const rawFileName = r.resourceUrl.split("/").pop()?.split("?")[0] || "";
+                    sourceFile = rawFileName.replace(/^\d+-/, "") || sourceFile;
+                  }
+                  return {
+                    id: r.id,
+                    entity_type: r.entityType,
+                    source_file: sourceFile,
+                    context_header: r.contextHeader,
+                    content: r.content,
+                    similarity: 1.0,
+                  };
+                }),
+                ...keywordNodeResults.map((r) => ({
+                  id: r.id,
+                  entity_type: r.entityType,
+                  source_file: r.title || "Note",
+                  context_header: r.title || "Note",
+                  content: (r.snippet || r.title || "").trim().replace(/\s+/g, " "),
+                  similarity: 1.0,
+                })),
+              ];
 
               return {
                 success: true,
