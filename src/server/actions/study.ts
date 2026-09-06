@@ -8,6 +8,9 @@ import {
     studySessions,
     courseResources,
     flashcards,
+    notes,
+    nodeLinks,
+    chunks,
 } from "@/server/db/schema";
 import { eq, and, desc, asc, isNull } from "drizzle-orm";
 import { getCurrentUser, createClient } from "@/utils/supabase/server";
@@ -768,6 +771,170 @@ export async function reviewFlashcard(cardId: string, rating: number) {
     } catch (error: any) {
         console.error("Failed to review flashcard:", error);
         return { error: error?.message || "Failed to review flashcard" };
+    }
+}
+
+export type DeleteResourceAction = "convert_to_note" | "keep_chunks" | "purge_all";
+
+/**
+ * Smart delete for course resources:
+ * - convert_to_note: Combines chunks/text into an editable Markdown Note, links it to the course,
+ *                    re-assigns chunks to the note, deletes file from Supabase storage, soft-deletes resource.
+ * - keep_chunks: Retains chunks in knowledge graph (marks contextHeader as archived),
+ *                deletes file from Supabase storage, soft-deletes resource.
+ * - purge_all: Completely purges chunks from database, deletes file from storage, soft-deletes resource.
+ */
+export async function deleteResource(
+    resourceId: string,
+    courseId: string,
+    action: DeleteResourceAction = "purge_all"
+) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        // 1. Fetch resource and verify ownership
+        const [resource] = await db
+            .select()
+            .from(courseResources)
+            .where(
+                and(
+                    eq(courseResources.id, resourceId),
+                    eq(courseResources.userId, user.id),
+                    isNull(courseResources.deletedAt)
+                )
+            )
+            .limit(1);
+
+        if (!resource) {
+            return { error: "Resource not found or already deleted" };
+        }
+
+        // 2. Fetch parent course for code/title
+        const [course] = await db
+            .select()
+            .from(courses)
+            .where(eq(courses.id, courseId))
+            .limit(1);
+
+        const courseCode = course?.code || "COURSE";
+        const courseTitle = course?.title || "Course";
+
+        let createdNoteId: string | undefined;
+
+        if (action === "convert_to_note") {
+            // Fetch all chunks for this resource in order
+            const resourceChunks = await db
+                .select()
+                .from(chunks)
+                .where(eq(chunks.entityId, resourceId))
+                .orderBy(asc(chunks.chunkIndex));
+
+            let combinedSections = "";
+            if (resourceChunks.length > 0) {
+                combinedSections = resourceChunks
+                    .map((c, i) => `### Section ${i + 1}\n\n${c.content}`)
+                    .join("\n\n---\n\n");
+            } else {
+                combinedSections = `Extracted from course resource: **${resource.title}** (${resource.url})`;
+            }
+
+            const noteTitle = `${courseCode}: ${resource.title}`;
+            const fullNoteContent = `# ${resource.title}\n\n*Source: Course resource for **${courseCode} - ${courseTitle}***\n\n${combinedSections}`;
+
+            // Create note in notes table (triggers automatic node row creation)
+            const [newNote] = await db
+                .insert(notes)
+                .values({
+                    userId: user.id,
+                    title: noteTitle,
+                    content: fullNoteContent,
+                })
+                .returning();
+
+            createdNoteId = newNote.id;
+
+            // Link newly created Note to Course via nodeLinks
+            await db
+                .insert(nodeLinks)
+                .values({
+                    sourceNodeId: newNote.id,
+                    targetNodeId: courseId,
+                    kind: "reference",
+                })
+                .onConflictDoNothing();
+
+            // Re-assign chunks to the newly created Note
+            if (resourceChunks.length > 0) {
+                await db
+                    .update(chunks)
+                    .set({
+                        entityType: "note",
+                        entityId: newNote.id,
+                        contextHeader: `${courseCode} > ${resource.title}`,
+                    })
+                    .where(eq(chunks.entityId, resourceId));
+            }
+
+            // Generate node embedding asynchronously
+            generateNodeEmbedding(newNote.id, fullNoteContent).catch((err) => {
+                console.error("[deleteResource] Background note embedding error:", err);
+            });
+        } else if (action === "keep_chunks") {
+            // Retain chunks in knowledge graph, annotate contextHeader with [Archived]
+            await db
+                .update(chunks)
+                .set({
+                    contextHeader: `[Archived] ${courseCode} > ${resource.title}`,
+                })
+                .where(eq(chunks.entityId, resourceId));
+        } else if (action === "purge_all") {
+            // Delete all chunks for this resource
+            await db
+                .delete(chunks)
+                .where(eq(chunks.entityId, resourceId));
+        }
+
+        // 3. Clean up file in Supabase Storage if it was an uploaded file
+        if (resource.url && resource.url.includes("course-resources")) {
+            try {
+                const supabase = await createClient();
+                const match = resource.url.match(/course-resources\/(.+)$/);
+                if (match && match[1]) {
+                    const storagePath = decodeURIComponent(match[1]);
+                    await supabase.storage.from("course-resources").remove([storagePath]);
+                }
+            } catch (storageErr) {
+                console.warn("[deleteResource] Storage file cleanup warning:", storageErr);
+            }
+        }
+
+        // 4. Soft-delete the course_resources record
+        await db
+            .update(courseResources)
+            .set({
+                deletedAt: new Date(),
+                updatedAt: new Date(),
+            })
+            .where(eq(courseResources.id, resourceId));
+
+        revalidatePath(`/study/courses/${courseId}`);
+        revalidatePath("/study/courses");
+        if (createdNoteId) {
+            revalidatePath("/notes");
+            revalidatePath(`/notes/${createdNoteId}`);
+        }
+
+        return {
+            success: true,
+            action,
+            createdNoteId,
+        };
+    } catch (error: any) {
+        console.error("Failed to delete resource:", error);
+        return { error: error?.message || "Failed to delete resource" };
     }
 }
 
