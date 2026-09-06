@@ -463,7 +463,7 @@ ${
                 success: true,
                 message: `Task "${cleanTitle}" created successfully with priority P${parsedPriority}.`,
                 taskId: insertedTask.id,
-                task: insertedTask,
+                task: JSON.parse(JSON.stringify(insertedTask)),
               };
             } catch (err: any) {
               console.error("[createTask] Tool createTask database error:", err);
@@ -585,7 +585,7 @@ ${
                 success: true,
                 message: `Task "${updatedTask.title}" has been marked as completed.`,
                 taskId: updatedTask.id,
-                task: updatedTask,
+                task: JSON.parse(JSON.stringify(updatedTask)),
               };
             } catch (err: any) {
               console.error("[completeTask] Error:", err);
