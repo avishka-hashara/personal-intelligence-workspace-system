@@ -16,19 +16,70 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 
-const LIFE_AREA_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  work: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
-  project: { bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-200" },
-  health: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-  study: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
-  finance: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
-  personal: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
+function ProgressRing({
+  percent,
+  strokeColor = "#18181b",
+  size = 32,
+  strokeWidth = 3,
+}: {
+  percent: number;
+  strokeColor?: string;
+  size?: number;
+  strokeWidth?: number;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clampedPercent = Math.max(0, Math.min(100, percent));
+  const offset = circumference - (clampedPercent / 100) * circumference;
+
+  return (
+    <div className="relative inline-flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="rotate-[-90deg]">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="currentColor"
+          className="text-zinc-100 dark:text-zinc-800"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          fill="transparent"
+          className="transition-all duration-500 ease-out"
+        />
+      </svg>
+      <span className="absolute text-[9px] font-medium text-zinc-700 dark:text-zinc-300 font-mono">
+        {clampedPercent}
+      </span>
+    </div>
+  );
+}
+
+const LIFE_AREA_COLORS: Record<string, { dot: string }> = {
+  work: { dot: "bg-blue-500" },
+  project: { dot: "bg-indigo-500" },
+  health: { dot: "bg-emerald-500" },
+  study: { dot: "bg-amber-500" },
+  finance: { dot: "bg-purple-500" },
+  personal: { dot: "bg-rose-500" },
 };
 
 function getAreaBadge(area: string | null) {
-  if (!area) return { bg: "bg-slate-100", text: "text-slate-700", border: "border-slate-200" };
+  if (!area) return { label: "General", dot: "bg-zinc-400" };
   const key = area.toLowerCase().trim();
-  return LIFE_AREA_COLORS[key] || { bg: "bg-slate-100", text: "text-slate-700", border: "border-slate-200" };
+  return {
+    label: area,
+    dot: LIFE_AREA_COLORS[key]?.dot || "bg-zinc-400",
+  };
 }
 
 export default async function GoalsPage() {
@@ -54,38 +105,38 @@ export default async function GoalsPage() {
       {/* Page Header */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1">
-            <Compass className="w-3.5 h-3.5 text-indigo-500" />
+          <div className="flex items-center gap-2 text-zinc-400 text-xs font-semibold uppercase tracking-wider mb-1">
+            <Compass className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
             <span>Intent & Planning</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Goals & Life Plans</h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Goals & Life Plans</h1>
+          <p className="text-zinc-500 text-sm mt-1">
             Define high-level objectives, link roadmaps, and track long-term progress.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
           {/* View Toggle */}
-          <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-xl border border-slate-200">
+          <div className="inline-flex items-center p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl border border-zinc-200/70 dark:border-zinc-700/60">
             <Link
               href="/plan/goals"
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-slate-900 shadow-xs flex items-center gap-1.5"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-subtle flex items-center gap-1.5"
             >
-              <Target className="w-3.5 h-3.5 text-indigo-600" />
+              <Target className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />
               <span>Goals Grid</span>
             </Link>
             <Link
               href="/plan/canvas"
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center gap-1.5"
             >
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <Calendar className="w-3.5 h-3.5" />
               <span>24-Month Canvas</span>
             </Link>
           </div>
 
           {userGoals.length > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100/80 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 text-xs font-medium rounded-xl border border-zinc-200/50 dark:border-zinc-700/50">
+              <Sparkles className="w-3.5 h-3.5 text-zinc-500" />
               <span>{userGoals.length} {userGoals.length === 1 ? "Goal" : "Goals"}</span>
             </div>
           )}
@@ -93,17 +144,17 @@ export default async function GoalsPage() {
       </header>
 
       {/* Quick Add Goal Card */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+      <section className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 rounded-2xl p-5 shadow-subtle">
         <div className="flex items-center gap-2 mb-4">
-          <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600">
+          <div className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
             <Plus className="w-4 h-4" />
           </div>
-          <h2 className="text-sm font-semibold text-slate-900">Set a New Goal</h2>
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Set a New Goal</h2>
         </div>
 
         <form action={handleCreateGoal} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-6">
-            <label htmlFor="goal-title" className="block text-xs font-medium text-slate-600 mb-1">
+            <label htmlFor="goal-title" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
               Goal Title <span className="text-rose-500">*</span>
             </label>
             <input
@@ -112,12 +163,12 @@ export default async function GoalsPage() {
               name="title"
               required
               placeholder="e.g. 'Ship MVP & Acquire 100 Users'"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50/50 border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-zinc-50/50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
             />
           </div>
 
           <div className="sm:col-span-3">
-            <label htmlFor="goal-life-area" className="block text-xs font-medium text-slate-600 mb-1">
+            <label htmlFor="goal-life-area" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
               Life Area
             </label>
             <input
@@ -125,28 +176,28 @@ export default async function GoalsPage() {
               type="text"
               name="lifeArea"
               placeholder="e.g. Work, Health, Study"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50/50 border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-zinc-50/50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
             />
           </div>
 
           <div className="sm:col-span-3">
-            <label htmlFor="goal-target-date" className="block text-xs font-medium text-slate-600 mb-1">
+            <label htmlFor="goal-target-date" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
               Target Date
             </label>
             <input
               id="goal-target-date"
               type="date"
               name="targetDate"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50/50 border border-slate-300 rounded-lg text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-zinc-50/50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
             />
           </div>
 
           <div className="sm:col-span-12 flex justify-end mt-1">
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-sm transition-all hover:shadow cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-medium rounded-xl shadow-subtle transition-all cursor-pointer active:scale-[0.985]"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-600" />
               <span>Create Goal</span>
             </button>
           </div>
@@ -155,65 +206,59 @@ export default async function GoalsPage() {
 
       {/* Goals Grid */}
       <section className="space-y-3">
-        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <Target className="w-3.5 h-3.5 text-indigo-500" />
+        <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+          <Target className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
           Active Goals ({userGoals.length})
         </h2>
 
         {userGoals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {userGoals.map((goal) => {
-              const badgeStyle = getAreaBadge(goal.lifeArea);
+              const area = getAreaBadge(goal.lifeArea);
               const targetDateObj = goal.targetDate ? new Date(goal.targetDate) : null;
+              const targetVal = goal.targetValue ? Number(goal.targetValue) : 0;
+              const currentVal = goal.currentValue ? Number(goal.currentValue) : 0;
+              const progress = targetVal > 0 ? Math.round((currentVal / targetVal) * 100) : goal.status === "completed" ? 100 : 0;
 
               return (
                 <Link
                   key={goal.id}
                   href={`/plan/goals/${goal.id}`}
-                  className="group block p-5 bg-white border border-slate-200 hover:border-slate-900/30 rounded-2xl shadow-xs hover:shadow-md transition-all duration-200"
+                  className="group block p-5 bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl shadow-subtle hover:shadow-float transition-all duration-200"
                 >
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    {goal.lifeArea ? (
-                      <span
-                        className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border}`}
-                      >
-                        {goal.lifeArea}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
-                        General
-                      </span>
-                    )}
-
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {goal.status || "active"}
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-zinc-100/70 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700/50">
+                      <span className={`w-1.5 h-1.5 rounded-full ${area.dot}`} />
+                      <span>{area.label}</span>
                     </span>
+
+                    <ProgressRing percent={progress} size={30} strokeWidth={2.5} strokeColor="#18181b" />
                   </div>
 
-                  <h3 className="text-base font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 mb-2">
+                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors line-clamp-2 mb-1.5">
                     {goal.title}
                   </h3>
 
                   {goal.description && (
-                    <p className="text-xs text-slate-500 line-clamp-2 mb-4">
+                    <p className="text-xs text-zinc-400 line-clamp-2 mb-4 font-normal">
                       {goal.description}
                     </p>
                   )}
 
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 mt-auto">
+                  <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between text-xs text-zinc-400 mt-auto">
                     {targetDateObj ? (
                       <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <Calendar className="w-3.5 h-3.5 text-zinc-400" />
                         <span>{format(targetDateObj, "MMM d, yyyy")}</span>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-zinc-400">
                           ({isPast(targetDateObj) ? "Overdue" : `${formatDistanceToNow(targetDateObj)} left`})
                         </span>
                       </span>
                     ) : (
-                      <span className="text-slate-400 italic text-[11px]">No target date</span>
+                      <span className="text-zinc-400 italic text-[11px]">No target date</span>
                     )}
 
-                    <span className="text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all">
+                    <span className="text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 group-hover:translate-x-0.5 transition-all">
                       <ArrowRight className="w-4 h-4" />
                     </span>
                   </div>

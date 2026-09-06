@@ -23,24 +23,24 @@ export function CapacityBar({ blockedMinutes, availableMinutes }: CapacityBarPro
   const formattedCap = capHours > 0 ? `${capHours}h ${capMins > 0 ? `${capMins}m` : ""}` : `${capMins}m`;
 
   return (
-    <div className="w-full space-y-1 px-2 py-1.5 bg-slate-50/80 rounded-lg border border-slate-200/80 text-[10px]">
+    <div className="w-full space-y-1 px-2 py-1.5 bg-zinc-50/80 dark:bg-zinc-850/80 rounded-xl border border-zinc-200/70 dark:border-zinc-800/70 text-[10px]">
       <div className="flex flex-col gap-0.5 min-w-0">
-        <div className="flex items-center justify-between gap-1 text-slate-500 font-medium">
-          <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider text-slate-400 shrink-0">
+        <div className="flex items-center justify-between gap-1 text-zinc-500 dark:text-zinc-400 font-medium">
+          <span className="flex items-center gap-1 text-[9px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500 shrink-0">
             <Clock className="w-2.5 h-2.5" />
             <span>Capacity</span>
           </span>
-          <span className="text-[10px] font-bold text-slate-600 shrink-0">
+          <span className="text-[10px] font-mono tabular-nums font-semibold text-zinc-700 dark:text-zinc-300 shrink-0">
             {percentage}%
           </span>
         </div>
         <div
-          className={`font-semibold flex items-center gap-1 text-[10px] truncate ${
+          className={`font-mono tabular-nums text-[10px] truncate flex items-center gap-1 ${
             isOverCapacity
-              ? "text-amber-600 font-bold"
+              ? "text-amber-600 dark:text-amber-400 font-bold"
               : isNearCapacity
-              ? "text-indigo-600"
-              : "text-slate-700"
+              ? "text-zinc-800 dark:text-zinc-200 font-medium"
+              : "text-zinc-600 dark:text-zinc-400"
           }`}
           title={`${formattedTime} / ${formattedCap} (${percentage}%)`}
         >
@@ -52,21 +52,21 @@ export function CapacityBar({ blockedMinutes, availableMinutes }: CapacityBarPro
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+      <div className="w-full h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
         <div
           className={`h-full transition-all duration-300 rounded-full ${
             isOverCapacity
-              ? "bg-amber-500 shadow-xs shadow-amber-200"
+              ? "bg-amber-500"
               : isNearCapacity
-              ? "bg-indigo-600"
-              : "bg-emerald-500"
+              ? "bg-zinc-800 dark:bg-zinc-200"
+              : "bg-emerald-500 dark:bg-emerald-400"
           }`}
           style={{ width: `${Math.min(percentage, 100)}%` }}
         />
       </div>
 
       {isOverCapacity && (
-        <div className="text-[9px] text-amber-600 font-medium leading-tight truncate">
+        <div className="text-[9px] text-amber-600 dark:text-amber-400 font-medium leading-tight truncate">
           Over capacity (&gt;110%)
         </div>
       )}

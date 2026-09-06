@@ -314,12 +314,12 @@ export default async function PlanCanvasPage() {
       </header>
 
       {/* Timeline Controls & Legend Bar */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs text-slate-600">
-          <span className="font-semibold uppercase tracking-wider text-slate-400 text-[10px]">
+      <section className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 rounded-2xl p-4 shadow-subtle flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+          <span className="font-medium uppercase tracking-wider text-zinc-400 text-[10px]">
             Timeline Window:
           </span>
-          <span className="font-bold text-slate-900">
+          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
             {format(timelineStart, "MMMM yyyy")} &mdash; {format(timelineEnd, "MMMM yyyy")} (24 Months / 8 Quarters)
           </span>
         </div>
@@ -332,9 +332,9 @@ export default async function PlanCanvasPage() {
             return (
               <span
                 key={areaKey}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-50 border border-slate-200/80 text-slate-700"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-700 dark:text-zinc-300"
               >
-                <span className={`w-2 h-2 rounded-full ${config.dotColor}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${config.dotColor}`} />
                 <span>{config.label.split(" ")[0]}</span>
               </span>
             );
@@ -343,25 +343,25 @@ export default async function PlanCanvasPage() {
       </section>
 
       {/* Main 24-Month Timeline Canvas Container */}
-      <section className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+      <section className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 rounded-2xl shadow-subtle overflow-hidden">
         {/* Horizontally scrollable wrapper */}
         <div className="overflow-x-auto min-w-full">
           <div className="min-w-[1280px] relative pb-6">
-            {/* Timeline Header: Quarters & Months */}
-            <div className="sticky top-0 z-20 bg-slate-50 border-b border-slate-200">
+            {/* Timeline Header: Quarters & Months (Frosted Glass Sticky) */}
+            <div className="sticky top-0 z-20 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xl border-b border-zinc-200/70 dark:border-zinc-800/60">
               {/* Quarters Row */}
-              <div className="grid grid-cols-8 border-b border-slate-200/70 text-xs font-bold text-slate-800">
+              <div className="grid grid-cols-8 border-b border-zinc-200/60 dark:border-zinc-800/60 text-xs font-semibold text-zinc-800 dark:text-zinc-200">
                 {quarters.map((q, idx) => (
                   <div
                     key={idx}
-                    className={`py-2 px-3 text-center border-r border-slate-200/70 last:border-r-0 ${
-                      idx % 2 === 0 ? "bg-slate-100/50" : "bg-transparent"
+                    className={`py-2.5 px-3 text-center border-r border-zinc-200/60 dark:border-zinc-800/60 last:border-r-0 ${
+                      idx % 2 === 0 ? "bg-zinc-50/40 dark:bg-zinc-850/40" : "bg-transparent"
                     }`}
                   >
-                    <span className="text-[11px] font-mono tracking-wider uppercase text-slate-500">
+                    <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-400">
                       {q.year}
                     </span>
-                    <div className="text-xs font-bold text-slate-900">
+                    <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                       Q{q.quarter}
                     </div>
                   </div>
@@ -369,12 +369,12 @@ export default async function PlanCanvasPage() {
               </div>
 
               {/* Months Row */}
-              <div className="grid grid-cols-24 text-[11px] text-slate-500 font-mono">
+              <div className="grid grid-cols-24 text-[10px] text-zinc-400 font-mono">
                 {quarters.flatMap((q) =>
                   q.months.map((m, mIdx) => (
                     <div
                       key={`${q.label}-${mIdx}`}
-                      className="py-1.5 px-1 text-center border-r border-slate-200/50 last:border-r-0"
+                      className="py-1 px-1 text-center border-r border-zinc-100 dark:border-zinc-800/40 last:border-r-0"
                     >
                       {m.label}
                     </div>
@@ -388,10 +388,10 @@ export default async function PlanCanvasPage() {
               className="absolute top-0 bottom-0 z-10 pointer-events-none flex flex-col items-center"
               style={{ left: `${todayPercent}%` }}
             >
-              <div className="bg-indigo-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-xs uppercase tracking-wider -translate-y-1">
+              <div className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[9px] font-semibold px-2 py-0.5 rounded-full shadow-subtle uppercase tracking-wider -translate-y-1">
                 Today
               </div>
-              <div className="w-[2px] h-full bg-indigo-500/80 border-l border-dashed border-indigo-400" />
+              <div className="w-[1px] h-full bg-zinc-900/60 dark:bg-zinc-100/60 border-l border-dashed border-zinc-400/50" />
             </div>
 
             {/* Life Area Lanes */}

@@ -210,30 +210,30 @@ export function Copilot() {
       {isCopilotOpen && (
         <div
           onClick={() => setCopilotOpen(false)}
-          className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs z-50 md:hidden transition-opacity"
+          className="fixed inset-0 bg-black/25 dark:bg-black/50 backdrop-blur-xs z-50 md:hidden transition-opacity"
         />
       )}
 
       {/* Slide-Over Panel */}
       <aside
-        className={`fixed top-0 right-0 bottom-0 w-full sm:w-[440px] bg-white border-l border-slate-200 shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 bottom-0 w-full sm:w-[440px] bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl border-l border-zinc-200/80 dark:border-zinc-800/80 shadow-float z-50 flex flex-col transition-transform duration-300 ease-in-out ${
           isCopilotOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between p-4 border-b border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-900/40">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-600 text-white shadow-xs">
+            <div className="p-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-2xs">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h2 className="text-sm font-bold text-slate-900">Workspace Copilot</h2>
-                <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Workspace Copilot</h2>
+                <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
                   AI
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium">
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
                 Academic & Productivity Assistant
               </p>
             </div>
@@ -245,7 +245,7 @@ export function Copilot() {
                 type="button"
                 onClick={handleClear}
                 title="Clear conversation"
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+                className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -253,7 +253,7 @@ export function Copilot() {
             <button
               type="button"
               onClick={() => setCopilotOpen(false)}
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -265,20 +265,20 @@ export function Copilot() {
           {messages.length === 0 ? (
             <div className="h-full flex flex-col justify-center py-6 space-y-6">
               <div className="text-center space-y-2">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto border border-indigo-100 shadow-2xs">
+                <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-center mx-auto border border-zinc-200/60 dark:border-zinc-700/60 shadow-2xs">
                   <Bot className="w-6 h-6" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                   How can I help you today?
                 </h3>
-                <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
                   I can help break down courses, generate flashcards, structure notes, or optimize your daily task schedule.
                 </p>
               </div>
 
               {/* Starter Suggestions */}
               <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 px-1">
                   <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
                   <span>Suggested Prompts</span>
                 </div>
@@ -289,10 +289,10 @@ export function Copilot() {
                       key={suggestion}
                       type="button"
                       onClick={() => handleSuggestionClick(suggestion)}
-                      className="w-full text-left p-2.5 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-200 transition-all text-xs font-medium text-slate-700 hover:text-indigo-950 flex items-center justify-between group cursor-pointer"
+                      className="w-full text-left p-2.5 rounded-xl border border-zinc-200/70 dark:border-zinc-800/70 bg-zinc-50/70 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center justify-between group cursor-pointer"
                     >
                       <span className="line-clamp-1">{suggestion}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                      <ArrowRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
                     </button>
                   ))}
                 </div>
@@ -308,20 +308,20 @@ export function Copilot() {
                 return (
                   <div
                     key={message.id}
-                    className={`flex gap-3 ${
+                    className={`flex gap-2.5 ${
                       isUser ? "justify-end" : "justify-start"
                     }`}
                   >
                     {!isUser && (
-                      <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                        <Sparkles className="w-3.5 h-3.5" />
+                      <div className="w-6 h-6 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                        <Sparkles className="w-3 h-3" />
                       </div>
                     )}
 
                     <div
                       className={`max-w-[85%] ${
                         isUser
-                          ? "rounded-2xl px-4 py-3 text-xs leading-relaxed bg-slate-900 text-white shadow-xs rounded-br-xs"
+                          ? "rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-subtle rounded-br-xs"
                           : "flex flex-col gap-1.5"
                       }`}
                     >
@@ -330,8 +330,8 @@ export function Copilot() {
                       ) : (
                         <>
                           {textContent ? (
-                            <div className="rounded-2xl px-4 py-3 text-xs leading-relaxed bg-slate-100/90 text-slate-900 border border-slate-200/80 rounded-bl-xs">
-                              <div className="prose prose-slate prose-xs max-w-none space-y-2">
+                            <div className="rounded-2xl px-4 py-3 text-xs leading-relaxed bg-zinc-100/90 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 border border-zinc-200/60 dark:border-zinc-700/60 rounded-bl-xs">
+                              <div className="prose prose-zinc prose-xs dark:prose-invert max-w-none space-y-2">
                                 <ReactMarkdown>{textContent}</ReactMarkdown>
                               </div>
                             </div>
@@ -360,8 +360,8 @@ export function Copilot() {
                                       key={tool.toolCallId || `tool-create-${idx}`}
                                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium shadow-2xs transition-all ${
                                         isError
-                                          ? "bg-rose-50 text-rose-700 border-rose-200"
-                                          : "bg-slate-100 text-slate-700 border-slate-200"
+                                          ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+                                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200/60 dark:border-zinc-700/60"
                                       }`}
                                     >
                                       <span>{isError ? "⚠️" : "🛠️"}</span>
@@ -373,7 +373,7 @@ export function Copilot() {
                                           : "Created task"}
                                       </span>
                                       {isCall && (
-                                        <Loader2 className="w-3 h-3 animate-spin text-slate-400 ml-0.5" />
+                                        <Loader2 className="w-3 h-3 animate-spin text-zinc-400 ml-0.5" />
                                       )}
                                     </div>
                                   );
@@ -385,8 +385,8 @@ export function Copilot() {
                                       key={tool.toolCallId || `tool-complete-${idx}`}
                                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium shadow-2xs transition-all ${
                                         isError
-                                          ? "bg-rose-50 text-rose-700 border-rose-200"
-                                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                          ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+                                          : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
                                       }`}
                                     >
                                       <span>{isError ? "⚠️" : "✅"}</span>
@@ -410,8 +410,8 @@ export function Copilot() {
                                       key={tool.toolCallId || `tool-search-${idx}`}
                                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium shadow-2xs transition-all ${
                                         isError
-                                          ? "bg-rose-50 text-rose-700 border-rose-200"
-                                          : "bg-slate-100 text-slate-700 border-slate-200"
+                                          ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+                                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200/60 dark:border-zinc-700/60"
                                       }`}
                                     >
                                       <span>{isError ? "⚠️" : "🔍"}</span>
@@ -423,7 +423,7 @@ export function Copilot() {
                                           : "Searched knowledge graph"}
                                       </span>
                                       {isCall && (
-                                        <Loader2 className="w-3 h-3 animate-spin text-slate-400 ml-0.5" />
+                                        <Loader2 className="w-3 h-3 animate-spin text-zinc-400 ml-0.5" />
                                       )}
                                     </div>
                                   );
@@ -434,14 +434,14 @@ export function Copilot() {
                                     key={tool.toolCallId || `tool-generic-${idx}`}
                                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium shadow-2xs transition-all ${
                                       isError
-                                        ? "bg-rose-50 text-rose-700 border-rose-200"
-                                        : "bg-slate-100 text-slate-700 border-slate-200"
+                                        ? "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20"
+                                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200/60 dark:border-zinc-700/60"
                                     }`}
                                   >
                                     <span>⚙️</span>
                                     <span>{tool.toolName}</span>
                                     {isCall && (
-                                      <Loader2 className="w-3 h-3 animate-spin text-slate-400 ml-0.5" />
+                                      <Loader2 className="w-3 h-3 animate-spin text-zinc-400 ml-0.5" />
                                     )}
                                   </div>
                                 );
@@ -451,8 +451,8 @@ export function Copilot() {
 
                           {/* Fallback if neither text nor tools have arrived yet during stream */}
                           {!textContent && toolInvocations.length === 0 && (
-                            <div className="rounded-2xl px-4 py-3 text-xs leading-relaxed bg-slate-100/90 text-slate-500 border border-slate-200/80 rounded-bl-xs flex items-center gap-2">
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                            <div className="rounded-2xl px-4 py-3 text-xs leading-relaxed bg-zinc-100/90 dark:bg-zinc-800/80 text-zinc-500 border border-zinc-200/60 dark:border-zinc-700/60 rounded-bl-xs flex items-center gap-2">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-600 dark:text-zinc-300" />
                               <span>Thinking...</span>
                             </div>
                           )}
@@ -461,8 +461,8 @@ export function Copilot() {
                     </div>
 
                     {isUser && (
-                      <div className="w-7 h-7 rounded-xl bg-slate-800 text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                        <User className="w-3.5 h-3.5" />
+                      <div className="w-6 h-6 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                        <User className="w-3 h-3" />
                       </div>
                     )}
                   </div>
@@ -470,19 +470,19 @@ export function Copilot() {
               })}
 
               {isLoading && (
-                <div className="flex gap-3 justify-start items-center">
-                  <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                    <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                <div className="flex gap-2.5 justify-start items-center">
+                  <div className="w-6 h-6 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center shrink-0 shadow-2xs">
+                    <Sparkles className="w-3 h-3 animate-spin" />
                   </div>
-                  <div className="bg-slate-100 border border-slate-200/80 rounded-2xl rounded-bl-xs px-4 py-3 flex items-center gap-1.5 text-xs text-slate-500">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                  <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 rounded-2xl rounded-bl-xs px-3.5 py-2 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    <Loader2 className="w-3 h-3 animate-spin text-zinc-500" />
                     <span>Thinking...</span>
                   </div>
                 </div>
               )}
 
               {error && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700 flex items-center gap-2">
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-medium text-rose-700 dark:text-rose-400 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{error.message || "Failed to reach AI service"}</span>
                 </div>
@@ -494,21 +494,21 @@ export function Copilot() {
         </div>
 
         {/* Footer Form */}
-        <div className="p-3 border-t border-slate-100 bg-white">
+        <div className="p-3 border-t border-zinc-200/70 dark:border-zinc-800/70 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
           <form onSubmit={handleSubmit} className="flex items-center gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask Copilot anything..."
-              className="flex-1 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+              className="flex-1 px-3.5 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
             />
 
             {isLoading ? (
               <button
                 type="button"
                 onClick={stop}
-                className="p-2.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer shrink-0"
+                className="p-2 rounded-xl bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border border-rose-500/20 transition-colors cursor-pointer shrink-0"
                 title="Stop generating"
               >
                 <Square className="w-4 h-4 fill-current" />
@@ -517,7 +517,7 @@ export function Copilot() {
               <button
                 type="submit"
                 disabled={!input.trim()}
-                className="p-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer shrink-0 disabled:cursor-not-allowed"
+                className="p-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white disabled:opacity-40 transition-colors cursor-pointer shrink-0 disabled:cursor-not-allowed shadow-2xs"
                 title="Send message"
               >
                 <Send className="w-4 h-4" />

@@ -155,8 +155,8 @@ export function CommandPalette() {
               setCopilotOpen(true);
             }}
           >
-            <Sparkles className="mr-2 h-4 w-4 text-indigo-600" />
-            <span className="font-semibold text-slate-900">Ask Copilot</span>
+            <Sparkles className="mr-2 h-4 w-4 text-zinc-900 dark:text-zinc-100" />
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">Ask Copilot</span>
             <CommandShortcut>C</CommandShortcut>
           </CommandItem>
 
@@ -166,7 +166,7 @@ export function CommandPalette() {
               setCaptureOpen(true);
             }}
           >
-            <Plus className="mr-2 h-4 w-4 text-slate-700" />
+            <Plus className="mr-2 h-4 w-4 text-zinc-600 dark:text-zinc-400" />
             <span>Quick Capture</span>
             <CommandShortcut>Q</CommandShortcut>
           </CommandItem>
@@ -186,40 +186,40 @@ export function CommandPalette() {
         {/* Navigation */}
         <CommandGroup heading="Navigation">
           <CommandItem onSelect={() => handleNavigate("/")}>
-            <Home className="mr-2 h-4 w-4" />
+            <Home className="mr-2 h-4 w-4 text-zinc-500" />
             <span>Today</span>
             <CommandShortcut>T</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate("/plan/goals")}>
-            <Map className="mr-2 h-4 w-4" />
+            <Map className="mr-2 h-4 w-4 text-zinc-500" />
             <span>Plan</span>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate("/tasks")}>
-            <CheckSquare className="mr-2 h-4 w-4" />
+            <CheckSquare className="mr-2 h-4 w-4 text-zinc-500" />
             <span>Tasks</span>
             <CommandShortcut>K</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate("/study/courses")}>
-            <BookOpen className="mr-2 h-4 w-4" />
+            <BookOpen className="mr-2 h-4 w-4 text-zinc-500" />
             <span>Study</span>
             <CommandShortcut>S</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate("/calendar")}>
-            <Calendar className="mr-2 h-4 w-4" />
+            <Calendar className="mr-2 h-4 w-4 text-zinc-500" />
             <span>Calendar</span>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate("/notes")}>
-            <FileText className="mr-2 h-4 w-4" />
+            <FileText className="mr-2 h-4 w-4 text-zinc-500" />
             <span>Notes</span>
             <CommandShortcut>N</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate("/journal")}>
-            <Book className="mr-2 h-4 w-4" />
+            <Book className="mr-2 h-4 w-4 text-zinc-500" />
             <span>Journal</span>
             <CommandShortcut>J</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate("/settings")}>
-            <Settings className="mr-2 h-4 w-4" />
+            <Settings className="mr-2 h-4 w-4 text-zinc-500" />
             <span>Settings</span>
           </CommandItem>
         </CommandGroup>

@@ -73,17 +73,17 @@ export function QuickCapture() {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/20 flex items-start justify-center pt-[20vh] backdrop-blur-sm"
+      className="fixed inset-0 z-50 bg-black/30 dark:bg-black/60 flex items-start justify-center pt-[20vh] backdrop-blur-md transition-all"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           setCaptureOpen(false);
         }
       }}
     >
-      <div className="w-full max-w-xl mx-4 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="w-full max-w-xl mx-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl shadow-float border border-zinc-200/80 dark:border-zinc-800/80 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <form onSubmit={handleSubmit} className="p-4">
           <div className="flex items-center gap-3">
-            <Plus className="w-5 h-5 text-slate-400 shrink-0" />
+            <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-500 shrink-0" />
             <input
               type="text"
               name="title"
@@ -91,23 +91,23 @@ export function QuickCapture() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Capture a task or idea... (e.g. 'Read docs tomorrow 4pm')"
               autoFocus
-              className="flex-1 bg-transparent text-slate-900 placeholder:text-slate-400 text-base font-medium outline-none border-none focus:ring-0"
+              className="flex-1 bg-transparent text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-base font-medium outline-none border-none focus:ring-0"
             />
             <button
               type="submit"
               disabled={!title.trim()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white disabled:opacity-40 text-white dark:text-zinc-900 text-xs font-semibold rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed shadow-2xs"
             >
               <span>Capture</span>
               <CornerDownLeft className="w-3.5 h-3.5" />
             </button>
           </div>
-          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1">
+          <div className="mt-3 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400 dark:text-zinc-500">
+            <span className="flex items-center gap-1 text-[11px]">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               Natural date parsing supported (e.g., today, tomorrow 5pm)
             </span>
-            <span>Esc to close</span>
+            <span className="font-mono text-[11px]">Esc to close</span>
           </div>
         </form>
       </div>

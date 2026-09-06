@@ -38,10 +38,10 @@ interface SyllabusManagerProps {
 }
 
 const COVERAGE_OPTIONS = [
-  { value: "not_started", label: "Not Started", color: "bg-slate-100 text-slate-600 border-slate-200" },
-  { value: "in_progress", label: "In Progress", color: "bg-amber-50 text-amber-700 border-amber-200" },
-  { value: "covered", label: "Covered", color: "bg-blue-50 text-blue-700 border-blue-200" },
-  { value: "revised", label: "Revised", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { value: "not_started", label: "Not Started", color: "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200/70 dark:border-zinc-700" },
+  { value: "in_progress", label: "In Progress", color: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20" },
+  { value: "covered", label: "Covered", color: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20" },
+  { value: "revised", label: "Revised", color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20" },
 ];
 
 const STUDY_TECHNIQUES = [
@@ -142,23 +142,23 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
     <div className="space-y-6">
       {/* Syllabus Table */}
       {items.length > 0 ? (
-        <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+        <div className="border border-zinc-200/70 dark:border-zinc-800/70 rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 shadow-subtle">
           <Table>
-            <TableHeader className="bg-slate-50/80">
-              <TableRow className="hover:bg-transparent border-slate-200">
-                <TableHead className="w-12 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <TableHeader className="bg-zinc-50/70 dark:bg-zinc-800/50">
+              <TableRow className="hover:bg-transparent border-zinc-200/70 dark:border-zinc-800">
+                <TableHead className="w-12 text-center text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                   #
                 </TableHead>
-                <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                   Topic / Concept
                 </TableHead>
-                <TableHead className="w-40 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="w-40 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                   Coverage Status
                 </TableHead>
-                <TableHead className="w-36 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="w-36 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                   Confidence (1-5)
                 </TableHead>
-                <TableHead className="w-48 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="w-48 text-right text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                   Actions
                 </TableHead>
               </TableRow>
@@ -172,16 +172,16 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                 return (
                   <TableRow
                     key={item.id}
-                    className="border-slate-100 hover:bg-slate-50/60 transition-colors"
+                    className="border-zinc-100 dark:border-zinc-800/80 hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30 transition-colors"
                   >
                     {/* Index */}
-                    <TableCell className="text-center font-mono text-xs font-semibold text-slate-400">
+                    <TableCell className="text-center font-mono text-xs font-medium text-zinc-400 dark:text-zinc-500">
                       {index + 1}
                     </TableCell>
 
                     {/* Title */}
                     <TableCell>
-                      <span className="text-xs font-semibold text-slate-800">
+                      <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                         {item.title}
                       </span>
                     </TableCell>
@@ -193,7 +193,7 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                         onChange={(e) =>
                           handleUpdate(item.id, e.target.value, item.confidence ?? 1)
                         }
-                        className={`text-xs font-medium px-2.5 py-1 rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer ${currentOpt.color}`}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-lg border focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 cursor-pointer ${currentOpt.color}`}
                       >
                         {COVERAGE_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
@@ -215,10 +215,10 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                               onClick={() =>
                                 handleUpdate(item.id, item.coverage, score)
                               }
-                              className={`w-6 h-6 rounded-md text-[11px] font-bold flex items-center justify-center transition-all cursor-pointer ${
+                              className={`w-6 h-6 rounded-md text-[11px] font-semibold flex items-center justify-center transition-all cursor-pointer ${
                                 isFilled
-                                  ? "bg-amber-400 text-amber-950 shadow-2xs"
-                                  : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                                  ? "bg-amber-400 dark:bg-amber-500 text-amber-950 shadow-2xs font-bold"
+                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                               }`}
                               title={`Confidence: ${score}/5`}
                             >
@@ -235,20 +235,20 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                         <button
                           type="button"
                           onClick={() => setQuizItem(item)}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer shadow-2xs"
+                          className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60 transition-colors cursor-pointer shadow-2xs"
                           title="Generate AI Active Recall Quiz for this topic"
                         >
-                          <Sparkles className="w-3 h-3 text-indigo-500" />
-                          <span>Practice Quiz</span>
+                          <Sparkles className="w-3 h-3 text-zinc-600 dark:text-zinc-300" />
+                          <span>Practice</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => openLogDialog(item)}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 border border-slate-200 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                           title="Log study session"
                         >
-                          <Timer className="w-3 h-3 text-slate-400" />
+                          <Timer className="w-3 h-3 text-zinc-400" />
                           <span>Log</span>
                         </button>
                       </div>
@@ -260,12 +260,12 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
           </Table>
         </div>
       ) : (
-        <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50/50 flex flex-col items-center justify-center gap-2">
-          <Layers className="w-8 h-8 text-slate-300" />
-          <p className="text-sm font-semibold text-slate-700">
+        <div className="border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 text-center bg-zinc-50/50 dark:bg-zinc-900/40 flex flex-col items-center justify-center gap-2">
+          <Layers className="w-8 h-8 text-zinc-300 dark:text-zinc-600" />
+          <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
             No syllabus items added yet
           </p>
-          <p className="text-xs text-slate-400 max-w-md">
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 max-w-md">
             Break this course down into weekly lectures, chapters, or exam topics below.
           </p>
         </div>
@@ -278,12 +278,12 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
           value={newItemTitle}
           onChange={(e) => setNewItemTitle(e.target.value)}
           placeholder="Add a syllabus topic (e.g. 'Week 3: Dynamic Programming & Memoization')..."
-          className="flex-1 px-3.5 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+          className="flex-1 px-3.5 py-2 text-xs bg-zinc-50/70 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
         />
         <button
           type="submit"
           disabled={!newItemTitle.trim() || isPending}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-xs font-semibold rounded-xl shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white disabled:opacity-40 text-white dark:text-zinc-900 text-xs font-semibold rounded-xl shadow-subtle transition-all cursor-pointer disabled:cursor-not-allowed"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Add Topic</span>
@@ -297,15 +297,15 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
           if (!open) setSessionItem(null);
         }}
       >
-        <DialogContent className="sm:max-w-md bg-white p-6 rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 p-6 rounded-2xl shadow-float">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Timer className="w-5 h-5 text-indigo-600" />
+            <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <Timer className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
               Log Study Session
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
+            <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
               Record active study time and update topic confidence for{" "}
-              <strong className="text-slate-800 font-semibold">
+              <strong className="text-zinc-800 dark:text-zinc-200 font-semibold">
                 {sessionItem?.title}
               </strong>
             </DialogDescription>
@@ -315,7 +315,7 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
             {/* Minutes & Technique */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Minutes Spent *
                 </label>
                 <input
@@ -325,18 +325,18 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                   value={minutes}
                   onChange={(e) => setMinutes(parseInt(e.target.value, 10) || 25)}
                   required
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded-xl text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Technique
                 </label>
                 <select
                   value={technique}
                   onChange={(e) => setTechnique(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded-xl text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
                 >
                   {STUDY_TECHNIQUES.map((t) => (
                     <option key={t} value={t}>
@@ -350,7 +350,7 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
             {/* Confidence Ratings (Before & After) */}
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Confidence Before
                 </label>
                 <div className="flex items-center gap-1">
@@ -361,8 +361,8 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                       onClick={() => setConfidenceBefore(s)}
                       className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${
                         confidenceBefore >= s
-                          ? "bg-slate-800 text-white"
-                          : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                          ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                       }`}
                     >
                       {s}
@@ -372,7 +372,7 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Confidence After
                 </label>
                 <div className="flex items-center gap-1">
@@ -383,8 +383,8 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                       onClick={() => setConfidenceAfter(s)}
                       className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${
                         confidenceAfter >= s
-                          ? "bg-amber-400 text-amber-950 shadow-2xs"
-                          : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                          ? "bg-amber-400 dark:bg-amber-500 text-amber-950 shadow-2xs"
+                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                       }`}
                     >
                       {s}
@@ -396,7 +396,7 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
 
             {/* Notes */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 Session Notes (Optional)
               </label>
               <textarea
@@ -404,7 +404,7 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Key insights, difficult concepts, or recall notes..."
                 rows={2}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
               />
             </div>
 
@@ -413,14 +413,14 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
               <button
                 type="button"
                 onClick={() => setSessionItem(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isPending}
-                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-xs font-semibold rounded-xl shadow-xs transition-all cursor-pointer"
+                className="px-5 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white disabled:opacity-40 text-white dark:text-zinc-900 text-xs font-semibold rounded-xl shadow-subtle transition-all cursor-pointer"
               >
                 {isPending ? "Logging..." : "Save Session"}
               </button>
@@ -436,7 +436,7 @@ export function SyllabusManager({ courseId, initialItems }: SyllabusManagerProps
           if (!open) setQuizItem(null);
         }}
       >
-        <DialogContent className="sm:max-w-2xl bg-white p-6 rounded-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 p-6 rounded-2xl max-h-[90vh] overflow-y-auto shadow-float">
           <DialogHeader className="sr-only">
             <DialogTitle>Practice Quiz: {quizItem?.title}</DialogTitle>
             <DialogDescription>Interactive active recall practice</DialogDescription>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { CheckSquare, Square, Trash2, GripVertical } from "lucide-react";
+import { Check, Trash2, GripVertical } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
 import { useTaskStore, type Task } from "@/store/taskStore";
 import {
@@ -33,6 +33,13 @@ interface SortableTaskItemProps {
     isCompletedList?: boolean;
 }
 
+function getPriorityDot(priority?: number | null) {
+    if (priority === 1) return "bg-rose-500";
+    if (priority === 2) return "bg-amber-500";
+    if (priority === 3) return "bg-blue-500";
+    return null;
+}
+
 export function SortableTaskItem({
     task,
     onToggle,
@@ -55,38 +62,40 @@ export function SortableTaskItem({
         zIndex: isDragging ? 50 : undefined,
     };
 
+    const priorityDot = getPriorityDot(task.priority);
+
     if (isCompletedList) {
         return (
             <div
                 ref={setNodeRef}
                 style={style}
-                className={`group h-14 border border-slate-200 rounded-lg bg-slate-50 flex items-center justify-between px-4 transition-all ${
-                    isDragging ? "opacity-40 shadow-lg ring-2 ring-slate-400 bg-white" : ""
+                className={`group h-13 border border-zinc-200/60 dark:border-zinc-800/60 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-between px-3.5 transition-all shadow-subtle ${
+                    isDragging ? "opacity-40 shadow-float ring-2 ring-zinc-400 bg-white dark:bg-zinc-900" : ""
                 }`}
             >
-                <div className="flex items-center flex-1 opacity-60">
+                <div className="flex items-center flex-1 min-w-0">
                     <div
                         {...attributes}
                         {...listeners}
-                        className="text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing mr-2 p-1.5 rounded hover:bg-slate-200/50 transition-colors flex items-center justify-center select-none"
+                        className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 cursor-grab active:cursor-grabbing mr-2.5 p-1 rounded-md transition-colors flex items-center justify-center select-none"
                         style={{ touchAction: "none" }}
                         title="Drag to reorder"
                         aria-label="Drag to reorder task"
                     >
-                        <GripVertical className="w-4 h-4" />
+                        <GripVertical className="w-3.5 h-3.5" />
                     </div>
                     <button
                         type="button"
                         onClick={() => onToggle(task.id)}
-                        className="text-slate-900 mr-3 mt-0.5 focus:outline-none cursor-pointer"
+                        className="w-5 h-5 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center mr-3 shrink-0 focus:outline-none cursor-pointer transition-all duration-150 active:scale-90"
                         aria-label="Mark task as incomplete"
                     >
-                        <CheckSquare className="w-5 h-5" />
+                        <Check className="w-3 h-3 stroke-[2.5]" />
                     </button>
                     <button
                         type="button"
                         onClick={() => setSelectedTaskId(task.id)}
-                        className="text-slate-700 font-medium line-through text-left hover:text-slate-900 transition-colors focus:outline-none cursor-pointer"
+                        className="text-zinc-400 dark:text-zinc-500 font-normal line-through text-left hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors text-sm truncate focus:outline-none cursor-pointer"
                     >
                         {task.title}
                     </button>
@@ -94,10 +103,10 @@ export function SortableTaskItem({
                 <button
                     type="button"
                     onClick={() => onDelete(task.id)}
-                    className="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-50 cursor-pointer"
+                    className="text-zinc-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer shrink-0 ml-2"
                     aria-label="Delete task"
                 >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                 </button>
             </div>
         );
@@ -107,44 +116,47 @@ export function SortableTaskItem({
         <div
             ref={setNodeRef}
             style={style}
-            className={`group h-14 border border-slate-200 rounded-lg bg-white flex items-center justify-between px-4 hover:border-slate-300 transition-all ${
-                isDragging ? "opacity-40 shadow-lg ring-2 ring-slate-400 scale-[1.01]" : ""
+            className={`group h-13 border border-zinc-200/70 dark:border-zinc-800/60 rounded-xl bg-white dark:bg-zinc-900 flex items-center justify-between px-3.5 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-subtle transition-all ${
+                isDragging ? "opacity-40 shadow-float ring-2 ring-zinc-400 scale-[1.01]" : ""
             }`}
         >
-            <div className="flex items-center flex-1">
+            <div className="flex items-center flex-1 min-w-0">
                 <div
                     {...attributes}
                     {...listeners}
-                    className="text-slate-400 hover:text-slate-700 cursor-grab active:cursor-grabbing mr-2 p-1.5 rounded hover:bg-slate-100 transition-colors flex items-center justify-center select-none"
+                    className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 cursor-grab active:cursor-grabbing mr-2.5 p-1 rounded-md transition-colors flex items-center justify-center select-none"
                     style={{ touchAction: "none" }}
                     title="Drag to reorder"
                     aria-label="Drag to reorder task"
                 >
-                    <GripVertical className="w-4 h-4" />
+                    <GripVertical className="w-3.5 h-3.5" />
                 </div>
                 <button
                     type="button"
                     onClick={() => onToggle(task.id)}
-                    className="text-slate-400 hover:text-slate-600 mr-3 mt-0.5 transition-colors focus:outline-none cursor-pointer"
+                    className="w-5 h-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600 hover:border-zinc-900 dark:hover:border-zinc-300 flex items-center justify-center mr-3 shrink-0 transition-all duration-150 focus:outline-none cursor-pointer active:scale-90 group/btn"
                     aria-label="Mark task as complete"
                 >
-                    <Square className="w-5 h-5" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-zinc-900 dark:bg-zinc-100 opacity-0 group-hover/btn:opacity-20 transition-opacity" />
                 </button>
                 <button
                     type="button"
                     onClick={() => setSelectedTaskId(task.id)}
-                    className="text-slate-800 font-medium text-left hover:text-slate-950 hover:underline transition-colors focus:outline-none cursor-pointer"
+                    className="text-zinc-800 dark:text-zinc-200 font-medium text-left hover:text-zinc-950 dark:hover:text-white transition-colors text-sm truncate focus:outline-none cursor-pointer flex items-center gap-2"
                 >
-                    {task.title}
+                    {priorityDot && (
+                        <span className={`w-1.5 h-1.5 rounded-full ${priorityDot} shrink-0`} />
+                    )}
+                    <span className="truncate">{task.title}</span>
                 </button>
             </div>
             <button
                 type="button"
                 onClick={() => onDelete(task.id)}
-                className="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-50 cursor-pointer"
+                className="text-zinc-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer shrink-0 ml-2"
                 aria-label="Delete task"
             >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
             </button>
         </div>
     );
@@ -204,23 +216,21 @@ export default function TaskList({ tasks, isCompletedList = false }: TaskListPro
 
     if (!mounted) {
         return (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
                 {sortedTasks.map((task) => (
                     <div
                         key={task.id}
-                        className="h-14 border border-slate-200 rounded-lg bg-white flex items-center justify-between px-4"
+                        className="h-13 border border-zinc-200/70 dark:border-zinc-800/60 rounded-xl bg-white dark:bg-zinc-900 flex items-center justify-between px-3.5 shadow-subtle"
                     >
                         <div className="flex items-center flex-1">
-                            <div className="text-slate-400 mr-2 p-1.5">
-                                <GripVertical className="w-4 h-4" />
+                            <div className="text-zinc-300 dark:text-zinc-600 mr-2.5 p-1">
+                                <GripVertical className="w-3.5 h-3.5" />
                             </div>
-                            <div className="text-slate-400 mr-3 mt-0.5">
-                                <Square className="w-5 h-5" />
-                            </div>
+                            <div className="w-5 h-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600 mr-3" />
                             <button
                                 type="button"
                                 onClick={() => setSelectedTaskId(task.id)}
-                                className="text-slate-800 font-medium text-left hover:underline cursor-pointer"
+                                className="text-zinc-800 dark:text-zinc-200 font-medium text-left text-sm cursor-pointer"
                             >
                                 {task.title}
                             </button>

@@ -48,29 +48,25 @@ export function SyncStatusIndicator() {
     }
   };
 
-  // 1. Pending offline operations state (Amber chip)
+  // 1. Pending offline operations state (Amber dot indicator)
   if (pendingOps > 0) {
     return (
       <button
         type="button"
         onClick={handleManualSync}
         disabled={isSyncing || !isOnline}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100/80 text-amber-900 border border-amber-200/90 text-xs font-medium transition-all shadow-2xs cursor-pointer group"
+        className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/15 text-zinc-800 dark:text-zinc-200 border border-amber-500/20 text-xs font-medium transition-all cursor-pointer group"
         title={isOnline ? "Click to sync changes to server" : "Changes queued in local mirror"}
       >
         <span className="flex items-center gap-2">
-          {isOnline ? (
-            <RefreshCw
-              className={`w-3.5 h-3.5 text-amber-600 ${
-                isSyncing ? "animate-spin text-amber-700" : "group-hover:rotate-45 transition-transform"
-              }`}
-            />
+          {isSyncing ? (
+            <RefreshCw className="w-3 h-3 text-amber-500 animate-spin" />
           ) : (
-            <CloudOff className="w-3.5 h-3.5 text-amber-600" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
           )}
-          <span>{isSyncing ? "Syncing..." : `${pendingOps} queued`}</span>
+          <span className="text-[12px]">{isSyncing ? "Syncing..." : `${pendingOps} queued`}</span>
         </span>
-        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white text-amber-800 border border-amber-300 font-bold">
+        <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-medium">
           {isOnline ? "Sync" : "Offline"}
         </span>
       </button>
@@ -80,9 +76,9 @@ export function SyncStatusIndicator() {
   // 2. Offline with 0 pending ops
   if (!isOnline) {
     return (
-      <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200 text-xs">
-        <CloudOff className="w-3.5 h-3.5 text-slate-500" />
-        <span>Offline mirror active</span>
+      <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100/60 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 text-xs border border-zinc-200/50 dark:border-zinc-800/50">
+        <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+        <span className="text-[12px]">Offline mirror</span>
       </div>
     );
   }
@@ -93,20 +89,19 @@ export function SyncStatusIndicator() {
       type="button"
       onClick={handleManualSync}
       disabled={isSyncing}
-      className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100/70 text-xs transition-colors group cursor-pointer"
+      className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40 text-xs transition-colors group cursor-pointer"
       title="Click to refresh local mirror from server"
     >
       <span className="flex items-center gap-2">
         {isSyncing ? (
-          <RefreshCw className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
+          <RefreshCw className="w-3 h-3 text-zinc-600 dark:text-zinc-300 animate-spin" />
         ) : (
-          <Cloud className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
         )}
-        <span>{isSyncing ? "Syncing..." : "Synced"}</span>
+        <span className="text-[12px]">{isSyncing ? "Syncing..." : "Synced"}</span>
       </span>
-      <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
-        <Check className="w-3 h-3 text-emerald-500" />
-        <span>{lastSyncedText || "Cloud"}</span>
+      <span className="text-[11px] text-zinc-400 font-normal">
+        {lastSyncedText || "Cloud"}
       </span>
     </button>
   );

@@ -11,7 +11,7 @@ export default function AppLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex min-h-screen bg-slate-50/30" suppressHydrationWarning>
+    <div className="flex min-h-screen bg-background" suppressHydrationWarning>
       <CommandPalette />
       <QuickCapture />
       <FocusTimer />

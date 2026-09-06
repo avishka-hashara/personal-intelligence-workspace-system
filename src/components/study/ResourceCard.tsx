@@ -98,20 +98,30 @@ export function ResourceCard({
 
   return (
     <>
-      <div className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between group">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/70 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-5 shadow-subtle hover:shadow-float transition-all flex flex-col justify-between group">
         <div>
           <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ${typeColor}`}
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border uppercase tracking-wider ${
+                  type === "pdf"
+                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                    : type === "doc"
+                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                    : type === "slides"
+                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                    : type === "video"
+                    ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700"
+                }`}
               >
                 {typeLabel}
               </span>
 
               {type === "pdf" && (
                 resource.indexStatus === "ready" ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                     <span>
                       Indexed ({resource.pageCount ?? 1}{" "}
                       {(resource.pageCount ?? 1) === 1 ? "page" : "pages"}
@@ -119,46 +129,46 @@ export function ResourceCard({
                     </span>
                   </span>
                 ) : resource.indexStatus === "indexing" ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
-                    <Loader2 className="w-3 h-3 animate-spin text-amber-600 shrink-0" />
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
                     <span>Indexing...</span>
                   </span>
                 ) : resource.indexStatus === "failed" ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
-                    <AlertCircle className="w-3 h-3 text-rose-600 shrink-0" />
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+                    <AlertCircle className="w-3 h-3 text-rose-500 shrink-0" />
                     <span>Index failed</span>
                   </span>
                 ) : null
               )}
             </div>
 
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500">
               {formatDistanceToNow(new Date(resource.createdAt), {
                 addSuffix: true,
               })}
             </span>
           </div>
 
-          <h3 className="text-sm font-bold text-slate-900 line-clamp-2">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug">
             {resource.title}
           </h3>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+        <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between gap-2">
           <a
             href={resource.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline max-w-[220px] truncate"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white max-w-[220px] truncate transition-colors"
           >
-            <Icon className="w-3.5 h-3.5 shrink-0" />
+            <Icon className="w-3.5 h-3.5 shrink-0 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 transition-colors" />
             <span className="truncate">
               {isUploadedFile ? "Open / Download File" : resource.url}
             </span>
             {isUploadedFile ? (
-              <Download className="w-3 h-3 shrink-0 ml-0.5" />
+              <Download className="w-3 h-3 shrink-0 ml-0.5 text-zinc-400" />
             ) : (
-              <ExternalLink className="w-3 h-3 shrink-0 ml-0.5" />
+              <ExternalLink className="w-3 h-3 shrink-0 ml-0.5 text-zinc-400" />
             )}
           </a>
 
@@ -168,12 +178,12 @@ export function ResourceCard({
                 type="button"
                 disabled={isReindexing}
                 onClick={handleReindex}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-800 hover:bg-slate-100 px-2 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-2 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50"
                 title="Re-run fast PDF indexing"
               >
                 <RefreshCw
-                  className={`w-3 h-3 text-slate-400 ${
-                    isReindexing ? "animate-spin text-indigo-600" : ""
+                  className={`w-3 h-3 text-zinc-400 ${
+                    isReindexing ? "animate-spin text-zinc-900 dark:text-zinc-100" : ""
                   }`}
                 />
                 <span className="hidden sm:inline">Re-index</span>
@@ -183,7 +193,7 @@ export function ResourceCard({
             <button
               type="button"
               onClick={() => setIsDeleteOpen(true)}
-              className="inline-flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
               title="Delete resource"
             >
               <Trash2 className="w-3.5 h-3.5" />

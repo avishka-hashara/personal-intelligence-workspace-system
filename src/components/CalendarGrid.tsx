@@ -57,8 +57,10 @@ const HourSlotCell = React.memo(function HourSlotCell({
     <div
       ref={setNodeRef}
       onClick={() => onSlotClick?.(dateObj, hour)}
-      className={`border-b border-slate-100 transition-colors ${
-        isOver ? "bg-indigo-100/60 border-indigo-300" : "hover:bg-slate-50/50"
+      className={`border-b border-zinc-100 dark:border-zinc-850 transition-colors ${
+        isOver
+          ? "bg-zinc-200/50 dark:bg-zinc-800/60 border-zinc-300 dark:border-zinc-700"
+          : "hover:bg-zinc-50/60 dark:hover:bg-zinc-850/40"
       }`}
       style={{ height: `${HOUR_HEIGHT_PX}px` }}
     />
@@ -88,19 +90,19 @@ const DayColumnHeader = React.memo(function DayColumnHeader({
   return (
     <div key={dateKey} className="p-2 sm:p-2.5 text-center space-y-1.5 min-w-0">
       <div className="flex items-center justify-center gap-1.5 min-w-0">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider shrink-0">
+        <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">
           {dayName}
         </span>
         <span
-          className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 ${
+          className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold shrink-0 transition-colors ${
             isToday
-              ? "bg-indigo-600 text-white shadow-xs"
-              : "text-slate-900 bg-slate-200/60"
+              ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-subtle"
+              : "text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800"
           }`}
         >
           {dayNum}
         </span>
-        <span className="text-[10px] text-slate-400 font-medium hidden sm:inline truncate">
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium hidden sm:inline truncate font-mono">
           {monthName}
         </span>
       </div>
@@ -167,7 +169,7 @@ const DayColumn = React.memo(function DayColumn({
   currentTopPx,
 }: DayColumnProps) {
   return (
-    <div className="relative bg-white min-w-0">
+    <div className="relative bg-white dark:bg-zinc-900 min-w-0">
       {/* Hourly Droppable Slots */}
       {HOURS.map((hour) => (
         <HourSlotCell
@@ -185,8 +187,8 @@ const DayColumn = React.memo(function DayColumn({
           className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
           style={{ top: `${currentTopPx}px` }}
         >
-          <div className="w-2 h-2 rounded-full bg-rose-500 -ml-1 shadow-xs" />
-          <div className="flex-1 h-[2px] bg-rose-500 shadow-xs" />
+          <div className="w-2 h-2 rounded-full bg-rose-500 -ml-1 shadow-subtle" />
+          <div className="flex-1 h-[1.5px] bg-rose-500 shadow-subtle" />
         </div>
       )}
 
@@ -268,21 +270,21 @@ export function CalendarGrid({
   return (
     <div
       ref={containerRef}
-      className="flex flex-col bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden select-none w-full transition-all duration-300 ease-in-out"
+      className="flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/70 rounded-2xl shadow-subtle overflow-hidden select-none w-full transition-all duration-300 ease-in-out"
     >
       {/* Unified Horizontal Scroll Container */}
       <div className="overflow-x-auto w-full">
         <div style={{ minWidth: `${requiredMinWidth}px`, width: "100%" }}>
           {/* Day Columns Header */}
-          <div className="grid grid-cols-[64px_1fr] border-b border-slate-200 bg-slate-50/90 backdrop-blur-xs sticky top-0 z-20">
+          <div className="grid grid-cols-[64px_1fr] border-b border-zinc-200/70 dark:border-zinc-800/70 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md sticky top-0 z-20">
             {/* Time Gutter Header */}
-            <div className="p-3 border-r border-slate-200 text-center text-[10px] font-bold uppercase text-slate-400 flex items-center justify-center">
+            <div className="p-3 border-r border-zinc-200/70 dark:border-zinc-800/70 text-center text-[10px] font-mono font-medium uppercase text-zinc-400 dark:text-zinc-500 flex items-center justify-center">
               GMT
             </div>
 
             {/* Day Column Headers */}
             <div
-              className="grid divide-x divide-slate-200"
+              className="grid divide-x divide-zinc-200/70 dark:divide-zinc-800/70"
               style={{
                 gridTemplateColumns: `repeat(${days.length}, minmax(${MIN_COL_WIDTH}px, 1fr))`,
               }}
@@ -316,11 +318,11 @@ export function CalendarGrid({
           <div className="overflow-y-auto max-h-[calc(100vh-250px)] relative">
             <div className="grid grid-cols-[64px_1fr] w-full">
               {/* Time Gutter Labels */}
-              <div className="border-r border-slate-200 bg-slate-50/50 text-right pr-2 select-none">
+              <div className="border-r border-zinc-200/70 dark:border-zinc-800/70 bg-zinc-50/40 dark:bg-zinc-900/40 text-right pr-2 select-none">
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
-                    className="text-[11px] font-semibold text-slate-400 relative -top-2 flex items-start justify-end"
+                    className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 relative -top-2 flex items-start justify-end"
                     style={{ height: `${HOUR_HEIGHT_PX}px` }}
                   >
                     <span>{formatHour(hour)}</span>
@@ -330,7 +332,7 @@ export function CalendarGrid({
 
               {/* Columns Grid */}
               <div
-                className="grid divide-x divide-slate-200 relative"
+                className="grid divide-x divide-zinc-200/70 dark:divide-zinc-800/70 relative"
                 style={{
                   gridTemplateColumns: `repeat(${days.length}, minmax(${MIN_COL_WIDTH}px, 1fr))`,
                 }}

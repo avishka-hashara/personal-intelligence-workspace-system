@@ -110,27 +110,27 @@ export function TodayView({
       {showOnboardingPrompts && <OnboardingPrompts userName={userName} />}
 
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Today</h1>
-        <p className="text-slate-500 mt-2 text-sm font-medium">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Today</h1>
+        <p className="text-zinc-500 mt-1 text-sm font-normal">
           {pendingTasks.length} pending · {nowTask ? "1 focus task active" : "All caught up"}
         </p>
       </header>
 
       {/* Instant Quick Capture Form */}
-      <section className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
-        <form onSubmit={handleCreateTask} className="flex gap-4">
+      <section className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 rounded-2xl p-2.5 shadow-subtle">
+        <form onSubmit={handleCreateTask} className="flex items-center gap-2">
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="What needs to be done? (e.g. 'Review PR tomorrow 10am')"
             required
-            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-shadow text-slate-900 bg-white"
+            className="flex-1 px-3.5 py-2 text-sm bg-transparent border-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none"
           />
           <button
             type="submit"
             disabled={!title.trim()}
-            className="bg-slate-900 text-white font-medium rounded-lg px-6 py-2 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-medium text-xs rounded-xl px-4 py-2 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all duration-150 shadow-subtle disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.985]"
           >
             Add Task
           </button>
@@ -142,44 +142,44 @@ export function TodayView({
         {/* NOW Section */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               NOW
             </h2>
             {nowTask && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500">
                 Score: {calculateTaskScore(nowTask)}
               </span>
             )}
           </div>
 
           {nowTask ? (
-            <div className="border-2 border-slate-900 bg-gradient-to-br from-white to-slate-50/50 rounded-xl p-5 shadow-sm flex items-center justify-between gap-4 transition-all hover:shadow-md">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-subtle hover:shadow-float flex items-center justify-between gap-4 transition-all duration-200">
               <div className="flex items-center gap-3.5 flex-1 min-w-0">
                 <button
                   type="button"
                   onClick={() => toggleTask(nowTask.id)}
-                  className="text-slate-400 hover:text-slate-900 transition-colors p-1 rounded-md hover:bg-slate-100 shrink-0 cursor-pointer"
+                  className="w-6 h-6 rounded-full border-2 border-zinc-300 dark:border-zinc-600 hover:border-zinc-900 dark:hover:border-zinc-200 flex items-center justify-center transition-all duration-150 shrink-0 cursor-pointer active:scale-90 group/btn"
                   aria-label="Mark task complete"
                 >
-                  <Square className="w-6 h-6 text-slate-800 hover:text-slate-950" />
+                  <span className="w-3 h-3 rounded-full bg-zinc-900 dark:bg-zinc-100 opacity-0 group-hover/btn:opacity-20 transition-opacity" />
                 </button>
                 <div className="flex-1 min-w-0">
                   <button
                     type="button"
                     onClick={() => setSelectedTaskId(nowTask.id)}
-                    className="text-base sm:text-lg font-semibold text-slate-900 text-left hover:underline truncate block cursor-pointer"
+                    className="text-base sm:text-lg font-medium text-zinc-900 dark:text-zinc-100 text-left hover:underline truncate block cursor-pointer"
                   >
                     {nowTask.title}
                   </button>
                   {nowTask.dueAt && (
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs font-medium text-slate-500 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-400" />
+                      <span className="text-xs font-normal text-zinc-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-zinc-400" />
                         {isToday(new Date(nowTask.dueAt)) ? (
-                          <span className="text-emerald-600 font-semibold">Due Today</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">Due Today</span>
                         ) : isPast(new Date(nowTask.dueAt)) ? (
-                          <span className="text-rose-600 font-semibold">Overdue</span>
+                          <span className="text-rose-600 dark:text-rose-400 font-medium">Overdue</span>
                         ) : (
                           `Due ${new Date(nowTask.dueAt).toLocaleDateString()}`
                         )}
@@ -194,7 +194,7 @@ export function TodayView({
                   onClick={() => {
                     startTimer(nowTask.id, nowTask.title);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-sm transition-all hover:shadow cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white text-xs font-medium rounded-xl shadow-subtle transition-all cursor-pointer active:scale-[0.985]"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                   <span>Start focus</span>
@@ -202,7 +202,7 @@ export function TodayView({
                 <button
                   type="button"
                   onClick={() => setSelectedTaskId(nowTask.id)}
-                  className="text-xs font-medium text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <span>Details</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
@@ -210,10 +210,10 @@ export function TodayView({
               </div>
             </div>
           ) : (
-            <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50/50 flex flex-col items-center justify-center gap-2">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-              <p className="text-sm font-semibold text-slate-700">You&apos;re all caught up.</p>
-              <p className="text-xs text-slate-400">Capture a new task above to get started.</p>
+            <div className="border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 text-center bg-zinc-50/30 dark:bg-zinc-900/20 flex flex-col items-center justify-center gap-2">
+              <CheckCircle2 className="w-7 h-7 text-emerald-500" />
+              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">You&apos;re all caught up.</p>
+              <p className="text-xs text-zinc-400">Capture a new task above to get started.</p>
             </div>
           )}
         </section>
@@ -221,7 +221,7 @@ export function TodayView({
         {/* NEXT UP Section */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
               NEXT UP ({nextUpTasks.length})
             </h2>
           </div>
@@ -241,8 +241,8 @@ export function TodayView({
       {initialUpcomingExams && initialUpcomingExams.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+              <GraduationCap className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />
               STUDY DUE & UPCOMING EXAMS ({initialUpcomingExams.length})
             </h2>
           </div>
@@ -256,30 +256,30 @@ export function TodayView({
                 <Link
                   key={exam.id}
                   href={`/study/courses/${exam.courseId}`}
-                  className="group bg-white border border-amber-200/90 hover:border-amber-300 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-3"
+                  className="group bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-4 shadow-subtle hover:shadow-float transition-all flex items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/70 dark:border-zinc-700/60">
                         {exam.courseCode}
                       </span>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-                        <Zap className="w-3 h-3 text-amber-600 fill-amber-600" />
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                        <Zap className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
                         Ramp-up active
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
-                      🚨 {exam.title} in {daysLeft === 0 ? "Today" : `${daysLeft} day${daysLeft === 1 ? "" : "s"}`}
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
+                      {exam.title} in {daysLeft === 0 ? "Today" : `${daysLeft} day${daysLeft === 1 ? "" : "s"}`}
                     </h3>
 
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs text-zinc-400 mt-0.5">
                       {format(examDate, "MMM d, yyyy 'at' p")}
                       {exam.weight && ` · ${exam.weight}% weight`}
                     </p>
                   </div>
 
-                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all shrink-0" />
+                  <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 group-hover:translate-x-0.5 transition-all shrink-0" />
                 </Link>
               );
             })}

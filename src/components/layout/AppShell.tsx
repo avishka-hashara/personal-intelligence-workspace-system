@@ -64,11 +64,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={handleToggle}
             title="Expand Day Strip (Ctrl+\)"
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-indigo-600 border border-slate-200/90 shadow-md hover:shadow-lg backdrop-blur-md transition-all text-xs font-semibold cursor-pointer group"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-zinc-900/80 hover:bg-white dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-zinc-200/70 dark:border-zinc-800/60 shadow-subtle hover:shadow-float backdrop-blur-xl transition-all duration-150 text-xs font-medium cursor-pointer active:scale-[0.985] group"
           >
-            <PanelRightOpen className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 transition-colors" />
+            <PanelRightOpen className="w-4 h-4 text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors" />
             <span>Day Strip</span>
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-100 rounded border border-slate-200">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700">
               Ctrl+\
             </kbd>
           </button>
@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Day Strip (Right Rail) */}
       <aside
-        className={`hidden xl:flex flex-col border-l border-slate-200 bg-slate-50/90 backdrop-blur-xs transition-all duration-300 ease-in-out shrink-0 overflow-hidden ${
+        className={`hidden xl:flex flex-col border-l border-zinc-200/70 dark:border-zinc-800/60 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl transition-all duration-300 ease-in-out shrink-0 overflow-hidden ${
           isDayStripOpen
             ? "w-[320px] p-6 opacity-100"
             : "w-0 p-0 border-l-0 opacity-0 pointer-events-none"
@@ -85,9 +85,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className="flex items-center justify-between mb-4 w-[272px]">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-indigo-600" />
-            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Day Strip
+            <Calendar className="w-4 h-4 text-zinc-700 dark:text-zinc-300 stroke-[1.8]" />
+            <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+              Day Schedule
             </span>
           </div>
 
@@ -95,7 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={handleToggle}
             title="Collapse Day Strip (Ctrl+\)"
-            className="flex items-center gap-1 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-colors cursor-pointer"
+            className="flex items-center gap-1 p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
           >
             <PanelRightClose className="w-4 h-4" />
           </button>
