@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -147,7 +148,8 @@ export function Sidebar() {
           </div>
         </nav>
 
-        <div className="p-3 border-t border-zinc-200/60 dark:border-zinc-800/60 space-y-1.5">
+        <div className="p-3 border-t border-zinc-200/60 dark:border-zinc-800/60 space-y-2">
+          <ThemeToggle />
           <SyncStatusIndicator />
           <Link
             href="/settings/data"
