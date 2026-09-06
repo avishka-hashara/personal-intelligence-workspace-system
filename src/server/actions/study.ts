@@ -13,6 +13,7 @@ import { eq, and, desc, asc, isNull } from "drizzle-orm";
 import { getCurrentUser, createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { generateNodeEmbedding } from "@/lib/embeddings";
+import { indexResource } from "@/server/actions/indexing";
 import {
     fsrs,
     generatorParameters,
@@ -417,8 +418,16 @@ export async function uploadResourceFile(courseId: string, formData: FormData) {
                 title,
                 url: publicUrl,
                 resourceType,
+                indexStatus: resourceType === "pdf" ? "indexing" : "ready",
             })
             .returning();
+
+        if (resourceType === "pdf") {
+            // Trigger structure-aware chunking and embedding
+            indexResource(insertedResource.id, buffer).catch((err) => {
+                console.error("[uploadResourceFile] Background indexing error:", err);
+            });
+        }
 
         revalidatePath(`/study/courses/${courseId}`);
         revalidatePath("/study/courses");

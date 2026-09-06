@@ -439,12 +439,30 @@ export const courseResources = pgTable("course_resources", {
     title: text("title").notNull(),
     url: text("url").notNull(),
     resourceType: text("resource_type").default("link"), // 'link' | 'pdf' | 'video'
+    pageCount: integer("page_count"),
+    extractedChars: integer("extracted_chars"),
+    indexStatus: text("index_status").default("ready"), // 'pending' | 'indexing' | 'ready' | 'failed'
 
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     hlc: text("hlc"),
     version: smallint("version").default(1)
+});
+
+export const chunks = pgTable("chunks", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    entityType: text("entity_type").notNull(), // 'resource' | 'note' | 'goal'
+    entityId: uuid("entity_id").notNull(),
+    chunkIndex: integer("chunk_index").notNull(),
+    content: text("content").notNull(),
+    contextHeader: text("context_header").notNull(),
+    tokenCount: integer("token_count").notNull(),
+    embedding: vector("embedding", { dimensions: 1536 }),
+    modelVersion: text("model_version").default("text-embedding-3-small").notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const flashcards = pgTable("flashcards", {

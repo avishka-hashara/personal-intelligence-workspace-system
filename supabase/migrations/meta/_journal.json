@@ -99,6 +99,13 @@
       "when": 1788675705815,
       "tag": "0013_rich_skrulls",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788677800284,
+      "tag": "0014_skinny_malice",
+      "breakpoints": true
     }
   ]
 }

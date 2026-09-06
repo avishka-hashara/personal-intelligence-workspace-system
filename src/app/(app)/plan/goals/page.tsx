@@ -64,12 +64,32 @@ export default async function GoalsPage() {
           </p>
         </div>
 
-        {userGoals.length > 0 && (
-          <div className="flex items-center gap-2 self-start sm:self-auto px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg">
-            <Target className="w-3.5 h-3.5 text-indigo-600" />
-            <span>{userGoals.length} {userGoals.length === 1 ? "Active Goal" : "Active Goals"}</span>
+        <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+          {/* View Toggle */}
+          <div className="inline-flex items-center p-1 bg-slate-100/90 rounded-xl border border-slate-200">
+            <Link
+              href="/plan/goals"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-slate-900 shadow-xs flex items-center gap-1.5"
+            >
+              <Target className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Goals Grid</span>
+            </Link>
+            <Link
+              href="/plan/canvas"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5"
+            >
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span>24-Month Canvas</span>
+            </Link>
           </div>
-        )}
+
+          {userGoals.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-medium rounded-lg">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>{userGoals.length} {userGoals.length === 1 ? "Goal" : "Goals"}</span>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Quick Add Goal Card */}

@@ -34,6 +34,8 @@ import {
   FileCode,
   File,
   Download,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -361,12 +363,32 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                       className="bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between"
                     >
                       <div>
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ${typeColor}`}
-                          >
-                            {typeLabel}
-                          </span>
+                        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ${typeColor}`}
+                            >
+                              {typeLabel}
+                            </span>
+                            {type === "pdf" && (
+                              res.indexStatus === "ready" ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>Indexed ({res.pageCount ?? 1} {(res.pageCount ?? 1) === 1 ? "page" : "pages"})</span>
+                                </span>
+                              ) : res.indexStatus === "indexing" ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+                                  <Loader2 className="w-3 h-3 animate-spin text-amber-600" />
+                                  <span>Indexing...</span>
+                                </span>
+                              ) : res.indexStatus === "failed" ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">
+                                  <AlertCircle className="w-3 h-3 text-rose-600" />
+                                  <span>Index failed</span>
+                                </span>
+                              ) : null
+                            )}
+                          </div>
 
                           <span className="text-[11px] text-slate-400">
                             {formatDistanceToNow(new Date(res.createdAt), { addSuffix: true })}
