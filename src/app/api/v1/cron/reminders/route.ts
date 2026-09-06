@@ -102,6 +102,12 @@ export async function processReminderTick() {
 }
 
 export async function GET(req: NextRequest) {
+  // Optional security: Verify Vercel Cron bearer token if CRON_SECRET is configured
+  const authHeader = req.headers.get("authorization");
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const result = await processReminderTick();
     return Response.json(result);
@@ -115,6 +121,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Optional security: Verify Vercel Cron bearer token if CRON_SECRET is configured
+  const authHeader = req.headers.get("authorization");
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const result = await processReminderTick();
     return Response.json(result);
