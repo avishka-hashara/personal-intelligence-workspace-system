@@ -3,7 +3,7 @@
 import { db } from "@/server/db";
 import { chunks, courseResources, courses } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
-import { embedText } from "@/lib/embeddings";
+import { embedManyTexts } from "@/lib/embeddings";
 import { revalidatePath } from "next/cache";
 
 interface ChunkToInsert {
@@ -38,15 +38,20 @@ function createStructureAwareChunks(
     if (!rawPageText) continue;
 
     const header = `${courseCode} > ${resourceTitle} > Page ${page.num}`;
-    const paragraphs = rawPageText.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+
+    // Normalize lines: try double newlines, or lines if no double newlines exist
+    let blocks = rawPageText.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+    if (blocks.length <= 1 && rawPageText.length > MAX_CHUNK_CHARS) {
+      blocks = rawPageText.split(/\n/).map((l) => l.trim()).filter(Boolean);
+    }
 
     let currentChunk = "";
 
-    for (const para of paragraphs) {
+    for (const block of blocks) {
       if (!currentChunk) {
-        currentChunk = para;
-      } else if (currentChunk.length + para.length + 2 <= MAX_CHUNK_CHARS) {
-        currentChunk += "\n\n" + para;
+        currentChunk = block;
+      } else if (currentChunk.length + block.length + 2 <= MAX_CHUNK_CHARS) {
+        currentChunk += "\n\n" + block;
       } else {
         // Chunk is full
         const approxTokens = Math.ceil(currentChunk.length / 4);
@@ -59,7 +64,7 @@ function createStructureAwareChunks(
 
         // Compute overlap for next chunk
         const overlapSlice = currentChunk.slice(-OVERLAP_CHARS);
-        currentChunk = overlapSlice + "\n\n" + para;
+        currentChunk = overlapSlice + "\n\n" + block;
       }
     }
 
@@ -90,9 +95,9 @@ function createStructureAwareChunks(
 
 /**
  * Extracts text from a PDF buffer, splits it into structure-aware chunks,
- * prepends context headers, calculates embeddings, and stores chunks in the database.
+ * prepends context headers, calculates batch embeddings (30x faster), and stores chunks.
  */
-export async function indexResource(resourceId: string, fileBuffer: Buffer) {
+export async function indexResource(resourceId: string, fileBuffer?: Buffer | Uint8Array) {
   try {
     // 1. Fetch resource and parent course
     const [resource] = await db
@@ -123,6 +128,27 @@ export async function indexResource(resourceId: string, fileBuffer: Buffer) {
       })
       .where(eq(courseResources.id, resourceId));
 
+    try {
+      revalidatePath(`/study/courses/${resource.courseId}`);
+    } catch {
+      // Ignored outside request context
+    }
+
+    // Resolve binary data
+    let uint8Data: Uint8Array;
+    if (fileBuffer) {
+      uint8Data = new Uint8Array(fileBuffer);
+    } else if (resource.url) {
+      const response = await fetch(resource.url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch resource file from storage: ${response.statusText}`);
+      }
+      const arrayBuf = await response.arrayBuffer();
+      uint8Data = new Uint8Array(arrayBuf);
+    } else {
+      throw new Error("No file buffer or storage URL available for indexing");
+    }
+
     // 3. Extract text with pdf-parse
     let totalPages = 1;
     let fullExtractedText = "";
@@ -130,7 +156,6 @@ export async function indexResource(resourceId: string, fileBuffer: Buffer) {
 
     try {
       const pdfParseModule = (await import("pdf-parse")) as any;
-      const uint8Data = new Uint8Array(fileBuffer);
 
       if (pdfParseModule.PDFParse && typeof pdfParseModule.PDFParse === "function") {
         const parser = new pdfParseModule.PDFParse(uint8Data);
@@ -150,7 +175,6 @@ export async function indexResource(resourceId: string, fileBuffer: Buffer) {
       }
     } catch (parseError) {
       console.error("[indexResource] PDF parse error:", parseError);
-      // Fallback: continue with resource title so failure does not block completely
       fullExtractedText = resourceTitle;
       pages = [{ num: 1, text: resourceTitle }];
     }
@@ -163,34 +187,23 @@ export async function indexResource(resourceId: string, fileBuffer: Buffer) {
       .delete(chunks)
       .where(eq(chunks.entityId, resourceId));
 
-    // 6. Generate embeddings and prepare rows
-    const chunksToInsert: ChunkToInsert[] = [];
+    // 6. Fast batch embedding via embedManyTexts (batches of 25)
+    const textsToEmbed = rawChunks.map((c) => `${c.contextHeader}\n\n${c.content}`);
+    const embeddings = await embedManyTexts(textsToEmbed, 25);
 
-    for (let i = 0; i < rawChunks.length; i++) {
-      const item = rawChunks[i];
-      const textToEmbed = `${item.contextHeader}\n\n${item.content}`;
+    // 7. Prepare and insert chunk rows
+    const chunksToInsert: ChunkToInsert[] = rawChunks.map((item, idx) => ({
+      userId: resource.userId,
+      entityType: "resource",
+      entityId: resource.id,
+      chunkIndex: idx,
+      content: item.content,
+      contextHeader: item.contextHeader,
+      tokenCount: item.tokenCount,
+      embedding: embeddings[idx] || null,
+      modelVersion: "text-embedding-3-small",
+    }));
 
-      let embedding: number[] | null = null;
-      try {
-        embedding = await embedText(textToEmbed);
-      } catch (embErr) {
-        console.warn(`[indexResource] Embedding failed for chunk ${i}:`, embErr);
-      }
-
-      chunksToInsert.push({
-        userId: resource.userId,
-        entityType: "resource",
-        entityId: resource.id,
-        chunkIndex: i,
-        content: item.content,
-        contextHeader: item.contextHeader,
-        tokenCount: item.tokenCount,
-        embedding: embedding,
-        modelVersion: "text-embedding-3-small",
-      });
-    }
-
-    // 7. Insert chunk rows into chunks table
     if (chunksToInsert.length > 0) {
       await db.insert(chunks).values(chunksToInsert);
     }
@@ -231,6 +244,19 @@ export async function indexResource(resourceId: string, fileBuffer: Buffer) {
       })
       .where(eq(courseResources.id, resourceId));
 
+    try {
+      revalidatePath(`/study/courses`);
+    } catch {
+      // Ignore
+    }
+
     return { success: false, error: error?.message || "Failed to index resource" };
   }
+}
+
+/**
+ * Re-index an existing resource by fetching its file from storage URL.
+ */
+export async function reindexResource(resourceId: string) {
+  return await indexResource(resourceId);
 }

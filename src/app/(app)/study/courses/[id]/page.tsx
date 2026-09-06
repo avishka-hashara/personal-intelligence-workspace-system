@@ -36,6 +36,7 @@ import {
   Download,
   Loader2,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -43,6 +44,7 @@ import { SyllabusManager } from "@/components/SyllabusManager";
 import { FlashcardList } from "@/components/FlashcardList";
 import { ResourceUploader } from "@/components/ResourceUploader";
 import { createExam, addFlashcard, getDueFlashcards } from "@/server/actions/study";
+import { reindexResource } from "@/server/actions/indexing";
 import { format, differenceInCalendarDays, formatDistanceToNow } from "date-fns";
 import { ContextSetter } from "@/components/ContextSetter";
 
@@ -417,6 +419,24 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                             <ExternalLink className="w-3 h-3 shrink-0 ml-0.5" />
                           )}
                         </a>
+
+                        {type === "pdf" && (
+                          <form
+                            action={async () => {
+                              "use server";
+                              await reindexResource(res.id);
+                            }}
+                          >
+                            <button
+                              type="submit"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-800 hover:bg-slate-100 px-2 py-1 rounded-md transition-colors cursor-pointer"
+                              title="Re-run fast PDF indexing"
+                            >
+                              <RefreshCw className="w-3 h-3 text-slate-400" />
+                              <span>Re-index</span>
+                            </button>
+                          </form>
+                        )}
                       </div>
                     </div>
                   );
