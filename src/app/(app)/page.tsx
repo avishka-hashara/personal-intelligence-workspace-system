@@ -1,5 +1,5 @@
 import { db } from "@/server/db";
-import { tasks, users, habits, habitLogs, exams, courses, goals } from "@/server/db/schema";
+import { tasks, users, habits, habitLogs, habitPauses, exams, courses, goals } from "@/server/db/schema";
 import { eq, and, isNull, asc, desc, gt } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
@@ -36,6 +36,7 @@ export default async function Today() {
     userTasks,
     userHabits,
     userTodayLogs,
+    userHabitPauses,
     userExams,
     todayNudgeResult,
   ] = await Promise.all([
@@ -96,7 +97,13 @@ export default async function Today() {
         )
       ),
 
-    // 4. Fetch upcoming exams approaching within their ramp-up window
+    // 4. Fetch habit pauses for user
+    db
+      .select()
+      .from(habitPauses)
+      .where(and(eq(habitPauses.userId, user.id), isNull(habitPauses.deletedAt))),
+
+    // 5. Fetch upcoming exams approaching within their ramp-up window
     db
       .select({
         id: exams.id,
@@ -121,7 +128,7 @@ export default async function Today() {
       )
       .orderBy(asc(exams.startsAt)),
 
-    // 5. Fetch or Trigger AI-10 Coaching Nudge for Today
+    // 6. Fetch or Trigger AI-10 Coaching Nudge for Today
     getTodayNudge().catch(() => null),
     userUpsertPromise,
   ]);
@@ -165,6 +172,7 @@ export default async function Today() {
       initialNextUpTasks={nextUpTasks}
       initialHabits={userHabits}
       initialTodayLogs={userTodayLogs}
+      initialHabitPauses={userHabitPauses}
       initialUpcomingExams={upcomingExams}
       initialNudge={todayNudge}
       todayDateStr={todayStr}

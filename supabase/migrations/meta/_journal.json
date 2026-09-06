@@ -92,6 +92,13 @@
       "when": 1788202649927,
       "tag": "0012_wide_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788675705815,
+      "tag": "0013_rich_skrulls",
+      "breakpoints": true
     }
   ]
 }

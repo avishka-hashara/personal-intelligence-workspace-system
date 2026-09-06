@@ -18,7 +18,7 @@ import {
   GraduationCap,
   ArrowRight,
 } from "lucide-react";
-import { HabitTracker, type Habit, type HabitLog } from "@/components/HabitTracker";
+import { HabitTracker, type Habit, type HabitLog, type HabitPause } from "@/components/HabitTracker";
 import { NudgeBanner, type NudgeData } from "@/components/NudgeBanner";
 import { OnboardingPrompts } from "@/components/OnboardingPrompts";
 
@@ -40,6 +40,7 @@ interface TodayViewProps {
   initialNextUpTasks?: Task[];
   initialHabits?: Habit[];
   initialTodayLogs?: HabitLog[];
+  initialHabitPauses?: HabitPause[];
   initialUpcomingExams?: UpcomingExamItem[];
   initialNudge?: NudgeData | null;
   todayDateStr?: string;
@@ -51,6 +52,7 @@ export function TodayView({
   initialTasks,
   initialHabits = [],
   initialTodayLogs = [],
+  initialHabitPauses = [],
   initialUpcomingExams = [],
   initialNudge = null,
   todayDateStr,
@@ -232,6 +234,7 @@ export function TodayView({
         habits={initialHabits}
         todayLogs={initialTodayLogs}
         todayDateStr={todayDateStr}
+        initialPauses={initialHabitPauses}
       />
 
       {/* Study Due / Upcoming Exams Section */}

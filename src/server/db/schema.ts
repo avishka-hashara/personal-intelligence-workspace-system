@@ -640,4 +640,69 @@ export const reviews = pgTable("reviews", {
     version: smallint("version").default(1)
 });
 
+// ----------------------------------------------------------------------
+// Section 7.2.10: Reminders & Push Notifications
+// ----------------------------------------------------------------------
+
+export const reminders = pgTable("reminders", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    nodeId: uuid("node_id").references(() => nodes.id, { onDelete: "set null" }),
+    title: text("title").notNull(),
+    fireAt: timestamp("fire_at", { withTimezone: true }),
+    rrule: text("rrule"),
+    channel: text("channel").array(),
+    snoozeUntil: timestamp("snooze_until", { withTimezone: true }),
+    leadMinutes: integer("lead_minutes"),
+    active: boolean("active").default(true).notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const reminderOccurrences = pgTable("reminder_occurrences", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    reminderId: uuid("reminder_id").notNull().references(() => reminders.id, { onDelete: "cascade" }),
+    scheduledFor: timestamp("scheduled_for", { withTimezone: true }).notNull(),
+    state: text("state").default("pending").notNull(), // 'pending' | 'sent' | 'snoozed' | 'dismissed' | 'missed'
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    hlc: text("hlc"),
+    version: smallint("version").default(1)
+});
+
+export const notificationDeliveries = pgTable("notification_deliveries", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    occurrenceId: uuid("occurrence_id").references(() => reminderOccurrences.id, { onDelete: "cascade" }),
+    channel: text("channel").default("web_push").notNull(), // 'web_push' | 'in_app' | 'email'
+    providerMessageId: text("provider_message_id"),
+    status: text("status").notNull(), // 'delivered' | 'failed' | 'skipped'
+    error: text("error"),
+    attempts: integer("attempts").default(1).notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    userAgent: text("user_agent"),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+
 

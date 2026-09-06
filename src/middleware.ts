@@ -31,9 +31,13 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/auth')
+    const isCronRoute = request.nextUrl.pathname.startsWith('/api/v1/cron')
 
-    // If no user and trying to access a protected route, redirect to login
-    if (!user && !isAuthRoute) {
+    // If no user and trying to access a protected route, redirect to login (or return 401 for API)
+    if (!user && !isAuthRoute && !isCronRoute) {
+        if (request.nextUrl.pathname.startsWith('/api/')) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         return NextResponse.redirect(url)

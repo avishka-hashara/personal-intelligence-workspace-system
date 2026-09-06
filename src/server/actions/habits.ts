@@ -1,10 +1,11 @@
 "use server";
 
 import { db } from "@/server/db";
-import { habits, habitLogs } from "@/server/db/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { habits, habitLogs, habitPauses } from "@/server/db/schema";
+import { eq, and, isNull, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { format, subDays, addDays, parseISO } from "date-fns";
 
 export interface CreateHabitInput {
     title: string;
@@ -77,6 +78,7 @@ export async function createHabit(input: FormData | CreateHabitInput) {
             .returning();
 
         revalidatePath("/");
+        revalidatePath("/habits");
         return { success: true, habit: insertedHabit };
     } catch (error) {
         console.error("Failed to create habit:", error);
@@ -112,6 +114,7 @@ export async function toggleHabitCheckIn(habitId: string, dateStr: string) {
                 .where(eq(habitLogs.id, existingLog.id));
 
             revalidatePath("/");
+            revalidatePath("/habits");
             return { success: true, checked: false };
         } else {
             // Check-in: Insert new log row
@@ -130,6 +133,7 @@ export async function toggleHabitCheckIn(habitId: string, dateStr: string) {
                 .returning();
 
             revalidatePath("/");
+            revalidatePath("/habits");
             return { success: true, checked: true, log: insertedLog };
         }
     } catch (error) {
@@ -137,3 +141,265 @@ export async function toggleHabitCheckIn(habitId: string, dateStr: string) {
         return { error: "Failed to toggle habit check-in" };
     }
 }
+
+export interface PauseHabitInput {
+    habitId: string;
+    startOn: string; // YYYY-MM-DD
+    endOn?: string | null; // YYYY-MM-DD
+    reason?: string | null;
+}
+
+export async function pauseHabit(input: PauseHabitInput) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        const [pause] = await db
+            .insert(habitPauses)
+            .values({
+                userId: user.id,
+                habitId: input.habitId,
+                startOn: input.startOn,
+                endOn: input.endOn || null,
+                reason: input.reason || null,
+            })
+            .returning();
+
+        revalidatePath("/");
+        revalidatePath("/habits");
+        return { success: true, pause };
+    } catch (error) {
+        console.error("Failed to pause habit:", error);
+        return { error: "Failed to pause habit" };
+    }
+}
+
+export async function resumeHabit(pauseId: string) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        await db
+            .delete(habitPauses)
+            .where(and(eq(habitPauses.id, pauseId), eq(habitPauses.userId, user.id)));
+
+        revalidatePath("/");
+        revalidatePath("/habits");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to resume habit:", error);
+        return { error: "Failed to resume habit" };
+    }
+}
+
+export async function getActiveHabitPauses(habitId?: string) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return [];
+    }
+
+    try {
+        const conditions = [
+            eq(habitPauses.userId, user.id),
+            isNull(habitPauses.deletedAt),
+        ];
+        if (habitId) {
+            conditions.push(eq(habitPauses.habitId, habitId));
+        }
+
+        const pauses = await db
+            .select()
+            .from(habitPauses)
+            .where(and(...conditions))
+            .orderBy(desc(habitPauses.startOn));
+
+        return pauses;
+    } catch (error) {
+        console.error("Failed to fetch habit pauses:", error);
+        return [];
+    }
+}
+
+export interface HabitStreakResult {
+    currentStreak: number;
+    bestStreak: number;
+    isPaused: boolean;
+    activePause?: typeof habitPauses.$inferSelect | null;
+}
+
+export async function calculateHabitStreak(
+    habitId: string,
+    asOfDate?: string
+): Promise<HabitStreakResult> {
+    const todayStr = asOfDate || format(new Date(), "yyyy-MM-dd");
+
+    // Fetch habit details
+    const [habit] = await db
+        .select()
+        .from(habits)
+        .where(eq(habits.id, habitId))
+        .limit(1);
+
+    if (!habit) {
+        return { currentStreak: 0, bestStreak: 0, isPaused: false, activePause: null };
+    }
+
+    // Fetch all pauses for this habit
+    const pauses = await db
+        .select()
+        .from(habitPauses)
+        .where(
+            and(
+                eq(habitPauses.habitId, habitId),
+                isNull(habitPauses.deletedAt)
+            )
+        )
+        .orderBy(desc(habitPauses.startOn));
+
+    // Helper to check if a date is within any pause range
+    const getPauseForDate = (dateStr: string) => {
+        return pauses.find((p) => {
+            if (p.startOn <= dateStr) {
+                if (!p.endOn || p.endOn >= dateStr) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    };
+
+    const isDateInPause = (dateStr: string) => !!getPauseForDate(dateStr);
+
+    const activePause = getPauseForDate(todayStr) || null;
+    const isPaused = !!activePause;
+
+    // Fetch all logs for this habit
+    const logs = await db
+        .select()
+        .from(habitLogs)
+        .where(
+            and(
+                eq(habitLogs.habitId, habitId),
+                isNull(habitLogs.deletedAt)
+            )
+        )
+        .orderBy(desc(habitLogs.loggedOn));
+
+    const loggedDates = new Set(logs.map((l) => l.loggedOn));
+
+    // Calculate current streak:
+    // If today is logged, count it and go backwards.
+    // If today is not logged:
+    //   - If today falls within an active habit_pauses range, do not mark streak as broken!
+    //     Streak continues backwards without counting today as a break.
+    //   - If today is not in a pause range, today is ongoing (not finished), so if yesterday was logged/paused,
+    //     streak is still intact. But if yesterday wasn't logged/paused, streak is 0.
+    let currentStreak = 0;
+    let checkDate = parseISO(todayStr);
+
+    const isTodayLogged = loggedDates.has(todayStr);
+    const isTodayPaused = isDateInPause(todayStr);
+
+    if (isTodayLogged) {
+        currentStreak++;
+        checkDate = subDays(checkDate, 1);
+    } else if (isTodayPaused) {
+        // Today is paused: per requirement, do not mark streak as broken!
+        // Start scanning backward from yesterday.
+        checkDate = subDays(checkDate, 1);
+    } else {
+        // Today is not logged and not paused: check if yesterday was logged or paused
+        const yesterdayStr = format(subDays(checkDate, 1), "yyyy-MM-dd");
+        if (loggedDates.has(yesterdayStr) || isDateInPause(yesterdayStr)) {
+            // Streak is alive from yesterday, scan backward starting from yesterday
+            checkDate = subDays(checkDate, 1);
+        } else {
+            // Neither today nor yesterday was logged or paused: streak is 0
+            checkDate = subDays(checkDate, 1);
+        }
+    }
+
+    // Now scan backwards day by day
+    let lookback = 365;
+    while (lookback > 0) {
+        lookback--;
+        const dateStr = format(checkDate, "yyyy-MM-dd");
+
+        if (loggedDates.has(dateStr)) {
+            currentStreak++;
+            checkDate = subDays(checkDate, 1);
+        } else if (isDateInPause(dateStr)) {
+            // In pause range: does NOT break the streak
+            checkDate = subDays(checkDate, 1);
+        } else {
+            // Day was missed and not paused -> Streak is broken
+            break;
+        }
+    }
+
+    // Calculate best streak historically
+    let bestStreak = currentStreak;
+    if (logs.length > 0) {
+        const sortedLogDates = Array.from(loggedDates).sort();
+        const earliestDate = parseISO(sortedLogDates[0]);
+        const latestDate = parseISO(todayStr);
+
+        let runningStreak = 0;
+        let iterDate = earliestDate;
+
+        while (iterDate <= latestDate) {
+            const dStr = format(iterDate, "yyyy-MM-dd");
+            if (loggedDates.has(dStr)) {
+                runningStreak++;
+                if (runningStreak > bestStreak) {
+                    bestStreak = runningStreak;
+                }
+            } else if (isDateInPause(dStr)) {
+                // Paused days preserve runningStreak
+            } else {
+                runningStreak = 0;
+            }
+            iterDate = addDays(iterDate, 1);
+        }
+    }
+
+    return {
+        currentStreak,
+        bestStreak,
+        isPaused,
+        activePause: activePause || null,
+    };
+}
+
+export async function getHabitsWithStreaks() {
+    const user = await getCurrentUser();
+    if (!user) return [];
+
+    const userHabits = await db
+        .select()
+        .from(habits)
+        .where(and(eq(habits.userId, user.id), isNull(habits.deletedAt)))
+        .orderBy(desc(habits.createdAt));
+
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+
+    const habitsWithStreaks = await Promise.all(
+        userHabits.map(async (h) => {
+            const streakInfo = await calculateHabitStreak(h.id, todayStr);
+            return {
+                ...h,
+                streak: streakInfo.currentStreak,
+                bestStreak: streakInfo.bestStreak,
+                isPaused: streakInfo.isPaused,
+                activePause: streakInfo.activePause,
+            };
+        })
+    );
+
+    return habitsWithStreaks;
+}
+
