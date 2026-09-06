@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { updateNote } from "@/server/actions/notes";
 import type { notes } from "@/server/db/schema";
 import type { ConnectedNode } from "@/server/actions/nodes";
 import { ConnectionsPanel } from "@/components/ConnectionsPanel";
+import { DeleteNoteModal } from "@/components/DeleteNoteModal";
 import {
   ArrowLeft,
   Columns,
@@ -17,6 +19,7 @@ import {
   FileText,
   Calendar,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ContextSetter } from "@/components/ContextSetter";
@@ -34,9 +37,11 @@ interface NoteEditorProps {
 type ViewMode = "split" | "edit" | "preview";
 
 export function NoteEditor({ note, connections }: NoteEditorProps) {
+  const router = useRouter();
   const [title, setTitle] = useState(note.title || "Untitled Note");
   const [content, setContent] = useState(note.content || "");
   const [viewMode, setViewMode] = useState<ViewMode>("split");
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
 
@@ -123,45 +128,58 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
           </div>
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setViewMode("split")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-              viewMode === "split"
-                ? "bg-white text-slate-900 shadow-2xs"
-                : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            <Columns className="w-3.5 h-3.5" />
-            <span>Split</span>
-          </button>
+        {/* Right Actions: View Mode Toggle & Delete Note */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
+            <button
+              type="button"
+              onClick={() => setViewMode("split")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                viewMode === "split"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Columns className="w-3.5 h-3.5" />
+              <span>Split</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode("edit")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                viewMode === "edit"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>Edit</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode("preview")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                viewMode === "preview"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Preview</span>
+            </button>
+          </div>
 
           <button
             type="button"
-            onClick={() => setViewMode("edit")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-              viewMode === "edit"
-                ? "bg-white text-slate-900 shadow-2xs"
-                : "text-slate-500 hover:text-slate-900"
-            }`}
+            onClick={() => setIsDeleteOpen(true)}
+            className="inline-flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer"
+            title="Delete note"
           >
-            <Edit3 className="w-3.5 h-3.5" />
-            <span>Edit</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setViewMode("preview")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-              viewMode === "preview"
-                ? "bg-white text-slate-900 shadow-2xs"
-                : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Preview</span>
+            <Trash2 className="w-4 h-4" />
+            <span className="sr-only">Delete</span>
           </button>
         </div>
       </div>
@@ -246,6 +264,14 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
           </div>
         )}
       </div>
+
+      <DeleteNoteModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        noteId={note.id}
+        noteTitle={title}
+        onDeleted={() => router.push("/notes")}
+      />
     </div>
   );
 }

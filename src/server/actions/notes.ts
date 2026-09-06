@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/server/db";
-import { notes } from "@/server/db/schema";
-import { eq, and } from "drizzle-orm";
+import { notes, nodeLinks, nodes, chunks } from "@/server/db/schema";
+import { eq, and, or } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { generateNodeEmbedding } from "@/lib/embeddings";
@@ -87,7 +87,46 @@ export async function deleteNote(id: string) {
             .where(and(eq(notes.id, id), eq(notes.userId, user.id)))
             .returning();
 
+        if (!deletedNote) {
+            return { error: "Note not found" };
+        }
+
+        // 1. Soft-delete linked node_links
+        await db
+            .update(nodeLinks)
+            .set({
+                deletedAt: new Date(),
+                updatedAt: new Date(),
+            })
+            .where(
+                or(
+                    eq(nodeLinks.sourceNodeId, id),
+                    eq(nodeLinks.targetNodeId, id)
+                )
+            );
+
+        // 2. Delete any vector chunks associated with this note
+        await db
+            .delete(chunks)
+            .where(
+                and(
+                    eq(chunks.entityType, "note"),
+                    eq(chunks.entityId, id),
+                    eq(chunks.userId, user.id)
+                )
+            );
+
+        // 3. Mark node entry as archived in nodes table
+        await db
+            .update(nodes)
+            .set({
+                archivedAt: new Date(),
+            })
+            .where(and(eq(nodes.id, id), eq(nodes.userId, user.id)));
+
         revalidatePath("/notes");
+        revalidatePath(`/notes/${id}`);
+        revalidatePath("/");
         return { success: true, note: deletedNote };
     } catch (error) {
         console.error("Failed to delete note:", error);

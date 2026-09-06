@@ -427,9 +427,11 @@ export async function uploadResourceFile(courseId: string, formData: FormData) {
 
         if (resourceType === "pdf") {
             // Trigger structure-aware chunking and embedding
-            indexResource(insertedResource.id, buffer).catch((err) => {
-                console.error("[uploadResourceFile] Background indexing error:", err);
-            });
+            try {
+                await indexResource(insertedResource.id, buffer);
+            } catch (err) {
+                console.error("[uploadResourceFile] Indexing error:", err);
+            }
         }
 
         revalidatePath(`/study/courses/${courseId}`);

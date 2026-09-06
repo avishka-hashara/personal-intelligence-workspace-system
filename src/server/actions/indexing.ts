@@ -134,10 +134,19 @@ export async function indexResource(resourceId: string, fileBuffer?: Buffer | Ui
       // Ignored outside request context
     }
 
-    // Resolve binary data
+    // Resolve binary data as pure Uint8Array (pdfjs-dist rejects Node Buffer instances)
     let uint8Data: Uint8Array;
     if (fileBuffer) {
-      uint8Data = new Uint8Array(fileBuffer);
+      if (Buffer.isBuffer(fileBuffer)) {
+        uint8Data = new Uint8Array(
+          fileBuffer.buffer.slice(
+            fileBuffer.byteOffset,
+            fileBuffer.byteOffset + fileBuffer.byteLength
+          )
+        );
+      } else {
+        uint8Data = new Uint8Array(fileBuffer);
+      }
     } else if (resource.url) {
       const response = await fetch(resource.url);
       if (!response.ok) {
@@ -173,7 +182,7 @@ export async function indexResource(resourceId: string, fileBuffer?: Buffer | Ui
         fullExtractedText = parsed.text || "";
         pages = [{ num: 1, text: fullExtractedText }];
       }
-    } catch (parseError) {
+    } catch (parseError: any) {
       console.error("[indexResource] PDF parse error:", parseError);
       fullExtractedText = resourceTitle;
       pages = [{ num: 1, text: resourceTitle }];

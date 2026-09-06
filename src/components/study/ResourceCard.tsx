@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import {
   Link2,
@@ -43,8 +44,20 @@ export function ResourceCard({
   courseId,
   chunkCount,
 }: ResourceCardProps) {
+  const router = useRouter();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isReindexing, startReindexTransition] = useTransition();
+
+  // Automatically poll/refresh every 2 seconds while document is actively indexing
+  useEffect(() => {
+    if (resource.indexStatus !== "indexing") return;
+
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [resource.indexStatus, router]);
 
   const type = resource.resourceType || "link";
 
