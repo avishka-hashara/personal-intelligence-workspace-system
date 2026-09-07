@@ -64,11 +64,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={handleToggle}
             title="Expand Day Strip (Ctrl+\)"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-zinc-900/80 hover:bg-white dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-zinc-200/70 dark:border-zinc-800/60 shadow-subtle hover:shadow-float backdrop-blur-xl transition-all duration-150 text-xs font-medium cursor-pointer active:scale-[0.985] group"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-zinc-200/70 dark:border-border-subtle hover:border-zinc-300 dark:hover:border-white/20 shadow-subtle hover:shadow-float backdrop-blur-xl transition-all duration-150 text-xs font-medium cursor-pointer active:scale-[0.985] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
           >
             <PanelRightOpen className="w-4 h-4 text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors" />
             <span>Day Strip</span>
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-border-subtle">
               Ctrl+\
             </kbd>
           </button>
@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Day Strip (Right Rail) */}
       <aside
-        className={`hidden xl:flex flex-col border-l border-zinc-200/70 dark:border-zinc-800/60 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl transition-all duration-300 ease-in-out shrink-0 overflow-hidden ${
+        className={`hidden xl:flex flex-col border-l border-zinc-200/70 dark:border-border-subtle bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl transition-all duration-300 ease-in-out shrink-0 overflow-hidden ${
           isDayStripOpen
             ? "w-[320px] p-6 opacity-100"
             : "w-0 p-0 border-l-0 opacity-0 pointer-events-none"
