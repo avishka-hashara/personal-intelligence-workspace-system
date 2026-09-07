@@ -473,7 +473,7 @@ export function CalendarView({
         {/* Main Workspace Layout (Sidebar + CalendarGrid) */}
         <div className="flex flex-col lg:flex-row gap-6 items-start w-full transition-all duration-300 ease-in-out">
           {/* Left Sidebar: Unscheduled Tasks */}
-          <div className="w-full lg:w-[280px] xl:w-[300px] shrink-0 min-w-[260px] bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 shadow-xs space-y-4">
+          <div className="w-full lg:w-[22%] shrink-0 lg:min-w-[210px] lg:max-w-[240px] bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
