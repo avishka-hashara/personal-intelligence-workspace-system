@@ -5,15 +5,8 @@ import { getCurrentUser } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createCourse } from "@/server/actions/study";
-import {
-  GraduationCap,
-  BookOpen,
-  Plus,
-  Calendar,
-  Award,
-  ArrowRight,
-  Sparkles,
-} from "lucide-react";
+import { Plus } from "lucide-react";
+import { CoursesView } from "@/components/study/CoursesView";
 
 export default async function CoursesPage() {
   const user = await getCurrentUser();
@@ -135,100 +128,8 @@ export default async function CoursesPage() {
         </form>
       </section>
 
-      {/* Courses Grid */}
-      <section className="space-y-4">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Enrolled Courses</h2>
-
-        {userCourses.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userCourses.map((course) => (
-              <Link
-                key={course.id}
-                href={`/study/courses/${course.id}`}
-                className="group bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/70 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-5 shadow-subtle hover:shadow-float transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200/60 dark:border-zinc-700/60 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors">
-                      {course.code}
-                    </span>
-
-                    {course.targetGrade && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                        <Award className="w-3 h-3" />
-                        Target: {course.targetGrade}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-950 dark:group-hover:text-white transition-colors line-clamp-1">
-                    {course.title}
-                  </h3>
-
-                  {course.instructor && (
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                      Prof. {course.instructor}
-                    </p>
-                  )}
-                </div>
-
-                <div className="mt-5 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400 dark:text-zinc-500">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>{course.term || "Active Term"}</span>
-                  </div>
-
-                  <span className="inline-flex items-center gap-1 font-medium text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 group-hover:translate-x-0.5 transition-all">
-                    <span>View Syllabus</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-zinc-50/50 dark:bg-zinc-900/40 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-6">
-            <div className="w-16 h-16 rounded-3xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center shadow-subtle">
-              <GraduationCap className="w-8 h-8" />
-            </div>
-
-            <div className="max-w-lg space-y-2">
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                Add your first course to unlock intelligent study
-              </h3>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                Courses are the backbone of your academic workspace. Adding a course lets you paste syllabus topics, track confidence ratings, run FSRS spaced repetition flashcards, and set up exam countdown ramps.
-              </p>
-            </div>
-
-            {/* 3 Step Academic Journey */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl text-left pt-2">
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/70 shadow-2xs">
-                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">1. Structure</div>
-                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Add Course & Code</div>
-                <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Define term, credit weight, and target grade.</div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/70 shadow-2xs">
-                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">2. Syllabus</div>
-                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">Map Topics & Weeks</div>
-                <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Track topic coverage from not started to revised.</div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/70 shadow-2xs">
-                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">3. Active Recall</div>
-                <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">AI Quizzes & Cards</div>
-                <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Generate flashcards and retain knowledge with FSRS.</div>
-              </div>
-            </div>
-
-            <div className="pt-2 text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Use the form above to add your first course</span>
-            </div>
-          </div>
-        )}
-      </section>
+      {/* Enrolled Courses Section (Grid & List View) */}
+      <CoursesView courses={userCourses} />
     </div>
   );
 }
