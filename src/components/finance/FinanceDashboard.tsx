@@ -417,7 +417,7 @@ export function FinanceDashboard({
 
             <div className="mt-4 flex flex-col gap-4">
               {budgets.length === 0 ? (
-                <div className="text-center py-6 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 text-xs">
+                <div className="text-center py-6 bg-zinc-50/50 dark:bg-transparent rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs">
                   No category budgets set yet. Click &quot;+ Set Budget&quot; to establish monthly limits.
                 </div>
               ) : (
@@ -520,7 +520,7 @@ export function FinanceDashboard({
 
             <div className="mt-4 flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/80">
               {subscriptions.length === 0 ? (
-                <div className="text-center py-6 bg-zinc-50/50 dark:bg-zinc-800/30 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 text-xs">
+                <div className="text-center py-6 bg-zinc-50/50 dark:bg-transparent rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs">
                   No subscriptions added. Track Netflix, Spotify, cloud storage, etc.
                 </div>
               ) : (

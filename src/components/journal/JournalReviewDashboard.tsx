@@ -180,12 +180,12 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
 
       {reviewsList.length === 0 ? (
         /* Empty State */
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4 border border-indigo-100">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 p-12 text-center shadow-xs">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-4 border border-indigo-100 dark:border-indigo-800/60">
             <Calendar className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">No Reviews Generated Yet</h2>
-          <p className="text-slate-600 text-sm max-w-md mx-auto mb-6">
+          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">No Reviews Generated Yet</h2>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm max-w-md mx-auto mb-6">
             Run your first Weekly Review (7 days) or Quarterly Review (90 days) to aggregate multi-module activity
             and receive an AI-08 high-level synthesis with proposed adjustments.
           </p>
@@ -193,7 +193,7 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
             <button
               onClick={() => handleRunReview("weekly")}
               disabled={isPending}
-              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-medium text-sm transition-colors cursor-pointer"
             >
               Run Weekly (7d)
             </button>
@@ -212,23 +212,23 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
           {/* Main Review Display (8 cols on lg) */}
           <div className="lg:col-span-8 space-y-6">
             {selectedReview && (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shadow-sm overflow-hidden">
                 {/* Review Header Banner */}
-                <div className="p-6 sm:p-8 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-indigo-50/30">
+                <div className="p-6 sm:p-8 border-b border-zinc-100 dark:border-zinc-800 bg-gradient-to-br from-zinc-50 to-indigo-50/30 dark:from-zinc-900 dark:to-indigo-950/20">
                   <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                     <div className="flex items-center gap-3">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
                           selectedReview.period === "quarterly"
-                            ? "bg-purple-100 text-purple-800 border-purple-200"
-                            : "bg-blue-100 text-blue-800 border-blue-200"
+                            ? "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800/60"
+                            : "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800/60"
                         }`}
                       >
                         {selectedReview.period === "quarterly"
                           ? "90-Day Quarterly Review"
                           : "7-Day Weekly Review"}
                       </span>
-                      <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
                         {new Date(selectedReview.periodStart).toLocaleDateString(undefined, {
                           month: "short",
@@ -243,12 +243,12 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                       </span>
                     </div>
 
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">
                       Generated {new Date(selectedReview.createdAt).toLocaleDateString()}
                     </span>
                   </div>
 
-                  <h2 className="text-2xl font-bold text-slate-900">
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                     {selectedReview.period === "quarterly"
                       ? "Quarterly Executive Retrospective"
                       : "Weekly Synthesis & Calibration"}
@@ -256,64 +256,64 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                 </div>
 
                 {/* 90-Day / 7-Day Multi-Metric Aggregate Cards */}
-                <div className="p-6 sm:p-8 border-b border-slate-100">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
+                <div className="p-6 sm:p-8 border-b border-zinc-100 dark:border-zinc-800">
+                  <h3 className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-4">
                     Aggregated Metrics ({selectedReview.stats.daysWindow} Days Window)
                   </h3>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {/* Task Card */}
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/80 dark:border-zinc-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-500">Tasks</span>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Tasks</span>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       </div>
-                      <div className="text-2xl font-bold text-slate-900">
+                      <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                         {selectedReview.stats.tasks.completed}
                       </div>
-                      <div className="text-xs text-slate-500 mt-1">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                         {selectedReview.stats.tasks.completionRate}% of {selectedReview.stats.tasks.total} planned
                       </div>
                     </div>
 
                     {/* Study Card */}
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/80 dark:border-zinc-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-500">Study</span>
-                        <BookOpen className="w-4 h-4 text-indigo-600" />
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Study</span>
+                        <BookOpen className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                       </div>
-                      <div className="text-2xl font-bold text-slate-900">
+                      <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                         {Math.round((selectedReview.stats.study.totalMinutes / 60) * 10) / 10}h
                       </div>
-                      <div className="text-xs text-slate-500 mt-1">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                         {selectedReview.stats.study.sessionCount} sessions ({selectedReview.stats.study.totalMinutes}m)
                       </div>
                     </div>
 
                     {/* Habits Card */}
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/80 dark:border-zinc-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-500">Habits</span>
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Habits</span>
                         <Flame className="w-4 h-4 text-amber-500" />
                       </div>
-                      <div className="text-2xl font-bold text-slate-900">
+                      <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                         {selectedReview.stats.habits.averageAdherence}%
                       </div>
-                      <div className="text-xs text-slate-500 mt-1">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                         {selectedReview.stats.habits.totalLogs} check-ins logged
                       </div>
                     </div>
 
                     {/* Flashcards Retention */}
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-850 border border-zinc-200/80 dark:border-zinc-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-slate-500">Retention</span>
-                        <TrendingUp className="w-4 h-4 text-teal-600" />
+                        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Retention</span>
+                        <TrendingUp className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                       </div>
-                      <div className="text-2xl font-bold text-slate-900">
+                      <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                         {selectedReview.stats.study.retentionPct}%
                       </div>
-                      <div className="text-xs text-slate-500 mt-1">
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                         {selectedReview.stats.study.cardsReviewed} cards reviewed
                       </div>
                     </div>
@@ -322,11 +322,11 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                   {/* Course & Habit Detailed Progress Rows */}
                   {(selectedReview.stats.study.studyMinutesByCourse.length > 0 ||
                     selectedReview.stats.habits.habitBreakdown.length > 0) && (
-                    <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Course Time Breakdown */}
                       {selectedReview.stats.study.studyMinutesByCourse.length > 0 && (
                         <div>
-                          <h4 className="text-xs font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
+                          <h4 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-3 flex items-center gap-1.5">
                             <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
                             Study Time by Course
                           </h4>
@@ -334,12 +334,12 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                             {selectedReview.stats.study.studyMinutesByCourse.map((c) => (
                               <div
                                 key={c.courseId}
-                                className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 text-xs font-medium text-slate-700 border border-slate-100"
+                                className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-850 text-xs font-medium text-zinc-700 dark:text-zinc-300 border border-zinc-100 dark:border-zinc-800"
                               >
-                                <span className="font-semibold text-slate-900">
+                                <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                                   {c.courseCode}: {c.courseTitle}
                                 </span>
-                                <span className="text-indigo-600 font-bold">
+                                <span className="text-indigo-600 dark:text-indigo-400 font-bold">
                                   {c.minutes} mins ({c.sessionCount} sessions)
                                 </span>
                               </div>
@@ -351,20 +351,20 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                       {/* Habit Adherence Breakdown */}
                       {selectedReview.stats.habits.habitBreakdown.length > 0 && (
                         <div>
-                          <h4 className="text-xs font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
+                          <h4 className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-3 flex items-center gap-1.5">
                             <Flame className="w-3.5 h-3.5 text-amber-500" />
                             Habit Consistency
                           </h4>
                           <div className="space-y-2">
                             {selectedReview.stats.habits.habitBreakdown.slice(0, 4).map((h) => (
                               <div key={h.habitId} className="space-y-1">
-                                <div className="flex justify-between text-xs font-medium text-slate-700">
+                                <div className="flex justify-between text-xs font-medium text-zinc-700 dark:text-zinc-300">
                                   <span>{h.title}</span>
-                                  <span className="font-semibold text-slate-900">
+                                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                                     {h.adherencePct}% ({h.loggedCount}/{h.expectedDays}d)
                                   </span>
                                 </div>
-                                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                                   <div
                                     className={`h-full rounded-full transition-all ${
                                       h.adherencePct >= 75
@@ -386,16 +386,16 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                 </div>
 
                 {/* AI-08 Narrative Section */}
-                <div className="p-6 sm:p-8 border-b border-slate-100 bg-slate-50/50">
+                <div className="p-6 sm:p-8 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
                   <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-4 h-4 text-indigo-600" />
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
                       AI-08 High-Level Narrative
                     </h3>
                   </div>
 
-                  <div className="prose prose-sm text-slate-700 leading-relaxed max-w-none bg-white p-5 rounded-xl border border-slate-200/80 shadow-2xs font-sans">
-                    <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-slate-800">
+                  <div className="prose prose-sm dark:prose-invert text-zinc-700 dark:text-zinc-300 leading-relaxed max-w-none bg-white dark:bg-zinc-850 p-5 rounded-xl border border-zinc-200/80 dark:border-zinc-750 shadow-2xs font-sans">
+                    <p className="whitespace-pre-line text-sm sm:text-base leading-relaxed text-zinc-800 dark:text-zinc-200">
                       {selectedReview.narrative}
                     </p>
                   </div>
@@ -405,19 +405,19 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                 <div className="p-6 sm:p-8">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <Target className="w-4 h-4 text-purple-600" />
-                      <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                      <Target className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
                         Proposed Quarterly Adjustments
                       </h3>
                     </div>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
                       {selectedReview.proposedAdjustments.filter((a) => a.applied).length} of{" "}
                       {selectedReview.proposedAdjustments.length} applied
                     </span>
                   </div>
 
                   {selectedReview.proposedAdjustments.length === 0 ? (
-                    <p className="text-xs text-slate-500 italic">No adjustments needed for this cycle.</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 italic">No adjustments needed for this cycle.</p>
                   ) : (
                     <div className="space-y-3">
                       {selectedReview.proposedAdjustments.map((adj) => (
@@ -425,8 +425,8 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                           key={adj.id}
                           className={`p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                             adj.applied
-                              ? "bg-slate-50 border-slate-200 text-slate-400"
-                              : "bg-white border-purple-200/70 hover:border-purple-300 shadow-2xs"
+                              ? "bg-zinc-50 dark:bg-zinc-850 border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500"
+                              : "bg-white dark:bg-zinc-850 border-purple-200/70 dark:border-purple-800/60 hover:border-purple-300 dark:hover:border-purple-700 shadow-2xs"
                           }`}
                         >
                           <div className="space-y-1">
@@ -434,15 +434,15 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                               <span
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                                   adj.applied
-                                    ? "bg-slate-200 text-slate-600"
-                                    : "bg-purple-100 text-purple-800"
+                                    ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                                    : "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300"
                                 }`}
                               >
                                 {adj.entityType}
                               </span>
-                              <span className="font-semibold text-sm text-slate-900">{adj.entityTitle}</span>
+                              <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{adj.entityTitle}</span>
                             </div>
-                            <p className="text-xs text-slate-600">{adj.description}</p>
+                            <p className="text-xs text-zinc-600 dark:text-zinc-400">{adj.description}</p>
                           </div>
 
                           <button
@@ -451,7 +451,7 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                             onClick={() => handleApplyAdjustment(adj.id)}
                             className={`shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                               adj.applied
-                                ? "bg-emerald-100 text-emerald-700 cursor-default"
+                                ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 cursor-default"
                                 : "bg-purple-600 hover:bg-purple-700 text-white shadow-2xs"
                             }`}
                           >
@@ -476,19 +476,19 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
 
           {/* Review Archives & History Sidebar (4 cols on lg) */}
           <div className="lg:col-span-4 space-y-4">
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <History className="w-4 h-4 text-slate-600" />
-                  <h3 className="font-bold text-slate-900 text-sm">Review Archives</h3>
+                  <History className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+                  <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Review Archives</h3>
                 </div>
 
                 {/* Filter Pills */}
-                <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-medium">
+                <div className="flex bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg text-xs font-medium">
                   <button
                     onClick={() => setActiveTab("all")}
                     className={`px-2 py-1 rounded-md transition-all ${
-                      activeTab === "all" ? "bg-white text-slate-900 font-semibold shadow-2xs" : "text-slate-600"
+                      activeTab === "all" ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white font-semibold shadow-2xs" : "text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
                     All
@@ -497,8 +497,8 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                     onClick={() => setActiveTab("quarterly")}
                     className={`px-2 py-1 rounded-md transition-all ${
                       activeTab === "quarterly"
-                        ? "bg-white text-purple-900 font-semibold shadow-2xs"
-                        : "text-slate-600"
+                        ? "bg-white dark:bg-zinc-700 text-purple-900 dark:text-purple-300 font-semibold shadow-2xs"
+                        : "text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
                     Quarterly
@@ -507,8 +507,8 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                     onClick={() => setActiveTab("weekly")}
                     className={`px-2 py-1 rounded-md transition-all ${
                       activeTab === "weekly"
-                        ? "bg-white text-blue-900 font-semibold shadow-2xs"
-                        : "text-slate-600"
+                        ? "bg-white dark:bg-zinc-700 text-blue-900 dark:text-blue-300 font-semibold shadow-2xs"
+                        : "text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
                     Weekly
@@ -517,7 +517,7 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
               </div>
 
               {filteredReviews.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-6">No reviews found in this filter.</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center py-6">No reviews found in this filter.</p>
               ) : (
                 <div className="space-y-2.5 max-h-[600px] overflow-y-auto pr-1">
                   {filteredReviews.map((rev) => {
@@ -529,30 +529,30 @@ export function JournalReviewDashboard({ initialReviews }: JournalReviewDashboar
                         onClick={() => setSelectedReviewId(rev.id)}
                         className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
                           isSelected
-                            ? "bg-indigo-50/80 border-indigo-300 shadow-2xs"
-                            : "bg-slate-50 hover:bg-slate-100/80 border-slate-200/80"
+                            ? "bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700 shadow-2xs"
+                            : "bg-zinc-50 dark:bg-zinc-850 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 border-zinc-200/80 dark:border-zinc-800"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1.5">
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                               rev.period === "quarterly"
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-blue-100 text-blue-800"
+                                ? "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300"
+                                : "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300"
                             }`}
                           >
                             {rev.period}
                           </span>
-                          <span className="text-[11px] text-slate-400">
+                          <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
                             {new Date(rev.createdAt).toLocaleDateString()}
                           </span>
                         </div>
 
-                        <div className="text-xs font-semibold text-slate-900 truncate mb-1">
+                        <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate mb-1">
                           {rev.period === "quarterly" ? "Quarterly Review (90d)" : "Weekly Review (7d)"}
                         </div>
 
-                        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                        <div className="flex items-center gap-3 text-[11px] text-zinc-500 dark:text-zinc-400">
                           <span>{rev.stats.tasks.completed} tasks</span>
                           <span>•</span>
                           <span>{Math.round(rev.stats.study.totalMinutes / 60)}h study</span>

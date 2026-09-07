@@ -117,7 +117,7 @@ export function SortableTaskItem({
         <div
             ref={setNodeRef}
             style={style}
-            className={`group h-13 border border-zinc-200/70 dark:border-zinc-800/60 rounded-xl bg-white dark:bg-zinc-900 flex items-center justify-between px-3.5 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-subtle transition-all ${
+            className={`group h-13 border border-zinc-200/70 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 flex items-center justify-between px-3.5 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-subtle transition-all ${
                 isDragging ? "opacity-40 shadow-float ring-2 ring-zinc-400 scale-[1.01]" : ""
             }`}
         >
@@ -125,7 +125,7 @@ export function SortableTaskItem({
                 <div
                     {...attributes}
                     {...listeners}
-                    className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 cursor-grab active:cursor-grabbing mr-2.5 p-1 rounded-md transition-colors flex items-center justify-center select-none"
+                    className="text-zinc-300 dark:text-zinc-500 hover:text-zinc-500 dark:hover:text-zinc-300 cursor-grab active:cursor-grabbing mr-2.5 p-1 rounded-md transition-colors flex items-center justify-center select-none"
                     style={{ touchAction: "none" }}
                     title="Drag to reorder"
                     aria-label="Drag to reorder task"
@@ -152,15 +152,15 @@ export function SortableTaskItem({
                 </button>
                 {task.dueAt && (
                     <span className="text-[11px] font-normal shrink-0 ml-2 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-zinc-400" />
+                        <Clock className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                         {isToday(new Date(task.dueAt)) ? (
-                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Today</span>
+                            <span className="text-emerald-700 dark:text-emerald-400 font-medium">Today</span>
                         ) : isTomorrow(new Date(task.dueAt)) ? (
-                            <span className="text-amber-600 dark:text-amber-400 font-medium">Tomorrow</span>
+                            <span className="text-amber-700 dark:text-amber-400 font-medium">Tomorrow</span>
                         ) : isPast(new Date(task.dueAt)) ? (
-                            <span className="text-rose-600 dark:text-rose-400 font-medium">Overdue</span>
+                            <span className="text-rose-700 dark:text-rose-400 font-medium">Overdue</span>
                         ) : (
-                            <span className="text-zinc-400 dark:text-zinc-500">{format(new Date(task.dueAt), "MMM d")}</span>
+                            <span className="text-zinc-500 dark:text-zinc-400">{format(new Date(task.dueAt), "MMM d")}</span>
                         )}
                     </span>
                 )}

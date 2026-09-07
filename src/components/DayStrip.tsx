@@ -237,7 +237,7 @@ export function DayStrip() {
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 rounded-2xl p-3.5 shadow-subtle flex items-center justify-between gap-2">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-2xl p-3.5 shadow-subtle flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 shrink-0">
               <Zap className="w-4 h-4" />
@@ -246,7 +246,7 @@ export function DayStrip() {
               <div className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">
                 Focus Timer
               </div>
-              <div className="text-[10px] text-zinc-400">
+              <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                 Press <kbd className="px-1 py-0.2 font-mono bg-zinc-100 dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700">F</kbd> to launch
               </div>
             </div>
@@ -254,7 +254,7 @@ export function DayStrip() {
           <button
             type="button"
             onClick={() => toggleTimer()}
-            className="px-2.5 py-1 text-[11px] font-medium text-zinc-900 dark:text-zinc-100 bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-lg transition-all duration-150 cursor-pointer shrink-0 active:scale-[0.985]"
+            className="px-2.5 py-1 text-[11px] font-semibold text-zinc-900 dark:text-zinc-900 bg-zinc-100 hover:bg-zinc-200/80 dark:bg-zinc-100 dark:hover:bg-white rounded-lg transition-all duration-150 cursor-pointer shrink-0 active:scale-[0.985] shadow-2xs"
           >
             Start
           </button>
@@ -288,7 +288,7 @@ export function DayStrip() {
       </div>
 
       {/* 3. Compact Vertical Timeline (08:00 to 22:00) */}
-      <div className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 rounded-2xl shadow-subtle p-3 flex flex-col overflow-hidden min-h-[420px]">
+      <div className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-2xl shadow-subtle p-3 flex flex-col overflow-hidden min-h-[420px]">
         {isLoadingBlocks ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-2 text-zinc-400">
             <RefreshCw className="w-5 h-5 animate-spin text-zinc-500" />
@@ -297,7 +297,7 @@ export function DayStrip() {
         ) : (
           <div className="relative flex-1 overflow-y-auto pr-1">
             {/* Hour ruler markers */}
-            <div className="relative h-[630px] border-l border-zinc-200/70 dark:border-zinc-800/60 ml-9">
+            <div className="relative h-[630px] border-l border-zinc-200/70 dark:border-zinc-800/80 ml-9">
               {Array.from({ length: TOTAL_HOURS + 1 }).map((_, i) => {
                 const hour = START_HOUR + i;
                 const topPct = (i / TOTAL_HOURS) * 100;
@@ -307,10 +307,10 @@ export function DayStrip() {
                     className="absolute w-full flex items-center"
                     style={{ top: `${topPct}%` }}
                   >
-                    <span className="absolute -left-9 text-[10px] font-mono text-zinc-400 dark:text-zinc-500 w-8 text-right pr-1">
+                    <span className="absolute -left-9 text-[10px] font-mono text-zinc-500 dark:text-zinc-400 w-8 text-right pr-1">
                       {formatHour(hour)}
                     </span>
-                    <div className="w-full border-b border-dashed border-zinc-100 dark:border-zinc-800/50" />
+                    <div className="w-full border-b border-dashed border-zinc-100 dark:border-zinc-800/60" />
                   </div>
                 );
               })}
@@ -380,11 +380,11 @@ export function DayStrip() {
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
                   <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/30 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-400 space-y-1.5">
-                    <CalendarIcon className="w-5 h-5 mx-auto text-zinc-400" />
+                    <CalendarIcon className="w-5 h-5 mx-auto text-zinc-400 dark:text-zinc-500" />
                     <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                       No blocks today
                     </p>
-                    <p className="text-[11px] text-zinc-400 leading-tight">
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">
                       Use Calendar to time-block your focus tasks.
                     </p>
                     <Link

@@ -35,6 +35,18 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-card-raised-foreground: var(--card-raised-foreground);
+  --color-card-raised: var(--card-raised);
+  --color-border-subtle: var(--border-subtle);
+  --color-status-success: var(--status-success);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-border: var(--status-success-border);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-warning-border: var(--status-warning-border);
+  --color-status-info: var(--status-info);
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-border: var(--status-info-border);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -53,6 +65,8 @@
   --foreground: #09090b;
   --card: #ffffff;
   --card-foreground: #09090b;
+  --card-raised: #f8fafc;
+  --card-raised-foreground: #09090b;
   --popover: #ffffff;
   --popover-foreground: #09090b;
   --primary: #18181b;
@@ -65,8 +79,18 @@
   --accent-foreground: #18181b;
   --destructive: #ef4444;
   --border: rgba(228, 228, 231, 0.7);
+  --border-subtle: rgba(228, 228, 231, 0.4);
   --input: rgba(228, 228, 231, 0.8);
   --ring: #18181b;
+  --status-success: #059669;
+  --status-success-bg: rgba(16, 185, 129, 0.08);
+  --status-success-border: rgba(16, 185, 129, 0.2);
+  --status-warning: #d97706;
+  --status-warning-bg: rgba(245, 158, 11, 0.08);
+  --status-warning-border: rgba(245, 158, 11, 0.2);
+  --status-info: #2563eb;
+  --status-info-bg: rgba(59, 130, 246, 0.08);
+  --status-info-border: rgba(59, 130, 246, 0.2);
   --chart-1: #18181b;
   --chart-2: #52525b;
   --chart-3: #71717a;
@@ -85,35 +109,47 @@
 
 .dark {
   --background: #09090b;
-  --foreground: #fafafa;
-  --card: #121215;
-  --card-foreground: #fafafa;
-  --popover: #121215;
-  --popover-foreground: #fafafa;
-  --primary: #fafafa;
-  --primary-foreground: #18181b;
-  --secondary: #18181b;
-  --secondary-foreground: #fafafa;
-  --muted: #18181b;
+  --foreground: #f4f4f5;
+  --card: #141417;
+  --card-foreground: #f4f4f5;
+  --card-raised: #1f1f24;
+  --card-raised-foreground: #f4f4f5;
+  --popover: #26262c;
+  --popover-foreground: #f4f4f5;
+  --primary: #f4f4f5;
+  --primary-foreground: #09090b;
+  --secondary: #1f1f24;
+  --secondary-foreground: #f4f4f5;
+  --muted: #1a1a1f;
   --muted-foreground: #a1a1aa;
-  --accent: #18181b;
-  --accent-foreground: #fafafa;
+  --accent: #1f1f24;
+  --accent-foreground: #f4f4f5;
   --destructive: #f87171;
-  --border: rgba(39, 39, 42, 0.6);
-  --input: rgba(39, 39, 42, 0.7);
+  --border: rgba(255, 255, 255, 0.11);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.16);
   --ring: #d4d4d8;
+  --status-success: #34d399;
+  --status-success-bg: rgba(52, 211, 153, 0.12);
+  --status-success-border: rgba(52, 211, 153, 0.28);
+  --status-warning: #fbbf24;
+  --status-warning-bg: rgba(251, 191, 36, 0.12);
+  --status-warning-border: rgba(251, 191, 36, 0.28);
+  --status-info: #60a5fa;
+  --status-info-bg: rgba(96, 165, 250, 0.12);
+  --status-info-border: rgba(96, 165, 250, 0.28);
   --chart-1: #fafafa;
   --chart-2: #a1a1aa;
   --chart-3: #71717a;
   --chart-4: #52525b;
   --chart-5: #27272a;
-  --sidebar: rgba(18, 18, 21, 0.75);
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #fafafa;
-  --sidebar-primary-foreground: #18181b;
-  --sidebar-accent: #18181b;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: rgba(39, 39, 42, 0.6);
+  --sidebar: rgba(16, 16, 20, 0.85);
+  --sidebar-foreground: #f4f4f5;
+  --sidebar-primary: #f4f4f5;
+  --sidebar-primary-foreground: #09090b;
+  --sidebar-accent: #1f1f24;
+  --sidebar-accent-foreground: #f4f4f5;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #d4d4d8;
 }
 
@@ -133,10 +169,10 @@
 }
 
 @utility glass-surface-dark {
-  background-color: rgba(18, 18, 21, 0.78);
+  background-color: rgba(20, 20, 23, 0.82);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(39, 39, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.11);
 }
 
 @utility interactive-scale {

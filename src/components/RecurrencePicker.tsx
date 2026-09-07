@@ -63,16 +63,16 @@ export function RecurrencePicker({
           value={selectedValue}
           onChange={handleChange}
           disabled={disabled}
-          className="w-full h-9 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-9 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-3 py-1.5 text-sm text-slate-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-zinc-400 focus:border-transparent transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Select recurrence preset"
         >
           {PRESETS.map((preset) => (
-            <option key={preset.label} value={preset.value}>
+            <option key={preset.label} value={preset.value} className="bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200">
               {preset.label}
             </option>
           ))}
           {isCustom && (
-            <option value={selectedValue}>
+            <option value={selectedValue} className="bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200">
               Custom ({humanReadable || selectedValue})
             </option>
           )}
@@ -80,9 +80,9 @@ export function RecurrencePicker({
       </div>
 
       {humanReadable && (
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 border border-slate-200/70 rounded-md px-2.5 py-1.5">
-          <Repeat className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <span>Repeats: <strong className="font-medium text-slate-700">{humanReadable}</strong></span>
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-800/50 border border-slate-200/70 dark:border-zinc-700/60 rounded-md px-2.5 py-1.5">
+          <Repeat className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 shrink-0" />
+          <span>Repeats: <strong className="font-medium text-slate-700 dark:text-zinc-200">{humanReadable}</strong></span>
         </div>
       )}
     </div>

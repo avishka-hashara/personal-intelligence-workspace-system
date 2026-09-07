@@ -18,7 +18,7 @@ import { format, formatDistanceToNow, isPast } from "date-fns";
 
 function ProgressRing({
   percent,
-  strokeColor = "#18181b",
+  strokeColor,
   size = 32,
   strokeWidth = 3,
 }: {
@@ -48,13 +48,15 @@ function ProgressRing({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={strokeColor}
+          stroke={strokeColor || "currentColor"}
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
           fill="transparent"
-          className="transition-all duration-500 ease-out"
+          className={`transition-all duration-500 ease-out ${
+            !strokeColor ? "text-zinc-900 dark:text-zinc-100" : ""
+          }`}
         />
       </svg>
       <span className="absolute text-[9px] font-medium text-zinc-700 dark:text-zinc-300 font-mono">

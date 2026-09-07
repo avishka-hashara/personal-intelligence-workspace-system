@@ -306,9 +306,9 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
         }
       }}
     >
-      <SheetContent className="w-[400px] sm:w-[540px] flex flex-col gap-6 p-6 overflow-y-auto bg-white">
+      <SheetContent className="w-[400px] sm:w-[540px] flex flex-col gap-6 p-6 overflow-y-auto bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
         <SheetHeader className="p-0 space-y-1">
-          <SheetTitle className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+          <SheetTitle className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
             Task Details
           </SheetTitle>
           <SheetDescription className="sr-only">
@@ -320,7 +320,7 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
           <div className="flex flex-col gap-6">
             {/* Title Field */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                 Title
               </label>
               <Input
@@ -328,13 +328,13 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                 onChange={(e) => setTitle(e.target.value)}
                 onBlur={handleTitleBlur}
                 placeholder="Task title..."
-                className="h-10 text-base font-semibold text-slate-900 border-slate-200 focus-visible:ring-slate-900"
+                className="h-10 text-base font-semibold text-slate-900 dark:text-zinc-100 border-slate-200 dark:border-zinc-700 bg-transparent dark:bg-zinc-800/60 focus-visible:ring-slate-900 dark:focus-visible:ring-zinc-400"
               />
             </div>
 
             {/* Notes Field */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
                 Notes
               </label>
               <Textarea
@@ -343,22 +343,22 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                 onBlur={handleNotesBlur}
                 placeholder="Add notes or detailed descriptions..."
                 rows={4}
-                className="min-h-28 text-sm text-slate-800 border-slate-200 focus-visible:ring-slate-900"
+                className="min-h-28 text-sm text-slate-800 dark:text-zinc-200 border-slate-200 dark:border-zinc-700 bg-transparent dark:bg-zinc-800/60 focus-visible:ring-slate-900 dark:focus-visible:ring-zinc-400"
               />
             </div>
 
             {/* Due Date & Time Section */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
                   Due Date & Time
                 </label>
                 {dueDateValue && (
                   <button
                     type="button"
                     onClick={handleClearDueDate}
-                    className="text-[11px] text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-0.5 cursor-pointer"
+                    className="text-[11px] text-slate-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-400 transition-colors flex items-center gap-0.5 cursor-pointer"
                     title="Remove due date"
                   >
                     <X className="w-3 h-3" /> Clear
@@ -373,8 +373,8 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                   onClick={() => handleSetPreset("today")}
                   className={`px-2.5 py-1 text-xs rounded-md border transition-all cursor-pointer ${
                     isDueToday
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-medium"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 font-medium"
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-zinc-800/60 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-800"
                   }`}
                 >
                   Today
@@ -384,8 +384,8 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                   onClick={() => handleSetPreset("tomorrow")}
                   className={`px-2.5 py-1 text-xs rounded-md border transition-all cursor-pointer ${
                     isDueTomorrow
-                      ? "bg-amber-50 text-amber-700 border-amber-300 font-medium"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      ? "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 font-medium"
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-zinc-800/60 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-800"
                   }`}
                 >
                   Tomorrow
@@ -393,7 +393,7 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                 <button
                   type="button"
                   onClick={() => handleSetPreset("next_week")}
-                  className="px-2.5 py-1 text-xs rounded-md border bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 transition-all cursor-pointer"
+                  className="px-2.5 py-1 text-xs rounded-md border bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-zinc-800/60 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-800 transition-all cursor-pointer"
                 >
                   Next Week
                 </button>
@@ -405,15 +405,15 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                   value={dueDateValue}
                   onChange={(e) => handleDueDateChange(e.target.value)}
                   disabled={isDueDatePending}
-                  className="h-9 text-xs border-slate-200 focus-visible:ring-slate-900 bg-white text-slate-800"
+                  className="h-9 text-xs border-slate-200 dark:border-zinc-700 focus-visible:ring-slate-900 dark:focus-visible:ring-zinc-400 bg-white dark:bg-zinc-800/60 text-slate-800 dark:text-zinc-200 [color-scheme:light] dark:[color-scheme:dark]"
                 />
               </div>
             </div>
 
             {/* Repeat Section */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Repeat className="w-3.5 h-3.5 text-slate-400" />
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-1.5">
+                <Repeat className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
                 Repeat
               </label>
               <RecurrencePicker
@@ -425,19 +425,19 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
 
             {/* Milestone Section */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Flag className="w-3.5 h-3.5 text-indigo-500" />
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-1.5">
+                <Flag className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                 Milestone
               </label>
               <select
                 value={selectedTask.milestoneId || "none"}
                 onChange={(e) => handleMilestoneChange(e.target.value)}
                 disabled={isMilestonePending}
-                className="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer disabled:opacity-50"
+                className="w-full h-9 px-3 text-xs bg-white dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 rounded-lg text-slate-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-zinc-400 cursor-pointer disabled:opacity-50"
               >
-                <option value="none">No milestone linked</option>
+                <option value="none" className="bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200">No milestone linked</option>
                 {activeMilestones.map((m) => (
-                  <option key={m.id} value={m.id}>
+                  <option key={m.id} value={m.id} className="bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200">
                     {m.goalTitle} → {m.stageTitle} → {m.title}
                   </option>
                 ))}
@@ -446,8 +446,8 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
 
             {/* Tags Section */}
             <div className="space-y-2.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5 text-slate-400" />
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
                 Tags
               </label>
 
@@ -457,13 +457,13 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                   <Badge
                     key={tag.id}
                     variant="secondary"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200/80 hover:bg-slate-200/70 transition-colors rounded-md"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-700 hover:bg-slate-200/70 dark:hover:bg-zinc-700 transition-colors rounded-md"
                   >
                     <span>{tag.name}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveTag(tag.id)}
-                      className="text-slate-400 hover:text-red-500 rounded-full p-0.5 hover:bg-slate-200 transition-colors focus:outline-none cursor-pointer"
+                      className="text-slate-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 rounded-full p-0.5 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors focus:outline-none cursor-pointer"
                       aria-label={`Remove tag ${tag.name}`}
                     >
                       <X className="w-3 h-3" />
@@ -472,13 +472,13 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                 ))}
 
                 {isLoadingTags && tagsList.length === 0 && (
-                  <span className="text-xs text-slate-400 flex items-center gap-1">
+                  <span className="text-xs text-slate-400 dark:text-zinc-500 flex items-center gap-1">
                     <Loader2 className="w-3 h-3 animate-spin" /> Loading tags...
                   </span>
                 )}
 
                 {!isLoadingTags && tagsList.length === 0 && (
-                  <span className="text-xs text-slate-400 italic">No tags assigned yet.</span>
+                  <span className="text-xs text-slate-400 dark:text-zinc-500 italic">No tags assigned yet.</span>
                 )}
               </div>
 
@@ -489,14 +489,14 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
                   placeholder="Add a tag (e.g. 'urgent', 'dev') and press Enter..."
-                  className="h-9 text-xs border-slate-200 focus-visible:ring-slate-900 flex-1"
+                  className="h-9 text-xs border-slate-200 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-200 focus-visible:ring-slate-900 dark:focus-visible:ring-zinc-400 flex-1"
                 />
                 <Button
                   type="submit"
                   size="sm"
                   variant="outline"
                   disabled={!newTagName.trim() || isTagPending}
-                  className="h-9 px-3 text-xs font-medium text-slate-700 border-slate-200 hover:bg-slate-50 shrink-0 cursor-pointer disabled:opacity-40"
+                  className="h-9 px-3 text-xs font-medium text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 shrink-0 cursor-pointer disabled:opacity-40"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
                   Add
@@ -505,10 +505,10 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
             </div>
 
             {/* Subtasks Section */}
-            <div className="space-y-3 pt-2 border-t border-slate-100">
+            <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-zinc-800">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <ListTree className="w-3.5 h-3.5 text-slate-400" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 flex items-center gap-1.5">
+                  <ListTree className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
                   Subtasks ({subtasks.length})
                 </h3>
               </div>
@@ -520,13 +520,13 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                   value={subtaskTitle}
                   onChange={(e) => setSubtaskTitle(e.target.value)}
                   placeholder="Add a subtask..."
-                  className="h-9 flex-1 text-sm border-slate-200 focus-visible:ring-slate-900"
+                  className="h-9 flex-1 text-sm border-slate-200 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-200 focus-visible:ring-slate-900 dark:focus-visible:ring-zinc-400"
                 />
                 <Button
                   type="submit"
                   size="sm"
                   disabled={!subtaskTitle.trim()}
-                  className="h-9 bg-slate-900 hover:bg-slate-800 text-white font-medium px-3 shrink-0 disabled:opacity-40"
+                  className="h-9 bg-slate-900 hover:bg-slate-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-900 font-medium px-3 shrink-0 disabled:opacity-40"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Add
@@ -536,7 +536,7 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
               {/* Subtasks List */}
               <div className="space-y-2 mt-3">
                 {subtasks.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic py-2">
+                  <p className="text-xs text-slate-400 dark:text-zinc-500 italic py-2">
                     No subtasks yet. Add one above.
                   </p>
                 ) : (
@@ -545,17 +545,17 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                     return (
                       <div
                         key={subtask.id}
-                        className="group flex items-center justify-between p-2.5 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100/70 transition-colors"
+                        className="group flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-zinc-800/40 hover:bg-slate-100/70 dark:hover:bg-zinc-800/80 transition-colors"
                       >
                         <div className="flex items-center gap-2.5 flex-1 min-w-0">
                           <button
                             type="button"
                             onClick={() => toggleTask(subtask.id)}
-                            className="text-slate-400 hover:text-slate-600 transition-colors shrink-0 focus:outline-none cursor-pointer"
+                            className="text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors shrink-0 focus:outline-none cursor-pointer"
                             aria-label={isDone ? "Mark subtask incomplete" : "Mark subtask complete"}
                           >
                             {isDone ? (
-                              <CheckSquare className="w-4 h-4 text-slate-900" />
+                              <CheckSquare className="w-4 h-4 text-slate-900 dark:text-zinc-100" />
                             ) : (
                               <Square className="w-4 h-4" />
                             )}
@@ -565,8 +565,8 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                             onClick={() => setSelectedTaskId(subtask.id)}
                             className={`text-sm text-left truncate hover:underline cursor-pointer ${
                               isDone
-                                ? "line-through text-slate-400"
-                                : "text-slate-800 font-medium"
+                                ? "line-through text-slate-400 dark:text-zinc-500"
+                                : "text-slate-800 dark:text-zinc-200 font-medium"
                             }`}
                           >
                             {subtask.title}
@@ -575,7 +575,7 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
                         <button
                           type="button"
                           onClick={() => deleteTask(subtask.id)}
-                          className="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 cursor-pointer"
+                          className="text-slate-400 hover:text-red-600 dark:text-zinc-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
                           aria-label="Delete subtask"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

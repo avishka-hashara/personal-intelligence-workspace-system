@@ -184,7 +184,7 @@ export function TodayView({
       </header>
 
       {/* Instant Quick Capture Form */}
-      <section className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 rounded-2xl p-2.5 shadow-subtle">
+      <section className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-2xl p-2.5 shadow-subtle">
         <form onSubmit={handleCreateTask} className="flex items-center gap-2">
           <input
             type="text"
@@ -192,12 +192,12 @@ export function TodayView({
             onChange={(e) => setTitle(e.target.value)}
             placeholder="What needs to be done? (e.g. 'Review PR tomorrow 10am')"
             required
-            className="flex-1 px-3.5 py-2 text-sm bg-transparent border-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none"
+            className="flex-1 px-3.5 py-2 text-sm bg-zinc-50/70 dark:bg-zinc-800/60 border border-zinc-200/50 dark:border-zinc-700/60 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-900/40 dark:focus:ring-zinc-400/40 transition-all"
           />
           <button
             type="submit"
             disabled={!title.trim()}
-            className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-medium text-xs rounded-xl px-4 py-2 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all duration-150 shadow-subtle disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.985]"
+            className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-medium text-xs rounded-xl px-4 py-2 hover:bg-zinc-800 dark:hover:bg-white transition-all duration-150 shadow-subtle disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed active:scale-[0.985]"
           >
             Add Task
           </button>
@@ -214,14 +214,14 @@ export function TodayView({
               NOW
             </h2>
             {nowTask && (
-              <span className="text-xs font-mono text-zinc-400 dark:text-zinc-500">
+              <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">
                 Score: {calculateTaskScore(nowTask)}
               </span>
             )}
           </div>
 
           {nowTask ? (
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-5 shadow-subtle hover:shadow-float flex items-center justify-between gap-4 transition-all duration-200">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-5 shadow-subtle hover:shadow-float flex items-center justify-between gap-4 transition-all duration-200">
               <div className="flex items-center gap-3.5 flex-1 min-w-0">
                 <button
                   type="button"
@@ -241,12 +241,12 @@ export function TodayView({
                   </button>
                   {nowTask.dueAt && (
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs font-normal text-zinc-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-zinc-400" />
+                      <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-zinc-400 dark:text-zinc-500" />
                         {isToday(new Date(nowTask.dueAt)) ? (
-                          <span className="text-emerald-600 dark:text-emerald-400 font-medium">Due Today</span>
+                          <span className="text-emerald-700 dark:text-emerald-400 font-medium">Due Today</span>
                         ) : isPast(new Date(nowTask.dueAt)) ? (
-                          <span className="text-rose-600 dark:text-rose-400 font-medium">Overdue</span>
+                          <span className="text-rose-700 dark:text-rose-400 font-medium">Overdue</span>
                         ) : (
                           `Due ${new Date(nowTask.dueAt).toLocaleDateString()}`
                         )}
@@ -269,7 +269,7 @@ export function TodayView({
                 <button
                   type="button"
                   onClick={() => setSelectedTaskId(nowTask.id)}
-                  className="text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50/60 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <span>Details</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
