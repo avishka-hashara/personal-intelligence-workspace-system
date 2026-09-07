@@ -76,7 +76,7 @@ export function SyncStatusIndicator() {
   // 2. Offline with 0 pending ops
   if (!isOnline) {
     return (
-      <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100/60 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 text-xs border border-zinc-200/50 dark:border-zinc-800/50">
+      <div className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100/60 dark:bg-sidebar-accent/60 text-zinc-500 dark:text-zinc-400 text-xs border border-zinc-200/50 dark:border-sidebar-border">
         <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
         <span className="text-[12px]">Offline mirror</span>
       </div>
@@ -89,7 +89,7 @@ export function SyncStatusIndicator() {
       type="button"
       onClick={handleManualSync}
       disabled={isSyncing}
-      className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40 text-xs transition-colors group cursor-pointer"
+      className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-sidebar-foreground hover:bg-zinc-100/60 dark:hover:bg-sidebar-accent/60 text-xs transition-colors group cursor-pointer"
       title="Click to refresh local mirror from server"
     >
       <span className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export function SyncStatusIndicator() {
         )}
         <span className="text-[12px]">{isSyncing ? "Syncing..." : "Synced"}</span>
       </span>
-      <span className="text-[11px] text-zinc-400 font-normal">
+      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-normal">
         {lastSyncedText || "Cloud"}
       </span>
     </button>

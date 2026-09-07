@@ -45,23 +45,23 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile Hamburger Header (Visible < lg) */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/80 dark:bg-zinc-950/80 border-b border-zinc-200/70 dark:border-zinc-800/60 backdrop-blur-xl z-40 px-4 flex items-center justify-between">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/80 dark:bg-sidebar border-b border-zinc-200/70 dark:border-sidebar-border backdrop-blur-xl z-40 px-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setIsMobileOpen((prev) => !prev)}
-            className="p-2 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
+            className="p-2 rounded-lg text-zinc-600 dark:text-sidebar-foreground/70 hover:bg-zinc-100 dark:hover:bg-sidebar-accent transition-colors cursor-pointer"
             aria-label="Toggle navigation menu"
           >
             {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <span className="font-semibold text-sm tracking-tight text-zinc-900 dark:text-zinc-100">PIW</span>
+          <span className="font-semibold text-sm tracking-tight text-zinc-900 dark:text-sidebar-foreground">PIW</span>
         </div>
 
         <button
           type="button"
           onClick={() => toggleCopilot()}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-medium text-xs shadow-subtle cursor-pointer active:scale-[0.985] transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 text-white dark:bg-sidebar-primary dark:text-sidebar-primary-foreground font-medium text-xs shadow-subtle cursor-pointer active:scale-[0.985] transition-all"
         >
           <Sparkles className="w-3.5 h-3.5" />
           <span>Copilot</span>
@@ -78,23 +78,23 @@ export function Sidebar() {
 
       {/* Main Sidebar Rail */}
       <aside
-        className={`w-[240px] border-r border-zinc-200/70 dark:border-zinc-800/60 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl flex flex-col h-screen fixed left-0 top-0 z-40 transition-transform duration-300 ease-in-out ${
+        className={`w-[240px] border-r border-zinc-200/70 dark:border-sidebar-border bg-white/70 dark:bg-sidebar backdrop-blur-xl flex flex-col h-screen fixed left-0 top-0 z-40 transition-transform duration-300 ease-in-out ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <div className="px-5 py-6 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center font-bold text-xs tracking-wider shadow-subtle">
+            <div className="w-7 h-7 rounded-lg bg-zinc-900 dark:bg-sidebar-primary text-white dark:text-sidebar-primary-foreground flex items-center justify-center font-bold text-xs tracking-wider shadow-subtle">
               P
             </div>
-            <h2 className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+            <h2 className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-sidebar-foreground">
               Workspace
             </h2>
           </div>
           {isMobileOpen && (
             <button
               onClick={() => setIsMobileOpen(false)}
-              className="lg:hidden p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+              className="lg:hidden p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-sidebar-foreground"
             >
               <X className="w-5 h-5" />
             </button>
@@ -117,8 +117,8 @@ export function Sidebar() {
                 onClick={() => setIsMobileOpen(false)}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? "bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-50 shadow-subtle"
-                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40"
+                    ? "bg-zinc-100 dark:bg-sidebar-accent text-zinc-900 dark:text-sidebar-accent-foreground font-semibold shadow-subtle"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-sidebar-foreground hover:bg-zinc-100/60 dark:hover:bg-sidebar-accent/60"
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0 stroke-[1.8]" />
@@ -135,20 +135,20 @@ export function Sidebar() {
                 setIsMobileOpen(false);
                 toggleCopilot();
               }}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-zinc-900/5 dark:bg-zinc-100/5 hover:bg-zinc-900/10 dark:hover:bg-zinc-100/10 text-zinc-900 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-800/80 font-medium text-xs transition-all duration-150 shadow-subtle cursor-pointer active:scale-[0.985] group"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-zinc-900/5 dark:bg-sidebar-accent/50 hover:bg-zinc-900/10 dark:hover:bg-sidebar-accent text-zinc-900 dark:text-sidebar-foreground border border-zinc-200/80 dark:border-sidebar-border font-medium text-xs transition-all duration-150 shadow-subtle cursor-pointer active:scale-[0.985] group"
             >
               <span className="flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300 group-hover:rotate-12 transition-transform" />
+                <Sparkles className="w-3.5 h-3.5 text-zinc-700 dark:text-sidebar-foreground group-hover:rotate-12 transition-transform" />
                 <span>AI Copilot</span>
               </span>
-              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 shadow-2xs font-semibold">
+              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-sidebar-border shadow-2xs font-semibold">
                 C
               </kbd>
             </button>
           </div>
         </nav>
 
-        <div className="p-3 border-t border-zinc-200/60 dark:border-zinc-800/60 space-y-2">
+        <div className="p-3 border-t border-zinc-200/60 dark:border-sidebar-border space-y-2">
           <ThemeToggle />
           <SyncStatusIndicator />
           <Link
@@ -157,8 +157,8 @@ export function Sidebar() {
             onClick={() => setIsMobileOpen(false)}
             className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150 cursor-pointer ${
               isSettingsActive
-                ? "bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-50 shadow-subtle"
-                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40"
+                ? "bg-zinc-100 dark:bg-sidebar-accent text-zinc-900 dark:text-sidebar-accent-foreground font-semibold shadow-subtle"
+                : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-sidebar-foreground hover:bg-zinc-100/60 dark:hover:bg-sidebar-accent/60"
             }`}
           >
             <Settings className="h-4 w-4 shrink-0 stroke-[1.8]" />
