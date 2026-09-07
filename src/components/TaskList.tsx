@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Check, Trash2, GripVertical } from "lucide-react";
+import { Check, Trash2, GripVertical, Clock } from "lucide-react";
+import { format, isToday, isTomorrow, isPast } from "date-fns";
 import { useUIStore } from "@/store/uiStore";
 import { useTaskStore, type Task } from "@/store/taskStore";
 import {
@@ -142,13 +143,27 @@ export function SortableTaskItem({
                 <button
                     type="button"
                     onClick={() => setSelectedTaskId(task.id)}
-                    className="text-zinc-800 dark:text-zinc-200 font-medium text-left hover:text-zinc-950 dark:hover:text-white transition-colors text-sm truncate focus:outline-none cursor-pointer flex items-center gap-2"
+                    className="text-zinc-800 dark:text-zinc-200 font-medium text-left hover:text-zinc-950 dark:hover:text-white transition-colors text-sm truncate focus:outline-none cursor-pointer flex items-center gap-2 flex-1 min-w-0"
                 >
                     {priorityDot && (
                         <span className={`w-1.5 h-1.5 rounded-full ${priorityDot} shrink-0`} />
                     )}
                     <span className="truncate">{task.title}</span>
                 </button>
+                {task.dueAt && (
+                    <span className="text-[11px] font-normal shrink-0 ml-2 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-zinc-400" />
+                        {isToday(new Date(task.dueAt)) ? (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Today</span>
+                        ) : isTomorrow(new Date(task.dueAt)) ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-medium">Tomorrow</span>
+                        ) : isPast(new Date(task.dueAt)) ? (
+                            <span className="text-rose-600 dark:text-rose-400 font-medium">Overdue</span>
+                        ) : (
+                            <span className="text-zinc-400 dark:text-zinc-500">{format(new Date(task.dueAt), "MMM d")}</span>
+                        )}
+                    </span>
+                )}
             </div>
             <button
                 type="button"

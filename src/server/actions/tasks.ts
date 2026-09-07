@@ -4,7 +4,7 @@ import * as chrono from "chrono-node";
 import { RRule } from "rrule";
 import { db } from "@/server/db";
 import { tasks, tags, nodeTags, nodes, focusSessions, milestones, stages, roadmaps, goals } from "@/server/db/schema";
-import { eq, and, asc, desc, isNull, sql } from "drizzle-orm";
+import { eq, and, asc, isNull, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { generateKeyBetween } from "fractional-indexing";
@@ -107,7 +107,7 @@ export async function updateTask(
         status?: string;
         priority?: number;
         energy?: string | null;
-        dueAt?: Date | null;
+        dueAt?: Date | string | null;
         milestoneId?: string | null;
         [key: string]: unknown;
     }
@@ -116,8 +116,13 @@ export async function updateTask(
     if (!user) return { error: "Unauthorized" };
 
     try {
+        const updatePayload: Record<string, unknown> = { ...data, updatedAt: new Date() };
+        if ("dueAt" in data) {
+            updatePayload.dueAt = data.dueAt ? new Date(data.dueAt as string | Date) : null;
+        }
+
         const [updatedTask] = await db.update(tasks)
-            .set({ ...data, updatedAt: new Date() })
+            .set(updatePayload)
             .where(and(eq(tasks.id, id), eq(tasks.userId, user.id)))
             .returning();
 
