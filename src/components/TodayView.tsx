@@ -11,6 +11,7 @@ import Link from "next/link";
 import {
   Zap,
   Clock,
+  Calendar,
   CheckCircle2,
   Square,
   ArrowUpRight,
@@ -63,9 +64,34 @@ export function TodayView({
   const { setSelectedTaskId, setActiveFocusTask, setTimerOpen, setTimerStatus, startTimer } = useUIStore();
   const [title, setTitle] = useState("");
 
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [timeZoneLabel, setTimeZoneLabel] = useState<string>("");
+
   useEffect(() => {
     initTasks(initialTasks);
   }, [initialTasks, initTasks]);
+
+  useEffect(() => {
+    setCurrentTime(new Date());
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const offsetMinutes = -new Date().getTimezoneOffset();
+      const sign = offsetMinutes >= 0 ? "+" : "-";
+      const hours = Math.floor(Math.abs(offsetMinutes) / 60);
+      const mins = Math.abs(offsetMinutes) % 60;
+      const offsetStr = `GMT${sign}${hours}${mins > 0 ? `:${mins.toString().padStart(2, "0")}` : ""}`;
+      const city = tz.split("/").pop()?.replace(/_/g, " ") || tz;
+      setTimeZoneLabel(`${city} (${offsetStr})`);
+    } catch {
+      setTimeZoneLabel("Local Time");
+    }
+
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const activeTasks = isInitialized ? tasks : initialTasks;
   const pendingTasks = activeTasks.filter((t) => t.status !== "done" && !t.parentTaskId);
@@ -109,11 +135,52 @@ export function TodayView({
       {/* First-Run Onboarding Prompts */}
       {showOnboardingPrompts && <OnboardingPrompts userName={userName} />}
 
-      <header>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Today</h1>
-        <p className="text-zinc-500 mt-1 text-sm font-normal">
-          {pendingTasks.length} pending · {nowTask ? "1 focus task active" : "All caught up"}
-        </p>
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Today</h1>
+          <p className="text-zinc-500 mt-1 text-sm font-normal">
+            {pendingTasks.length} pending · {nowTask ? "1 focus task active" : "All caught up"}
+          </p>
+        </div>
+
+        {/* Live Bento Clock & Date Card */}
+        <div className="flex items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 shadow-subtle self-start sm:self-auto">
+          <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800/70 border border-zinc-200/50 dark:border-zinc-700/50 flex items-center justify-center text-zinc-600 dark:text-zinc-300 shrink-0">
+            <Clock className="w-4 h-4" />
+          </div>
+
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-base sm:text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 tabular-nums leading-tight">
+                {currentTime ? format(currentTime, "hh:mm:ss a") : "--:--:-- --"}
+              </span>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                </span>
+                LIVE
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400 font-normal">
+              <Calendar className="w-3 h-3 text-zinc-400 shrink-0" />
+              <span>
+                {currentTime
+                  ? format(currentTime, "EEEE, MMMM d, yyyy")
+                  : todayDateStr || "Loading date..."}
+              </span>
+              {timeZoneLabel && (
+                <>
+                  <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                  <span className="text-zinc-400 dark:text-zinc-500 text-[10px] truncate max-w-[130px]" title={timeZoneLabel}>
+                    {timeZoneLabel}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* Instant Quick Capture Form */}
