@@ -98,11 +98,11 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
     <div className="flex flex-col gap-6 pb-12">
       <ContextSetter type="Note" id={note.id} title={title} data={content} />
       {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-200 dark:border-zinc-800">
         <div className="flex items-center gap-3">
           <Link
             href="/notes"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-900 transition-colors group"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             <span>Notes</span>
@@ -131,14 +131,14 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
         {/* Right Actions: View Mode Toggle & Delete Note */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
           {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-zinc-100/90 dark:bg-zinc-850/90 p-1 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80">
+          <div className="flex items-center gap-1 bg-zinc-100/90 dark:bg-zinc-800/90 p-1 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 shadow-subtle">
             <button
               type="button"
               onClick={() => setViewMode("split")}
               className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 viewMode === "split"
-                  ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-2xs"
-                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-2xs border border-transparent dark:border-white/10"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
             >
               <Columns className="w-3.5 h-3.5" />
@@ -150,8 +150,8 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
               onClick={() => setViewMode("edit")}
               className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 viewMode === "edit"
-                  ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-2xs"
-                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-2xs border border-transparent dark:border-white/10"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
             >
               <Edit3 className="w-3.5 h-3.5" />
@@ -163,8 +163,8 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
               onClick={() => setViewMode("preview")}
               className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 viewMode === "preview"
-                  ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-2xs"
-                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-2xs border border-transparent dark:border-white/10"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
             >
               <Eye className="w-3.5 h-3.5" />

@@ -75,21 +75,21 @@ export function ConnectionsPanel({ nodeId, connections }: ConnectionsPanelProps)
   const totalConnections = forwardLinks.length + backlinks.length;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
+    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
       {/* Header & Link Action */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
+          <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
             <Link2 className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 flex items-center gap-2">
               <span>Connected Entities & Knowledge Graph</span>
-              <span className="text-[11px] font-mono font-semibold px-2 py-0.2 rounded-full bg-slate-100 text-slate-600">
+              <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-transparent dark:border-zinc-700">
                 {totalConnections}
               </span>
             </h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-400 dark:text-zinc-400">
               Bi-directional links connecting this note to related tasks, goals, courses, or notes.
             </p>
           </div>
@@ -100,8 +100,8 @@ export function ConnectionsPanel({ nodeId, connections }: ConnectionsPanelProps)
 
       {/* Outgoing Forward Links */}
       <div className="space-y-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-          <ArrowUpRight className="w-3.5 h-3.5 text-indigo-500" />
+        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+          <ArrowUpRight className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
           <span>Outgoing Links ({forwardLinks.length})</span>
         </div>
 
@@ -115,13 +115,13 @@ export function ConnectionsPanel({ nodeId, connections }: ConnectionsPanelProps)
               return (
                 <div
                   key={link.id}
-                  className="group inline-flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50/80 hover:bg-white hover:border-slate-300 shadow-2xs hover:shadow-xs transition-all text-xs"
+                  className="group inline-flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 shadow-2xs hover:shadow-xs transition-all text-xs"
                 >
                   <Icon className={`w-3.5 h-3.5 shrink-0 ${badge.iconColor}`} />
                   
                   <Link
                     href={href}
-                    className="font-semibold text-slate-800 hover:text-indigo-600 hover:underline max-w-[280px] truncate"
+                    className="font-semibold text-slate-800 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline max-w-[280px] truncate"
                     title={link.title || "Untitled"}
                   >
                     {link.title || "Untitled"}
@@ -135,7 +135,7 @@ export function ConnectionsPanel({ nodeId, connections }: ConnectionsPanelProps)
                     type="button"
                     onClick={() => handleRemoveLink(link.id)}
                     disabled={isPending}
-                    className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    className="p-1 rounded-lg text-slate-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                     title="Remove connection"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -145,7 +145,7 @@ export function ConnectionsPanel({ nodeId, connections }: ConnectionsPanelProps)
             })}
           </div>
         ) : (
-          <p className="text-xs text-slate-400 italic">
+          <p className="text-xs text-slate-400 dark:text-zinc-500 italic">
             No outgoing links attached. Click &quot;Link Entity&quot; above to connect this note to a task, goal, course, or note.
           </p>
         )}
@@ -153,9 +153,9 @@ export function ConnectionsPanel({ nodeId, connections }: ConnectionsPanelProps)
 
       {/* Incoming Backlinks */}
       {backlinks.length > 0 && (
-        <div className="space-y-2 pt-3 border-t border-slate-100">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500" />
+        <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+            <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
             <span>Referenced By / Backlinks ({backlinks.length})</span>
           </div>
 
@@ -168,13 +168,13 @@ export function ConnectionsPanel({ nodeId, connections }: ConnectionsPanelProps)
               return (
                 <div
                   key={link.id}
-                  className="group inline-flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50/80 hover:bg-white hover:border-slate-300 shadow-2xs hover:shadow-xs transition-all text-xs"
+                  className="group inline-flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-800/60 hover:bg-white dark:hover:bg-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 shadow-2xs hover:shadow-xs transition-all text-xs"
                 >
                   <Icon className={`w-3.5 h-3.5 shrink-0 ${badge.iconColor}`} />
                   
                   <Link
                     href={href}
-                    className="font-semibold text-slate-800 hover:text-indigo-600 hover:underline max-w-[280px] truncate"
+                    className="font-semibold text-slate-800 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline max-w-[280px] truncate"
                     title={link.title || "Untitled"}
                   >
                     {link.title || "Untitled"}
@@ -188,7 +188,7 @@ export function ConnectionsPanel({ nodeId, connections }: ConnectionsPanelProps)
                     type="button"
                     onClick={() => handleRemoveLink(link.id)}
                     disabled={isPending}
-                    className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    className="p-1 rounded-lg text-slate-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                     title="Remove connection"
                   >
                     <X className="w-3.5 h-3.5" />
