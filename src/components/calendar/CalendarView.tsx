@@ -68,6 +68,7 @@ export function CalendarView({
   const dndId = useId();
   const [mounted, setMounted] = useState(false);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlockWithTask[]>(initialTimeBlocks);
+  const [taskList, setTaskList] = useState<TaskItemData[]>(unscheduledTasks);
   const [activeTaskDrag, setActiveTaskDrag] = useState<TaskItemData | null>(null);
   const [activeBlockDrag, setActiveBlockDrag] = useState<TimeBlockWithTask | null>(null);
   const [taskSearch, setTaskSearch] = useState("");
@@ -81,9 +82,36 @@ export function CalendarView({
     }, 4000);
   }, []);
 
+  const taskMapRef = React.useRef<Map<string, TaskItemData>>(new Map());
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    setTimeBlocks(initialTimeBlocks);
+    for (const b of initialTimeBlocks) {
+      if (b.taskId && b.task) {
+        taskMapRef.current.set(b.taskId, {
+          id: b.task.id,
+          title: b.task.title,
+          status: b.task.status,
+          priority: b.task.priority,
+          estimateMinutes: b.task.estimateMinutes,
+          dueAt: null,
+          energy: b.task.energy,
+        });
+      }
+    }
+  }, [initialTimeBlocks]);
+
+  useEffect(() => {
+    for (const t of unscheduledTasks) {
+      taskMapRef.current.set(t.id, t);
+    }
+    const localScheduledIds = new Set(timeBlocks.map((b) => b.taskId).filter(Boolean) as string[]);
+    setTaskList(unscheduledTasks.filter((t) => !localScheduledIds.has(t.id)));
+  }, [unscheduledTasks]);
 
   // Overlap conflict state
   const [conflictModal, setConflictModal] = useState<{
@@ -175,6 +203,17 @@ export function CalendarView({
 
   const scheduleBlock = useCallback((payload: any, allowOverlap: boolean) => {
     const tempId = `temp-${Date.now()}`;
+    const taskObj = payload.taskData
+      ? {
+          id: payload.taskData.id,
+          title: payload.taskData.title,
+          priority: payload.taskData.priority ?? 0,
+          status: payload.taskData.status || "inbox",
+          estimateMinutes: payload.taskData.estimateMinutes ?? 60,
+          energy: payload.taskData.energy ?? null,
+        }
+      : null;
+
     const optimisticBlock: TimeBlockWithTask = {
       id: tempId,
       userId: "",
@@ -187,23 +226,31 @@ export function CalendarView({
       locked: false,
       createdAt: new Date(),
       updatedAt: new Date(),
-      task: null,
+      task: taskObj,
     };
 
     const previousBlocks = timeBlocks;
+    const previousTasks = taskList;
+
     // 1. Instant optimistic state update
     setTimeBlocks((prev) => [...prev, optimisticBlock]);
+    if (payload.taskId) {
+      setTaskList((prev) => prev.filter((t) => t.id !== payload.taskId));
+    }
     setConflictModal({ isOpen: false, pendingData: null, message: "" });
 
     // 2. Persist in background
-    createTimeBlock({ ...payload, allowOverlap })
+    const { taskData, ...apiPayload } = payload;
+    createTimeBlock({ ...apiPayload, allowOverlap })
       .then((res) => {
         if (res.success && res.timeBlock) {
           setTimeBlocks((prev) =>
             prev.map((b) => (b.id === tempId ? res.timeBlock! : b))
           );
+          router.refresh();
         } else if (res.error === "OVERLAP_CONFLICT") {
           setTimeBlocks(previousBlocks);
+          setTaskList(previousTasks);
           setConflictModal({
             isOpen: true,
             pendingData: payload,
@@ -212,15 +259,17 @@ export function CalendarView({
           });
         } else {
           setTimeBlocks(previousBlocks);
+          setTaskList(previousTasks);
           showToast(res.message || "Failed to create time block", "error");
         }
       })
       .catch((err) => {
         console.error("Failed to create time block:", err);
         setTimeBlocks(previousBlocks);
+        setTaskList(previousTasks);
         showToast("Failed to create time block", "error");
       });
-  }, [timeBlocks, showToast]);
+  }, [timeBlocks, taskList, showToast, router]);
 
   const updateBlock = useCallback((payload: { id: string; data: any }, allowOverlap: boolean) => {
     const previousBlocks = timeBlocks;
@@ -239,6 +288,7 @@ export function CalendarView({
           setTimeBlocks((prev) =>
             prev.map((b) => (b.id === payload.id ? res.timeBlock! : b))
           );
+          router.refresh();
         } else if (res.error === "OVERLAP_CONFLICT") {
           setTimeBlocks(previousBlocks);
           setConflictModal({
@@ -257,7 +307,7 @@ export function CalendarView({
         setTimeBlocks(previousBlocks);
         showToast("Failed to update time block", "error");
       });
-  }, [timeBlocks, showToast]);
+  }, [timeBlocks, showToast, router]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -274,6 +324,7 @@ export function CalendarView({
 
     if (activeData?.type === "task") {
       const task: TaskItemData = activeData.task;
+      taskMapRef.current.set(task.id, task);
       const startAt = new Date(`${dateKey}T${String(hour).padStart(2, "0")}:00:00`);
       const durationMins = task.estimateMinutes || 60;
       const endAt = new Date(startAt.getTime() + durationMins * 60000);
@@ -284,6 +335,7 @@ export function CalendarView({
         startAt,
         endAt,
         kind: "work" as TimeBlockKind,
+        taskData: task,
       };
 
       scheduleBlock(blockPayload, false);
@@ -314,20 +366,45 @@ export function CalendarView({
   }, [scheduleBlock, updateBlock]);
 
   const handleDeleteBlock = useCallback((id: string) => {
+    const blockToDelete = timeBlocks.find((b) => b.id === id);
     const previousBlocks = timeBlocks;
+    const previousTasks = taskList;
+
     setTimeBlocks((prev) => prev.filter((b) => b.id !== id));
+
+    if (blockToDelete?.taskId) {
+      const cached = taskMapRef.current.get(blockToDelete.taskId);
+      const restoredTask: TaskItemData = cached || {
+        id: blockToDelete.taskId,
+        title: blockToDelete.task?.title || blockToDelete.title || "Untitled Task",
+        status: blockToDelete.task?.status || "inbox",
+        priority: blockToDelete.task?.priority ?? 0,
+        estimateMinutes: blockToDelete.task?.estimateMinutes ?? 60,
+        dueAt: null,
+        energy: blockToDelete.task?.energy ?? null,
+      };
+
+      setTaskList((prev) => {
+        if (prev.some((t) => t.id === restoredTask.id)) return prev;
+        return [restoredTask, ...prev];
+      });
+    }
 
     deleteTimeBlock(id).then((res) => {
       if (!res.success) {
         setTimeBlocks(previousBlocks);
+        setTaskList(previousTasks);
         showToast(res.error || "Failed to delete time block", "error");
+      } else {
+        router.refresh();
       }
     }).catch((err) => {
       console.error("Failed to delete time block:", err);
       setTimeBlocks(previousBlocks);
+      setTaskList(previousTasks);
       showToast("Failed to delete time block", "error");
     });
-  }, [timeBlocks, showToast]);
+  }, [timeBlocks, taskList, showToast, router]);
 
   const handleSlotClick = useCallback((date: Date, hour: number) => {
     setQuickCreateModal({
@@ -363,10 +440,10 @@ export function CalendarView({
 
   // Filter unscheduled tasks
   const filteredTasks = useMemo(() => {
-    if (!taskSearch.trim()) return unscheduledTasks;
+    if (!taskSearch.trim()) return taskList;
     const q = taskSearch.toLowerCase();
-    return unscheduledTasks.filter((t) => t.title.toLowerCase().includes(q));
-  }, [unscheduledTasks, taskSearch]);
+    return taskList.filter((t) => t.title.toLowerCase().includes(q));
+  }, [taskList, taskSearch]);
 
   const dateHeaderTitle = useMemo(() => {
     if (currentView === "day") {

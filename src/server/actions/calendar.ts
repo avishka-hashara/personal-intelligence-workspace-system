@@ -2,7 +2,7 @@
 
 import { db } from "@/server/db";
 import { timeBlocks, tasks, userSettings, users } from "@/server/db/schema";
-import { eq, and, isNull, gte, lte, lt, gt, ne, or, asc, desc } from "drizzle-orm";
+import { eq, and, isNull, isNotNull, gte, lte, lt, gt, ne, or, asc, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -214,6 +214,7 @@ export async function createTimeBlock(
       .returning();
 
     try {
+      revalidatePath("/calendar");
       revalidatePath("/");
     } catch {}
 
@@ -332,6 +333,7 @@ export async function updateTimeBlock(
       .returning();
 
     try {
+      revalidatePath("/calendar");
       revalidatePath("/");
     } catch {}
 
@@ -373,6 +375,7 @@ export async function deleteTimeBlock(
       .where(and(eq(timeBlocks.id, id), eq(timeBlocks.userId, user.id)));
 
     try {
+      revalidatePath("/calendar");
       revalidatePath("/");
     } catch {}
 
@@ -397,7 +400,7 @@ export async function getCalendarData(
     };
   }
 
-  const [blocks, userSettingRows, activeTasks] = await Promise.all([
+  const [blocks, userSettingRows, activeTasks, activeScheduledBlocks] = await Promise.all([
     getTimeBlocks(startDate, endDate, user.id),
     db
       .select({ availableMinutesPerDay: userSettings.availableMinutesPerDay })
@@ -424,14 +427,32 @@ export async function getCalendarData(
         )
       )
       .orderBy(asc(tasks.sortKey), desc(tasks.createdAt)),
+    db
+      .select({ taskId: timeBlocks.taskId })
+      .from(timeBlocks)
+      .where(
+        and(
+          eq(timeBlocks.userId, user.id),
+          isNull(timeBlocks.deletedAt),
+          isNotNull(timeBlocks.taskId)
+        )
+      ),
   ]);
+
+  const scheduledTaskIdSet = new Set(
+    activeScheduledBlocks.map((b) => b.taskId).filter(Boolean) as string[]
+  );
+
+  const unscheduledTasks = activeTasks.filter(
+    (task) => !scheduledTaskIdSet.has(task.id)
+  );
 
   const availableMinutesPerDay = userSettingRows[0]?.availableMinutesPerDay || 300;
 
   return {
     timeBlocks: blocks,
     availableMinutesPerDay,
-    unscheduledTasks: activeTasks,
+    unscheduledTasks,
   };
 }
 
