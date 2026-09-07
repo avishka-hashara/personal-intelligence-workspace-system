@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useCallback } from "react";
+import React, { useState, useEffect, useTransition, useCallback, useMemo } from "react";
 import { useUIStore } from "@/store/uiStore";
 import { logFocusSession } from "@/server/actions/tasks";
 import { getTodayTimeBlocks, type TimeBlockWithTask, type TimeBlockKind } from "@/server/actions/calendar";
@@ -82,6 +82,36 @@ export function DayStrip() {
   const [isStopping, setIsStopping] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  // Load showCompleted preference from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("piw_daystrip_show_completed");
+      if (saved !== null) {
+        setShowCompleted(saved === "true");
+      }
+    } catch {}
+  }, []);
+
+  const handleToggleShowCompleted = useCallback(() => {
+    setShowCompleted((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("piw_daystrip_show_completed", String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const visibleBlocks = useMemo(() => {
+    if (showCompleted) return timeBlocks;
+    return timeBlocks.filter((b) => b.task?.status !== "done");
+  }, [timeBlocks, showCompleted]);
+
+  const completedCount = useMemo(() => {
+    return timeBlocks.filter((b) => b.task?.status === "done").length;
+  }, [timeBlocks]);
 
   // Load today's time blocks
   const fetchBlocks = useCallback(async () => {
@@ -270,6 +300,19 @@ export function DayStrip() {
         <div className="flex items-center gap-1">
           <button
             type="button"
+            onClick={handleToggleShowCompleted}
+            title={showCompleted ? "Hide completed tasks" : "Show completed tasks"}
+            className={`flex items-center gap-1 p-1 rounded-md transition cursor-pointer text-[10px] ${
+              showCompleted
+                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 font-semibold"
+                : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            {completedCount > 0 && <span>{completedCount}</span>}
+          </button>
+          <button
+            type="button"
             onClick={fetchBlocks}
             disabled={isLoadingBlocks}
             title="Refresh schedule"
@@ -327,8 +370,9 @@ export function DayStrip() {
               )}
 
               {/* Positioned Time Blocks */}
-              {timeBlocks.length > 0 ? (
-                timeBlocks.map((block) => {
+              {visibleBlocks.length > 0 ? (
+                visibleBlocks.map((block: TimeBlockWithTask) => {
+                  const isCompleted = block.task?.status === "done";
                   const startDate = new Date(block.startAt);
                   const endDate = new Date(block.endAt);
 
@@ -345,13 +389,17 @@ export function DayStrip() {
                     ((clampedEnd - clampedStart) / TOTAL_MINUTES) * 100
                   );
 
-                  const kindStyle = KIND_STYLES[block.kind] || KIND_STYLES.work;
+                  const kindStyle = KIND_STYLES[(block.kind as TimeBlockKind)] || KIND_STYLES.work;
                   const title = block.title || block.task?.title || "Time Block";
 
                   return (
                     <div
                       key={block.id}
-                      className={`absolute left-2 right-1 rounded-xl p-2 border shadow-subtle flex flex-col justify-between overflow-hidden transition-all group z-10 ${kindStyle.bg} ${kindStyle.border}`}
+                      className={`absolute left-2 right-1 rounded-xl p-2 border shadow-subtle flex flex-col justify-between overflow-hidden transition-all group z-10 ${
+                        isCompleted
+                          ? "bg-zinc-100/70 dark:bg-zinc-900/60 border-l-2 border-l-emerald-500 border-zinc-200/60 dark:border-zinc-800/60 opacity-65"
+                          : `${kindStyle.bg} ${kindStyle.border}`
+                      }`}
                       style={{
                         top: `${topPct}%`,
                         height: `${heightPct}%`,
@@ -360,15 +408,25 @@ export function DayStrip() {
                     >
                       <div className="min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <span className={`text-[9px] font-semibold px-1 py-0.2 rounded uppercase ${kindStyle.badge}`}>
-                            {block.kind}
+                          <span
+                            className={`text-[9px] font-semibold px-1 py-0.2 rounded uppercase ${
+                              isCompleted
+                                ? "bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                                : kindStyle.badge
+                            }`}
+                          >
+                            {isCompleted ? "DONE" : block.kind}
                           </span>
                           <span className="text-[9px] font-mono text-zinc-500">
                             {formatTimeString(startDate)}
                           </span>
                         </div>
                         <p
-                          className={`text-[11px] font-medium leading-tight truncate mt-0.5 ${kindStyle.text}`}
+                          className={`text-[11px] font-medium leading-tight truncate mt-0.5 ${
+                            isCompleted
+                              ? "line-through text-zinc-500 dark:text-zinc-400"
+                              : kindStyle.text
+                          }`}
                           title={title}
                         >
                           {title}
@@ -382,10 +440,14 @@ export function DayStrip() {
                   <div className="p-4 bg-zinc-50/50 dark:bg-zinc-800/30 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-400 space-y-1.5">
                     <CalendarIcon className="w-5 h-5 mx-auto text-zinc-400 dark:text-zinc-500" />
                     <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                      No blocks today
+                      {timeBlocks.length > 0 && !showCompleted
+                        ? "All blocks completed"
+                        : "No blocks today"}
                     </p>
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight">
-                      Use Calendar to time-block your focus tasks.
+                      {timeBlocks.length > 0 && !showCompleted
+                        ? "Toggle the checkmark above to view completed blocks."
+                        : "Use Calendar to time-block your focus tasks."}
                     </p>
                     <Link
                       href="/calendar"

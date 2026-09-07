@@ -19,6 +19,7 @@ import {
   deleteTimeBlock,
   TimeBlockKind,
 } from "@/server/actions/calendar";
+import { toggleTaskStatus } from "@/server/actions/tasks";
 import { CalendarGrid } from "@/components/CalendarGrid";
 import { DraggableTaskItem, TaskItemData } from "@/components/calendar/DraggableTaskItem";
 import { TimeBlockCard } from "@/components/calendar/TimeBlockCard";
@@ -73,6 +74,36 @@ export function CalendarView({
   const [activeBlockDrag, setActiveBlockDrag] = useState<TimeBlockWithTask | null>(null);
   const [taskSearch, setTaskSearch] = useState("");
   const [toastMessage, setToastMessage] = useState<{ id: number; message: string; type: "error" | "info" } | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  // Load showCompleted preference from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("piw_calendar_show_completed");
+      if (saved !== null) {
+        setShowCompleted(saved === "true");
+      }
+    } catch {}
+  }, []);
+
+  const handleToggleShowCompleted = useCallback(() => {
+    setShowCompleted((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("piw_calendar_show_completed", String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const completedBlocksCount = useMemo(() => {
+    return timeBlocks.filter((b) => b.task?.status === "done").length;
+  }, [timeBlocks]);
+
+  const visibleTimeBlocks = useMemo(() => {
+    if (showCompleted) return timeBlocks;
+    return timeBlocks.filter((b) => b.task?.status !== "done");
+  }, [timeBlocks, showCompleted]);
 
   const showToast = useCallback((message: string, type: "error" | "info" = "error") => {
     const id = Date.now();
@@ -81,6 +112,49 @@ export function CalendarView({
       setToastMessage((curr) => (curr?.id === id ? null : curr));
     }, 4000);
   }, []);
+
+  const handleToggleTaskStatus = useCallback(
+    async (taskId: string, currentStatus: string) => {
+      const nextStatus = currentStatus === "done" ? "next" : "done";
+
+      // Optimistically update timeBlocks state
+      setTimeBlocks((prev) =>
+        prev.map((b) =>
+          b.taskId === taskId && b.task
+            ? { ...b, task: { ...b.task, status: nextStatus } }
+            : b
+        )
+      );
+
+      try {
+        const res = await toggleTaskStatus(taskId, currentStatus);
+        if (res && "error" in res && res.error) {
+          // Rollback on error
+          setTimeBlocks((prev) =>
+            prev.map((b) =>
+              b.taskId === taskId && b.task
+                ? { ...b, task: { ...b.task, status: currentStatus } }
+                : b
+            )
+          );
+          showToast(res.error, "error");
+        } else {
+          router.refresh();
+        }
+      } catch (err) {
+        console.error("Failed to toggle task status:", err);
+        setTimeBlocks((prev) =>
+          prev.map((b) =>
+            b.taskId === taskId && b.task
+              ? { ...b, task: { ...b.task, status: currentStatus } }
+              : b
+          )
+        );
+        showToast("Failed to update task status", "error");
+      }
+    },
+    [showToast, router]
+  );
 
   const taskMapRef = React.useRef<Map<string, TaskItemData>>(new Map());
 
@@ -544,6 +618,38 @@ export function CalendarView({
                 Day
               </button>
             </div>
+
+            {/* Completed Tasks Toggle */}
+            <button
+              type="button"
+              onClick={handleToggleShowCompleted}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                showCompleted
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 shadow-2xs"
+                  : "bg-slate-100 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
+              }`}
+              title={showCompleted ? "Hide completed tasks" : "Show completed tasks"}
+            >
+              <CheckCircle2
+                className={`w-3.5 h-3.5 ${
+                  showCompleted
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-slate-400 dark:text-zinc-500"
+                }`}
+              />
+              <span>Completed</span>
+              {completedBlocksCount > 0 && (
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                    showCompleted
+                      ? "bg-emerald-200/70 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-bold"
+                      : "bg-slate-200/80 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300 font-medium"
+                  }`}
+                >
+                  {completedBlocksCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -595,9 +701,10 @@ export function CalendarView({
           <div className="flex-1 min-w-0 w-full">
             <CalendarGrid
               days={displayedDays}
-              timeBlocks={timeBlocks}
+              timeBlocks={visibleTimeBlocks}
               availableMinutesPerDay={availableMinutesPerDay}
               onDeleteBlock={handleDeleteBlock}
+              onToggleTaskStatus={handleToggleTaskStatus}
               onSlotClick={handleSlotClick}
             />
           </div>

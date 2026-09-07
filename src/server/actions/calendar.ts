@@ -84,7 +84,7 @@ export async function getTimeBlocks(
         taskEnergy: tasks.energy,
       })
       .from(timeBlocks)
-      .leftJoin(tasks, eq(timeBlocks.taskId, tasks.id))
+      .leftJoin(tasks, and(eq(timeBlocks.taskId, tasks.id), isNull(tasks.deletedAt)))
       .where(
         and(
           eq(timeBlocks.userId, user.id),

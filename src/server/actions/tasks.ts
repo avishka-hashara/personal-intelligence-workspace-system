@@ -91,6 +91,7 @@ export async function createTask(input: FormData | CreateTaskInput) {
 
         revalidatePath("/");
         revalidatePath("/tasks");
+        revalidatePath("/calendar");
         return { success: true, task: insertedTask };
     } catch (error) {
         console.error("Failed to create task:", error);
@@ -128,6 +129,7 @@ export async function updateTask(
 
         revalidatePath("/");
         revalidatePath("/tasks");
+        revalidatePath("/calendar");
         return { success: true, task: updatedTask };
     } catch (error) {
         console.error("Failed to update task:", error);
@@ -208,6 +210,7 @@ export async function toggleTaskStatus(id: string, currentStatus: string) {
 
         revalidatePath("/");
         revalidatePath("/tasks");
+        revalidatePath("/calendar");
         return { success: true, task: updatedTask };
     } catch (error) {
         console.error("Failed to toggle task status:", error);
@@ -229,6 +232,7 @@ export async function deleteTask(id: string) {
 
         revalidatePath("/");
         revalidatePath("/tasks");
+        revalidatePath("/calendar");
         return { success: true };
     } catch (error) {
         console.error("Failed to delete task:", error);

@@ -3,12 +3,13 @@
 import React, { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { TimeBlockWithTask, TimeBlockKind } from "@/server/actions/calendar";
-import { Clock, Lock, Trash2, CheckSquare, GripVertical, MoreVertical } from "lucide-react";
+import { Clock, Lock, Trash2, GripVertical, CheckCircle2, Circle } from "lucide-react";
 
 interface TimeBlockCardProps {
   block: TimeBlockWithTask;
   hourHeightPx: number; // e.g. 56px per hour
   onDelete: (id: string) => void;
+  onToggleTaskStatus?: (taskId: string, currentStatus: string) => void;
   isOverlay?: boolean;
 }
 
@@ -66,6 +67,7 @@ export const TimeBlockCard = React.memo(function TimeBlockCard({
   block,
   hourHeightPx,
   onDelete,
+  onToggleTaskStatus,
   isOverlay = false,
 }: TimeBlockCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -78,6 +80,8 @@ export const TimeBlockCard = React.memo(function TimeBlockCard({
     },
     disabled: block.locked,
   });
+
+  const isCompleted = block.task?.status === "done";
 
   const startDate = new Date(block.startAt);
   const endDate = new Date(block.endAt);
@@ -119,6 +123,13 @@ export const TimeBlockCard = React.memo(function TimeBlockCard({
     onDelete(block.id);
   };
 
+  const handleToggleStatus = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (block.taskId && onToggleTaskStatus) {
+      onToggleTaskStatus(block.taskId, block.task?.status || "next");
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -126,19 +137,42 @@ export const TimeBlockCard = React.memo(function TimeBlockCard({
       {...listeners}
       {...attributes}
       className={`group absolute left-1 right-1 rounded-xl border border-l-4 shadow-subtle overflow-hidden transition-all select-none p-1.5 flex flex-col justify-between ${
-        theme.bg
-      } ${theme.border} ${theme.accent} ${
+        isCompleted
+          ? "bg-zinc-100/70 dark:bg-zinc-900/60 border-zinc-300/60 dark:border-zinc-800/80 border-l-emerald-500 opacity-65"
+          : `${theme.bg} ${theme.border} ${theme.accent}`
+      } ${
         block.locked ? "cursor-default" : "cursor-grab active:cursor-grabbing"
       } ${isDragging && !isOverlay ? "opacity-30 border-dashed ring-2 ring-zinc-400" : ""} ${
         isOverlay ? "relative w-full shadow-float ring-2 ring-zinc-500 z-50" : ""
       }`}
     >
       <div className="flex items-start justify-between gap-1 min-w-0">
-        <div className="flex items-center gap-1 min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {!block.locked && (
             <GripVertical className="w-3 h-3 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 shrink-0" />
           )}
-          <span className={`text-[11px] font-semibold truncate leading-tight ${theme.text}`}>
+
+          {block.taskId && onToggleTaskStatus && (
+            <button
+              type="button"
+              onClick={handleToggleStatus}
+              title={isCompleted ? "Mark task incomplete" : "Mark task completed"}
+              className="shrink-0 p-0.5 -m-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              {isCompleted ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-950/60" />
+              ) : (
+                <Circle className="w-3.5 h-3.5 text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors" />
+              )}
+            </button>
+          )}
+
+          <span
+            className={`text-[11px] font-semibold truncate leading-tight ${
+              isCompleted ? "line-through text-zinc-500 dark:text-zinc-400" : theme.text
+            }`}
+            title={block.title || "Scheduled Block"}
+          >
             {block.title || "Scheduled Block"}
           </span>
         </div>
@@ -159,11 +193,21 @@ export const TimeBlockCard = React.memo(function TimeBlockCard({
 
       {heightPx > 36 && (
         <div className="flex items-center justify-between gap-1 mt-0.5 text-[10px]">
-          <span className={`font-mono tabular-nums font-medium text-[10px] ${theme.timeText}`}>
+          <span
+            className={`font-mono tabular-nums font-medium text-[10px] ${
+              isCompleted ? "text-zinc-500 dark:text-zinc-400" : theme.timeText
+            }`}
+          >
             {formattedStart} - {formattedEnd}
           </span>
-          <span className={`px-1.5 py-0.5 rounded-md font-medium text-[9px] uppercase tracking-wider ${theme.badgeBg} ${theme.badgeText}`}>
-            {block.kind}
+          <span
+            className={`px-1.5 py-0.5 rounded-md font-medium text-[9px] uppercase tracking-wider ${
+              isCompleted
+                ? "bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                : `${theme.badgeBg} ${theme.badgeText}`
+            }`}
+          >
+            {isCompleted ? "DONE" : block.kind}
           </span>
         </div>
       )}

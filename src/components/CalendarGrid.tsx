@@ -14,6 +14,7 @@ interface CalendarGridProps {
   timeBlocks: TimeBlockWithTask[];
   availableMinutesPerDay: number;
   onDeleteBlock: (id: string) => void;
+  onToggleTaskStatus?: (taskId: string, currentStatus: string) => void;
   onSlotClick?: (date: Date, hour: number) => void;
 }
 
@@ -124,6 +125,7 @@ interface DayColumnProps {
   dayBlocks: TimeBlockWithTask[];
   hourHeightPx: number;
   onDeleteBlock: (id: string) => void;
+  onToggleTaskStatus?: (taskId: string, currentStatus: string) => void;
   onSlotClick?: (date: Date, hour: number) => void;
   currentTimeMinutes: number | null;
   mounted: boolean;
@@ -137,6 +139,7 @@ const areDayColumnPropsEqual = (prev: DayColumnProps, next: DayColumnProps) => {
   if (prev.currentTopPx !== next.currentTopPx) return false;
   if (prev.mounted !== next.mounted) return false;
   if (prev.onDeleteBlock !== next.onDeleteBlock) return false;
+  if (prev.onToggleTaskStatus !== next.onToggleTaskStatus) return false;
   if (prev.onSlotClick !== next.onSlotClick) return false;
   if (prev.dayBlocks.length !== next.dayBlocks.length) return false;
   for (let i = 0; i < prev.dayBlocks.length; i++) {
@@ -148,7 +151,8 @@ const areDayColumnPropsEqual = (prev: DayColumnProps, next: DayColumnProps) => {
       pb.endAt !== nb.endAt ||
       pb.title !== nb.title ||
       pb.kind !== nb.kind ||
-      pb.locked !== nb.locked
+      pb.locked !== nb.locked ||
+      pb.task?.status !== nb.task?.status
     ) {
       return false;
     }
@@ -163,6 +167,7 @@ const DayColumn = React.memo(function DayColumn({
   dayBlocks,
   hourHeightPx,
   onDeleteBlock,
+  onToggleTaskStatus,
   onSlotClick,
   currentTimeMinutes,
   mounted,
@@ -199,6 +204,7 @@ const DayColumn = React.memo(function DayColumn({
           block={block}
           hourHeightPx={hourHeightPx}
           onDelete={onDeleteBlock}
+          onToggleTaskStatus={onToggleTaskStatus}
         />
       ))}
     </div>
@@ -210,6 +216,7 @@ export function CalendarGrid({
   timeBlocks,
   availableMinutesPerDay,
   onDeleteBlock,
+  onToggleTaskStatus,
   onSlotClick,
 }: CalendarGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -246,7 +253,7 @@ export function CalendarGrid({
     return map;
   }, [days, timeBlocks]);
 
-  // Calculate sum of blocked minutes per day (recomputed in the same frame as state updates)
+  // Calculate sum of blocked minutes per day (completed tasks excluded from workload capacity)
   const minutesByDay = useMemo(() => {
     const map: Record<string, number> = {};
     for (const day of days) {
@@ -254,6 +261,8 @@ export function CalendarGrid({
       const dayBlocks = blocksByDay[key] || [];
       let total = 0;
       for (const b of dayBlocks) {
+        // Exclude completed tasks from capacity consumption
+        if (b.task?.status === "done") continue;
         const start = new Date(b.startAt).getTime();
         const end = new Date(b.endAt).getTime();
         total += Math.round(Math.max((end - start) / 60000, 0));
