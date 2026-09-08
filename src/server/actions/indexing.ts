@@ -158,32 +158,67 @@ export async function indexResource(resourceId: string, fileBuffer?: Buffer | Ui
       throw new Error("No file buffer or storage URL available for indexing");
     }
 
-    // 3. Extract text with pdf-parse
+    // 3. Extract text: use unpdf (serverless-first, no external worker file required) with pdf-parse fallback
     let totalPages = 1;
     let fullExtractedText = "";
     let pages: { num: number; text: string }[] = [];
+    let extractionSuccessful = false;
 
     try {
-      const pdfParseModule = (await import("pdf-parse")) as any;
+      const { extractText, getDocumentProxy } = await import("unpdf");
+      const pdf = await getDocumentProxy(uint8Data);
+      totalPages = pdf.numPages || 1;
+      const result = await extractText(pdf, { mergePages: false });
 
-      if (pdfParseModule.PDFParse && typeof pdfParseModule.PDFParse === "function") {
-        const parser = new pdfParseModule.PDFParse(uint8Data);
-        const parsed = await parser.getText();
-        totalPages = parsed.total || parsed.pages?.length || 1;
-        fullExtractedText = parsed.text || "";
-        pages =
-          parsed.pages && parsed.pages.length > 0
-            ? parsed.pages
-            : [{ num: 1, text: fullExtractedText }];
-      } else {
-        const parserFunc = pdfParseModule.default || pdfParseModule;
-        const parsed = await parserFunc(uint8Data);
-        totalPages = parsed.numpages || 1;
-        fullExtractedText = parsed.text || "";
+      if (Array.isArray(result.text)) {
+        pages = result.text.map((text, idx) => ({
+          num: idx + 1,
+          text: text || "",
+        }));
+        fullExtractedText = result.text.join("\n\n");
+      } else if (typeof result.text === "string") {
+        fullExtractedText = result.text;
         pages = [{ num: 1, text: fullExtractedText }];
       }
-    } catch (parseError: any) {
-      console.error("[indexResource] PDF parse error:", parseError);
+
+      if (result.totalPages) {
+        totalPages = result.totalPages;
+      }
+
+      extractionSuccessful = fullExtractedText.trim().length > 0;
+    } catch (unpdfErr) {
+      console.warn("[indexResource] unpdf extraction failed, attempting fallback to pdf-parse:", unpdfErr);
+    }
+
+    if (!extractionSuccessful) {
+      try {
+        const pdfParseModule = (await import("pdf-parse")) as any;
+
+        if (pdfParseModule.PDFParse && typeof pdfParseModule.PDFParse === "function") {
+          const parser = new pdfParseModule.PDFParse(uint8Data);
+          const parsed = await parser.getText();
+          totalPages = parsed.total || parsed.pages?.length || 1;
+          fullExtractedText = parsed.text || "";
+          pages =
+            parsed.pages && parsed.pages.length > 0
+              ? parsed.pages
+              : [{ num: 1, text: fullExtractedText }];
+        } else {
+          const parserFunc = pdfParseModule.default || pdfParseModule;
+          const parsed = await parserFunc(uint8Data);
+          totalPages = parsed.numpages || 1;
+          fullExtractedText = parsed.text || "";
+          pages = [{ num: 1, text: fullExtractedText }];
+        }
+
+        extractionSuccessful = fullExtractedText.trim().length > 0;
+      } catch (parseError: any) {
+        console.error("[indexResource] Fallback pdf-parse error:", parseError);
+      }
+    }
+
+    if (!extractionSuccessful || pages.length === 0) {
+      console.warn("[indexResource] Could not extract text from PDF, using fallback resource title.");
       fullExtractedText = resourceTitle;
       pages = [{ num: 1, text: resourceTitle }];
     }
