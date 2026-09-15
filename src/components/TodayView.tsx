@@ -138,7 +138,7 @@ export function TodayView({
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">Today</h1>
-          <p className="text-zinc-500 mt-1 text-sm font-normal">
+          <p className="text-zinc-500 dark:text-zinc-400 mt-1 text-sm font-normal">
             {pendingTasks.length} pending · {nowTask ? "1 focus task active" : "All caught up"}
           </p>
         </div>
@@ -209,7 +209,7 @@ export function TodayView({
         {/* NOW Section */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+            <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
               NOW
             </h2>
@@ -280,7 +280,7 @@ export function TodayView({
             <div className="border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 text-center bg-zinc-50/30 dark:bg-zinc-900/20 flex flex-col items-center justify-center gap-2">
               <CheckCircle2 className="w-7 h-7 text-emerald-500" />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">You&apos;re all caught up.</p>
-              <p className="text-xs text-zinc-400">Capture a new task above to get started.</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">Capture a new task above to get started.</p>
             </div>
           )}
         </section>
@@ -288,7 +288,7 @@ export function TodayView({
         {/* NEXT UP Section */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
               NEXT UP ({nextUpTasks.length})
             </h2>
           </div>
@@ -308,7 +308,7 @@ export function TodayView({
       {initialUpcomingExams && initialUpcomingExams.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+            <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
               <GraduationCap className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />
               STUDY DUE & UPCOMING EXAMS ({initialUpcomingExams.length})
             </h2>

@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex-1 lg:pl-[240px] flex min-h-screen relative w-full overflow-x-hidden">
       {/* Dynamic Center Column: expands smoothly when Day Strip is collapsed */}
       <main
-        className={`flex-1 min-w-0 w-full p-4 sm:p-6 md:p-8 transition-all duration-300 ease-in-out ${
+        className={`flex-1 min-w-0 w-full p-4 sm:p-6 md:p-8 pt-6 sm:pt-8 md:pt-10 xl:pt-14 transition-all duration-300 ease-in-out ${
           isDayStripOpen ? "max-w-full" : "max-w-7xl mx-auto"
         }`}
       >
@@ -59,16 +59,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Floating Toggle Button when Day Strip is collapsed */}
       {!isDayStripOpen && (
-        <div className="fixed top-4 right-4 z-40 hidden xl:block">
+        <div className="fixed top-3.5 right-6 z-40 hidden xl:block">
           <button
             type="button"
             onClick={handleToggle}
             title="Expand Day Strip (Ctrl+\)"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-zinc-200/70 dark:border-border-subtle hover:border-zinc-300 dark:hover:border-white/20 shadow-subtle hover:shadow-float backdrop-blur-xl transition-all duration-150 text-xs font-medium cursor-pointer active:scale-[0.985] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-zinc-900/90 hover:bg-white dark:hover:bg-zinc-850 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-zinc-200/80 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 shadow-subtle hover:shadow-float backdrop-blur-xl transition-all duration-150 text-xs font-medium cursor-pointer active:scale-[0.985] group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
           >
             <PanelRightOpen className="w-4 h-4 text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors" />
             <span>Day Strip</span>
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-border-subtle">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-white/10">
               Ctrl+\
             </kbd>
           </button>

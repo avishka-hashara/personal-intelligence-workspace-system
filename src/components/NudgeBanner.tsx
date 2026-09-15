@@ -67,25 +67,25 @@ export function NudgeBanner({ nudge }: NudgeBannerProps) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-50/90 via-purple-50/60 to-amber-50/40 border border-indigo-100/90 shadow-2xs p-4 sm:p-4.5 transition-all animate-in fade-in-50 duration-300">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-50/90 via-purple-50/60 to-amber-50/40 dark:from-indigo-950/40 dark:via-purple-950/30 dark:to-zinc-900/60 border border-indigo-100/90 dark:border-white/10 shadow-2xs p-4 sm:p-4.5 transition-all animate-in fade-in-50 duration-300">
       {/* Decorative subtle background aura */}
-      <div className="absolute -top-12 -right-12 w-28 h-28 bg-indigo-200/20 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -top-12 -right-12 w-28 h-28 bg-indigo-200/20 dark:bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
 
       <div className="flex items-start sm:items-center justify-between gap-3.5 relative z-10">
         <div className="flex items-start sm:items-center gap-3">
           {/* Glowing AI Coach Icon */}
-          <div className="w-8 h-8 rounded-xl bg-indigo-100/90 text-indigo-600 border border-indigo-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-            <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" />
+          <div className="w-8 h-8 rounded-xl bg-indigo-100/90 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-800/60 flex items-center justify-center shrink-0 shadow-2xs">
+            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-pulse" />
           </div>
 
           {/* Coaching Content */}
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-100/60 px-1.5 py-0.2 rounded-md">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 bg-indigo-100/60 dark:bg-indigo-900/40 px-1.5 py-0.2 rounded-md">
                 Coaching Nudge
               </span>
             </div>
-            <p className="text-xs sm:text-[13px] font-medium text-slate-800 leading-relaxed">
+            <p className="text-xs sm:text-[13px] font-medium text-slate-800 dark:text-zinc-200 leading-relaxed">
               {nudge.text}
             </p>
           </div>
@@ -107,7 +107,7 @@ export function NudgeBanner({ nudge }: NudgeBannerProps) {
           <button
             type="button"
             onClick={handleDismiss}
-            className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-black/5 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
             aria-label="Dismiss coaching nudge"
             title="Dismiss"
           >

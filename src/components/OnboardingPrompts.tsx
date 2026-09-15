@@ -47,10 +47,10 @@ export function OnboardingPrompts({ userName }: OnboardingPromptsProps) {
       description: "Turn your ambition into a staged plan.",
       icon: Target,
       iconBg: "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20",
-      accentBg: "from-blue-50/50 via-indigo-50/30 to-white",
-      borderColor: "border-blue-100 hover:border-blue-300",
+      accentBg: "from-blue-50/50 via-indigo-50/30 to-white dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-900",
+      borderColor: "border-blue-100 hover:border-blue-300 dark:border-white/10 dark:hover:border-white/20",
       badge: "Vision",
-      badgeStyle: "bg-blue-50 text-blue-700 border-blue-200",
+      badgeStyle: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30",
       href: "/plan/goals",
       buttonText: "Create Goal",
       isAction: false,
@@ -61,10 +61,10 @@ export function OnboardingPrompts({ userName }: OnboardingPromptsProps) {
       description: "Track your syllabus and study sessions.",
       icon: GraduationCap,
       iconBg: "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/20",
-      accentBg: "from-indigo-50/50 via-purple-50/30 to-white",
-      borderColor: "border-indigo-100 hover:border-indigo-300",
+      accentBg: "from-indigo-50/50 via-purple-50/30 to-white dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-900",
+      borderColor: "border-indigo-100 hover:border-indigo-300 dark:border-white/10 dark:hover:border-white/20",
       badge: "Academics",
-      badgeStyle: "bg-indigo-50 text-indigo-700 border-indigo-200",
+      badgeStyle: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-violet-500/15 dark:text-violet-300 dark:border-violet-500/30",
       href: "/study/courses",
       buttonText: "Add Course",
       isAction: false,
@@ -75,10 +75,10 @@ export function OnboardingPrompts({ userName }: OnboardingPromptsProps) {
       description: "Get something done today.",
       icon: CheckSquare,
       iconBg: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20",
-      accentBg: "from-emerald-50/50 via-teal-50/30 to-white",
-      borderColor: "border-emerald-100 hover:border-emerald-300",
+      accentBg: "from-emerald-50/50 via-teal-50/30 to-white dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-900",
+      borderColor: "border-emerald-100 hover:border-emerald-300 dark:border-white/10 dark:hover:border-white/20",
       badge: "Action",
-      badgeStyle: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      badgeStyle: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30",
       href: "#",
       buttonText: "Quick Capture",
       isAction: true,
@@ -87,7 +87,7 @@ export function OnboardingPrompts({ userName }: OnboardingPromptsProps) {
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900/[0.03] to-slate-900/[0.01] border border-slate-200/80 p-6 sm:p-8 backdrop-blur-xs mb-8 shadow-xs">
+    <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900/[0.03] to-slate-900/[0.01] dark:from-white/[0.02] dark:to-transparent border border-slate-200/80 dark:border-white/10 p-6 sm:p-8 backdrop-blur-xs mb-8 shadow-xs">
       {/* Background ambient lighting */}
       <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -95,14 +95,14 @@ export function OnboardingPrompts({ userName }: OnboardingPromptsProps) {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-semibold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30 text-xs font-semibold uppercase tracking-wider mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-blue-300" />
             <span>Welcome to PIW</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-zinc-50 tracking-tight">
             {userName ? `Welcome, ${userName}!` : "Let's set up your workspace"}
           </h2>
-          <p className="text-sm text-slate-500 mt-1 max-w-xl">
+          <p className="text-sm text-slate-500 dark:text-zinc-400 mt-1 max-w-xl">
             Choose your starting point below to build your intentional life graph. Intention flows down to tasks; execution flows up to goals.
           </p>
         </div>
@@ -111,7 +111,7 @@ export function OnboardingPrompts({ userName }: OnboardingPromptsProps) {
           type="button"
           onClick={handleDismiss}
           disabled={isDismissing}
-          className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors border border-slate-200/80 cursor-pointer"
+          className="self-start sm:self-center inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800/60 transition-colors border border-slate-200/80 dark:border-white/10 cursor-pointer"
         >
           <X className="w-3.5 h-3.5" />
           <span>Skip for now</span>
@@ -139,19 +139,19 @@ export function OnboardingPrompts({ userName }: OnboardingPromptsProps) {
                   </span>
                 </div>
 
-                <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                   {card.title}
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 leading-relaxed">
                   {card.description}
                 </p>
               </div>
 
-              <div className="mt-6 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-semibold text-slate-700 group-hover:text-indigo-600">
+              <div className="mt-6 pt-3 border-t border-slate-200/60 dark:border-white/10 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-zinc-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
                 <span className="flex items-center gap-1.5">
                   <span>{card.buttonText}</span>
                   {card.shortcut && (
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white text-slate-500 border border-slate-200 shadow-2xs">
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white dark:bg-white/10 text-slate-500 dark:text-zinc-300 border border-slate-200 dark:border-white/10 shadow-2xs">
                       {card.shortcut}
                     </span>
                   )}
