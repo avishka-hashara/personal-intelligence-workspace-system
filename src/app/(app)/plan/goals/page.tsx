@@ -146,7 +146,7 @@ export default async function GoalsPage() {
       </header>
 
       {/* Quick Add Goal Card */}
-      <section className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 rounded-2xl p-5 shadow-subtle">
+      <section className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 rounded-2xl p-5 shadow-subtle">
         <div className="flex items-center gap-2 mb-4">
           <div className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
             <Plus className="w-4 h-4" />
@@ -165,7 +165,7 @@ export default async function GoalsPage() {
               name="title"
               required
               placeholder="e.g. 'Ship MVP & Acquire 100 Users'"
-              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-zinc-50/50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-zinc-50/50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/80 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-400 transition-all"
             />
           </div>
 
@@ -178,7 +178,7 @@ export default async function GoalsPage() {
               type="text"
               name="lifeArea"
               placeholder="e.g. Work, Health, Study"
-              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-zinc-50/50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-zinc-50/50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/80 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-400 transition-all"
             />
           </div>
 
@@ -190,7 +190,7 @@ export default async function GoalsPage() {
               id="goal-target-date"
               type="date"
               name="targetDate"
-              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-zinc-50/50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
+              className="w-full px-3.5 py-2 text-xs sm:text-sm bg-zinc-50/50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/80 rounded-xl text-zinc-900 dark:text-zinc-100 focus:bg-white dark:focus:bg-zinc-850 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-400 [color-scheme:light] dark:[color-scheme:dark] transition-all"
             />
           </div>
 
@@ -208,7 +208,7 @@ export default async function GoalsPage() {
 
       {/* Goals Grid */}
       <section className="space-y-3">
-        <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+        <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
           <Target className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
           Active Goals ({userGoals.length})
         </h2>
@@ -234,7 +234,7 @@ export default async function GoalsPage() {
                       <span>{area.label}</span>
                     </span>
 
-                    <ProgressRing percent={progress} size={30} strokeWidth={2.5} strokeColor="#18181b" />
+                    <ProgressRing percent={progress} size={30} strokeWidth={2.5} />
                   </div>
 
                   <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors line-clamp-2 mb-1.5">
@@ -269,43 +269,43 @@ export default async function GoalsPage() {
             })}
           </div>
         ) : (
-          <div className="bg-gradient-to-b from-blue-50/40 via-white to-slate-50/50 border-2 border-dashed border-blue-200/80 rounded-3xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-6">
+          <div className="bg-gradient-to-b from-blue-50/40 via-white to-slate-50/50 dark:from-white/[0.02] dark:via-transparent dark:to-transparent border-2 border-dashed border-blue-200/80 dark:border-white/15 rounded-3xl p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-6">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20">
               <Target className="w-8 h-8" />
             </div>
 
             <div className="max-w-lg space-y-2">
-              <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-foreground tracking-tight">
                 Turn your ambition into a staged plan
               </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-muted-foreground leading-relaxed">
                 Goals anchor your intentional life. A single high-level goal can be automatically decomposed into chronological stages, concrete milestones, and daily tasks with our AI Roadmap generator.
               </p>
             </div>
 
             {/* 3 Step Goal-to-Execution Flow */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl text-left pt-2">
-              <div className="p-3.5 rounded-2xl bg-white border border-blue-100 shadow-2xs">
-                <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">1. Intention</div>
-                <div className="text-xs font-semibold text-slate-900">Define the Goal</div>
-                <div className="text-[11px] text-slate-500 mt-0.5">Set a clear outcome, life area, and target horizon.</div>
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-card/80 border border-blue-100 dark:border-white/10 shadow-2xs">
+                <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">1. Intention</div>
+                <div className="text-xs font-semibold text-slate-900 dark:text-foreground">Define the Goal</div>
+                <div className="text-[11px] text-slate-500 dark:text-muted-foreground mt-0.5">Set a clear outcome, life area, and target horizon.</div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white border border-blue-100 shadow-2xs">
-                <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">2. Decomposition</div>
-                <div className="text-xs font-semibold text-slate-900">Generate Roadmap</div>
-                <div className="text-[11px] text-slate-500 mt-0.5">AI builds ordered stages and critical-path milestones.</div>
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-card/80 border border-blue-100 dark:border-white/10 shadow-2xs">
+                <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">2. Decomposition</div>
+                <div className="text-xs font-semibold text-slate-900 dark:text-foreground">Generate Roadmap</div>
+                <div className="text-[11px] text-slate-500 dark:text-muted-foreground mt-0.5">AI builds ordered stages and critical-path milestones.</div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white border border-blue-100 shadow-2xs">
-                <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-1">3. Execution</div>
-                <div className="text-xs font-semibold text-slate-900">Daily Tasks & Logs</div>
-                <div className="text-[11px] text-slate-500 mt-0.5">Milestone tasks flow straight to your Today screen.</div>
+              <div className="p-3.5 rounded-2xl bg-white dark:bg-card/80 border border-blue-100 dark:border-white/10 shadow-2xs">
+                <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">3. Execution</div>
+                <div className="text-xs font-semibold text-slate-900 dark:text-foreground">Daily Tasks & Logs</div>
+                <div className="text-[11px] text-slate-500 dark:text-muted-foreground mt-0.5">Milestone tasks flow straight to your Today screen.</div>
               </div>
             </div>
 
-            <div className="pt-2 text-xs text-slate-500 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <div className="pt-2 text-xs text-slate-500 dark:text-zinc-400 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               <span>Use the form above to set your first goal</span>
             </div>
           </div>
