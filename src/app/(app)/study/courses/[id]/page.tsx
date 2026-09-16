@@ -289,24 +289,24 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
 
       {/* Tabs Container */}
       <Tabs defaultValue="syllabus" className="w-full space-y-6">
-        <TabsList className="bg-zinc-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 inline-flex">
+        <TabsList className="bg-zinc-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 flex max-w-full overflow-x-auto justify-start flex-nowrap shrink-0">
           <TabsTrigger
             value="syllabus"
-            className="text-xs font-medium px-4 py-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-[state=active]:shadow-2xs transition-all cursor-pointer"
+            className="text-xs font-medium px-4 py-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-[state=active]:shadow-2xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
           >
             <BookOpen className="w-3.5 h-3.5 mr-1.5 inline" />
             Syllabus ({totalItems})
           </TabsTrigger>
           <TabsTrigger
             value="resources"
-            className="text-xs font-medium px-4 py-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-[state=active]:shadow-2xs transition-all cursor-pointer"
+            className="text-xs font-medium px-4 py-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-[state=active]:shadow-2xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
           >
             <FolderArchive className="w-3.5 h-3.5 mr-1.5 inline" />
             Resources ({resources.length})
           </TabsTrigger>
           <TabsTrigger
             value="cards"
-            className="text-xs font-medium px-4 py-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-[state=active]:shadow-2xs transition-all cursor-pointer flex items-center gap-1.5"
+            className="text-xs font-medium px-4 py-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-[state=active]:shadow-2xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0 whitespace-nowrap"
           >
             <CreditCard className="w-3.5 h-3.5" />
             <span>Cards ({cards.length})</span>
@@ -318,7 +318,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
           </TabsTrigger>
           <TabsTrigger
             value="exams"
-            className="text-xs font-medium px-4 py-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-[state=active]:shadow-2xs transition-all cursor-pointer"
+            className="text-xs font-medium px-4 py-2 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-900 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-[state=active]:shadow-2xs transition-all cursor-pointer shrink-0 whitespace-nowrap"
           >
             <Calendar className="w-3.5 h-3.5 mr-1.5 inline" />
             Exams ({courseExams.length})

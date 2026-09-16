@@ -28,7 +28,7 @@ export default async function DataSettingsPage() {
     .orderBy(asc(courses.code));
 
   return (
-    <div className="p-4 sm:p-8 min-h-screen bg-slate-50/50">
+    <div className="w-full min-w-0">
       <DataImportManager coursesList={userCourses} />
     </div>
   );

@@ -17,7 +17,7 @@ export default async function AISettingsPage() {
   const initialSettings = await getAISettings(user.id);
 
   return (
-    <div className="p-4 sm:p-8 min-h-screen bg-slate-50/50">
+    <div className="w-full min-w-0">
       <AISettingsManager initialSettings={initialSettings} />
     </div>
   );

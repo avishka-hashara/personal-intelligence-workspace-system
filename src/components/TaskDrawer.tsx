@@ -306,7 +306,7 @@ export function TaskDrawer({ tasks: propTasks }: TaskDrawerProps) {
         }
       }}
     >
-      <SheetContent className="w-[400px] sm:w-[540px] flex flex-col gap-6 p-6 overflow-y-auto bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
+      <SheetContent className="w-full max-w-full sm:max-w-[540px] flex flex-col gap-6 p-4 sm:p-6 overflow-y-auto bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
         <SheetHeader className="p-0 space-y-1">
           <SheetTitle className="text-sm font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
             Task Details

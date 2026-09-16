@@ -396,7 +396,7 @@ export function HabitTracker({ habits: initialHabits, todayLogs, todayDateStr, i
       {/* Quick Habit Creation Tray */}
       {isCreating && (
         <div className="p-4 bg-zinc-50/80 dark:bg-zinc-850/80 border border-zinc-200/80 dark:border-zinc-800 rounded-xl space-y-3 animate-in fade-in zoom-in-98 duration-150 shadow-xs">
-          <form onSubmit={handleCreateHabit} className="flex gap-2">
+          <form onSubmit={handleCreateHabit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <input
               type="text"
               value={newTitle}
@@ -406,28 +406,30 @@ export function HabitTracker({ habits: initialHabits, todayLogs, todayDateStr, i
               className="flex-1 px-3.5 py-2 text-sm bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
             />
 
-            {/* Color select pills */}
-            <div className="flex items-center gap-1.5 px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-              {PRESET_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => setNewColor(c.value)}
-                  className={`w-4 h-4 rounded-full ${c.bg} transition-transform ${
-                    newColor === c.value ? "scale-125 ring-2 ring-zinc-900 dark:ring-zinc-100" : "opacity-60 hover:opacity-100"
-                  }`}
-                  title={c.name}
-                />
-              ))}
-            </div>
+            <div className="flex items-center justify-between sm:justify-start gap-2">
+              {/* Color select pills */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setNewColor(c.value)}
+                    className={`w-4 h-4 rounded-full ${c.bg} transition-transform ${
+                      newColor === c.value ? "scale-125 ring-2 ring-zinc-900 dark:ring-zinc-100" : "opacity-60 hover:opacity-100"
+                    }`}
+                    title={c.name}
+                  />
+                ))}
+              </div>
 
-            <button
-              type="submit"
-              disabled={!newTitle.trim() || isSubmitting}
-              className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white disabled:opacity-40 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
-            >
-              Add
-            </button>
+              <button
+                type="submit"
+                disabled={!newTitle.trim() || isSubmitting}
+                className="flex-1 sm:flex-initial px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white disabled:opacity-40 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+              >
+                Add
+              </button>
+            </div>
           </form>
 
           {/* Quick Presets */}

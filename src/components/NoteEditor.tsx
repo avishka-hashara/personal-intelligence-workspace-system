@@ -129,26 +129,26 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
         </div>
 
         {/* Right Actions: View Mode Toggle & Delete Note */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
           {/* View Mode Toggle */}
           <div className="flex items-center gap-1 bg-zinc-100/90 dark:bg-zinc-800/90 p-1 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 shadow-subtle">
             <button
               type="button"
               onClick={() => setViewMode("split")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 viewMode === "split"
                   ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-2xs border border-transparent dark:border-white/10"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
             >
               <Columns className="w-3.5 h-3.5" />
-              <span>Split</span>
+              <span className="hidden sm:inline">Split</span>
             </button>
 
             <button
               type="button"
               onClick={() => setViewMode("edit")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 viewMode === "edit"
                   ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-2xs border border-transparent dark:border-white/10"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -161,7 +161,7 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
             <button
               type="button"
               onClick={() => setViewMode("preview")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                 viewMode === "preview"
                   ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-2xs border border-transparent dark:border-white/10"
                   : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -195,7 +195,7 @@ export function NoteEditor({ note, connections }: NoteEditorProps) {
           className="w-full text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 border-none outline-none focus:ring-0 bg-transparent p-0 tracking-tight"
         />
 
-        <div className="flex items-center gap-3 text-[11px] text-zinc-400 dark:text-zinc-500 pt-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-[11px] text-zinc-400 dark:text-zinc-500 pt-1">
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             Created {format(new Date(note.createdAt), "MMM d, yyyy")}

@@ -177,11 +177,11 @@ export function FocusTimer() {
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-200"
+      className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-50 animate-in slide-in-from-bottom-4 fade-in duration-200"
       role="region"
       aria-label="Focus Timer"
     >
-      <div className="w-[360px] bg-zinc-950/90 text-white rounded-3xl p-5 shadow-float border border-zinc-800/80 backdrop-blur-2xl transition-all">
+      <div className="w-full sm:w-[360px] max-w-full bg-zinc-950/95 text-white rounded-3xl p-5 shadow-float border border-zinc-800/80 backdrop-blur-2xl transition-all">
         {/* Header with Title and Close Button */}
         <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80">
           <div className="flex items-center gap-2 min-w-0">

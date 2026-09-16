@@ -566,7 +566,7 @@ export function CalendarView({
           </div>
 
           {/* Navigation Controls */}
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
             <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
               <button
                 type="button"
@@ -654,7 +654,7 @@ export function CalendarView({
         </div>
 
         {/* Main Workspace Layout (Sidebar + CalendarGrid) */}
-        <div className="flex flex-col lg:flex-row gap-6 items-start w-full transition-all duration-300 ease-in-out">
+        <div className="flex flex-col-reverse lg:flex-row gap-6 items-start w-full transition-all duration-300 ease-in-out">
           {/* Left Sidebar: Unscheduled Tasks */}
           <div className="w-full lg:w-[22%] shrink-0 lg:min-w-[210px] lg:max-w-[240px] bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-4 shadow-xs space-y-4">
             <div className="flex items-center justify-between">

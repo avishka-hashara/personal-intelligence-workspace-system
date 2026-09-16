@@ -449,7 +449,7 @@ export function FinanceDashboard({
                                 await deleteBudget(b.id);
                               });
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-600 transition cursor-pointer p-0.5"
+                            className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:opacity-100 text-zinc-400 hover:text-rose-600 transition cursor-pointer p-0.5"
                             title="Delete budget"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -565,7 +565,7 @@ export function FinanceDashboard({
                               await deleteSubscription(s.id);
                             });
                           }}
-                          className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-600 transition cursor-pointer p-1"
+                          className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:opacity-100 text-zinc-400 hover:text-rose-600 transition cursor-pointer p-1"
                           title="Delete subscription"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -616,7 +616,7 @@ export function FinanceDashboard({
                           await deleteAccount(acc.id);
                         });
                       }}
-                      className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
+                      className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:opacity-100 text-zinc-400 hover:text-rose-600 transition cursor-pointer"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -726,7 +726,7 @@ export function FinanceDashboard({
                               await deleteTransaction(tx.id);
                             });
                           }}
-                          className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-600 transition cursor-pointer p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                          className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:opacity-100 text-zinc-400 hover:text-rose-600 transition cursor-pointer p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30"
                           title="Delete transaction"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

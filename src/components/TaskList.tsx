@@ -104,7 +104,7 @@ export function SortableTaskItem({
                 <button
                     type="button"
                     onClick={() => onDelete(task.id)}
-                    className="text-zinc-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer shrink-0 ml-2"
+                    className="text-zinc-400 hover:text-rose-500 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer shrink-0 ml-2"
                     aria-label="Delete task"
                 >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -168,7 +168,7 @@ export function SortableTaskItem({
             <button
                 type="button"
                 onClick={() => onDelete(task.id)}
-                className="text-zinc-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer shrink-0 ml-2"
+                className="text-zinc-400 hover:text-rose-500 opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer shrink-0 ml-2"
                 aria-label="Delete task"
             >
                 <Trash2 className="w-3.5 h-3.5" />

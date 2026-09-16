@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex-1 lg:pl-[240px] flex min-h-screen relative w-full overflow-x-hidden">
       {/* Dynamic Center Column: expands smoothly when Day Strip is collapsed */}
       <main
-        className={`flex-1 min-w-0 w-full p-4 sm:p-6 md:p-8 pt-6 sm:pt-8 md:pt-10 xl:pt-14 ${
+        className={`flex-1 min-w-0 w-full p-4 sm:p-6 md:p-8 pt-18 sm:pt-20 lg:pt-8 xl:pt-14 pb-24 lg:pb-8 ${
           !isDayStripOpen ? "xl:pr-36" : ""
         } transition-all duration-300 ease-in-out ${
           isDayStripOpen ? "max-w-full" : "max-w-7xl mx-auto"
@@ -59,7 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* Floating Toggle Button when Day Strip is collapsed */}
+      {/* Floating Toggle Button when Day Strip is collapsed (Desktop xl+) */}
       {!isDayStripOpen && (
         <div className="fixed top-3.5 right-6 z-40 hidden xl:block">
           <button
@@ -77,7 +77,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* Day Strip (Right Rail) */}
+      {/* Mobile / Tablet Day Strip Sheet (< xl) */}
+      {isDayStripOpen && (
+        <div className="xl:hidden fixed inset-0 z-50 flex justify-end">
+          <div
+            onClick={() => setDayStripOpen(false)}
+            className="fixed inset-0 bg-black/30 dark:bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+          />
+          <aside className="relative w-full max-w-[340px] sm:max-w-[360px] h-full bg-white/95 dark:bg-zinc-950/95 backdrop-blur-2xl border-l border-zinc-200/80 dark:border-zinc-800 shadow-float z-50 flex flex-col p-5 overflow-y-auto animate-in slide-in-from-right duration-300">
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-zinc-700 dark:text-zinc-300 stroke-[1.8]" />
+                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+                  Day Schedule
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setDayStripOpen(false)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors cursor-pointer"
+                title="Close Day Schedule"
+              >
+                <PanelRightClose className="w-5 h-5" />
+              </button>
+            </div>
+
+            <DayStrip />
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop Day Strip (Right Rail xl+) */}
       <aside
         className={`hidden xl:flex flex-col border-l border-zinc-200/70 dark:border-border-subtle bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl transition-all duration-300 ease-in-out shrink-0 overflow-hidden ${
           isDayStripOpen

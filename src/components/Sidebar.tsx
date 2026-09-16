@@ -18,6 +18,7 @@ import {
   Heart,
   Menu,
   X,
+  Plus,
 } from "lucide-react";
 
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
@@ -25,7 +26,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { toggleCopilot } = useUIStore();
+  const { toggleCopilot, toggleCommand, toggleCapture, toggleDayStrip } = useUIStore();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const links = [
@@ -44,29 +45,61 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Hamburger Header (Visible < lg) */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/80 dark:bg-sidebar border-b border-zinc-200/70 dark:border-sidebar-border backdrop-blur-xl z-40 px-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      {/* Mobile Top Header (Visible < lg) */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/85 dark:bg-zinc-950/85 border-b border-zinc-200/70 dark:border-zinc-800/80 backdrop-blur-xl z-40 px-3 sm:px-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => setIsMobileOpen((prev) => !prev)}
-            className="p-2 rounded-lg text-zinc-600 dark:text-sidebar-foreground/70 hover:bg-zinc-100 dark:hover:bg-sidebar-accent transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             aria-label="Toggle navigation menu"
           >
             {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <span className="font-semibold text-sm tracking-tight text-zinc-900 dark:text-sidebar-foreground">PIW</span>
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center font-bold text-xs tracking-wider shadow-2xs">
+              P
+            </div>
+            <span className="font-bold text-sm tracking-tight text-zinc-900 dark:text-zinc-100">PIW</span>
+          </Link>
         </div>
 
-        <button
-          type="button"
-          onClick={() => toggleCopilot()}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 text-white dark:bg-sidebar-primary dark:text-sidebar-primary-foreground font-medium text-xs shadow-subtle cursor-pointer active:scale-[0.985] transition-all"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Copilot</span>
-        </button>
-      </div>
+        {/* Mobile Quick Action Buttons */}
+        <div className="flex items-center gap-1.5">
+          {/* Search / Command Palette */}
+          <button
+            type="button"
+            onClick={() => toggleCommand()}
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            aria-label="Search & Commands"
+            title="Search & Commands"
+          >
+            <Sparkles className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+          </button>
+
+          {/* Day Schedule Toggle */}
+          <button
+            type="button"
+            onClick={() => toggleDayStrip()}
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            aria-label="Day Schedule"
+            title="Day Schedule"
+          >
+            <Calendar className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
+          </button>
+
+          {/* AI Copilot Quick Launcher */}
+          <button
+            type="button"
+            onClick={() => toggleCopilot()}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-medium text-xs shadow-subtle cursor-pointer active:scale-[0.98] transition-all"
+            aria-label="Open Workspace Copilot"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-semibold">Copilot</span>
+          </button>
+        </div>
+      </header>
 
       {/* Mobile Backdrop */}
       {isMobileOpen && (
@@ -166,6 +199,77 @@ export function Sidebar() {
           </Link>
         </div>
       </aside>
+
+      {/* Mobile Bottom Navigation Bar (Visible < lg) */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/90 dark:bg-zinc-950/90 border-t border-zinc-200/80 dark:border-zinc-800/80 backdrop-blur-2xl z-40 px-3 sm:px-6 flex items-center justify-around shadow-float"
+      >
+        {/* Today */}
+        <Link
+          href="/"
+          className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all cursor-pointer ${
+            pathname === "/"
+              ? "text-zinc-900 dark:text-white font-semibold"
+              : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          }`}
+        >
+          <Home className={`w-5 h-5 ${pathname === "/" ? "stroke-[2.2]" : "stroke-[1.6]"}`} />
+          <span className="text-[10px] tracking-tight">Today</span>
+        </Link>
+
+        {/* Plan */}
+        <Link
+          href="/plan/goals"
+          className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all cursor-pointer ${
+            pathname.startsWith("/plan")
+              ? "text-zinc-900 dark:text-white font-semibold"
+              : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          }`}
+        >
+          <Map className={`w-5 h-5 ${pathname.startsWith("/plan") ? "stroke-[2.2]" : "stroke-[1.6]"}`} />
+          <span className="text-[10px] tracking-tight">Plan</span>
+        </Link>
+
+        {/* Center Prominent Quick Capture Floating Button */}
+        <button
+          type="button"
+          onClick={() => toggleCapture()}
+          className="relative -top-2 flex items-center justify-center w-12 h-12 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-float hover:scale-105 active:scale-95 transition-all cursor-pointer border-2 border-white dark:border-zinc-900"
+          aria-label="Quick Capture Task"
+          title="Quick Capture Task"
+        >
+          <Plus className="w-6 h-6 stroke-[2.5]" />
+        </button>
+
+        {/* Tasks */}
+        <Link
+          href="/tasks"
+          className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all cursor-pointer ${
+            pathname.startsWith("/tasks")
+              ? "text-zinc-900 dark:text-white font-semibold"
+              : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          }`}
+        >
+          <CheckSquare className={`w-5 h-5 ${pathname.startsWith("/tasks") ? "stroke-[2.2]" : "stroke-[1.6]"}`} />
+          <span className="text-[10px] tracking-tight">Tasks</span>
+        </Link>
+
+        {/* More / Full Menu */}
+        <button
+          type="button"
+          onClick={() => setIsMobileOpen(true)}
+          className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all cursor-pointer ${
+            isMobileOpen
+              ? "text-zinc-900 dark:text-white font-semibold"
+              : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          }`}
+          aria-label="Open Workspace Menu"
+        >
+          <Menu className="w-5 h-5 stroke-[1.6]" />
+          <span className="text-[10px] tracking-tight">More</span>
+        </button>
+      </nav>
     </>
   );
 }

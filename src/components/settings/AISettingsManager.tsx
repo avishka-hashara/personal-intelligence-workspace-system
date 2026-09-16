@@ -355,7 +355,7 @@ export function AISettingsManager({ initialSettings }: AISettingsManagerProps) {
         </div>
 
         <div className="overflow-x-auto border border-slate-200 dark:border-zinc-800 rounded-xl">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full min-w-[640px] text-left text-xs border-collapse">
             <thead className="bg-slate-50 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 border-b border-slate-200 dark:border-zinc-700">
               <tr>
                 <th className="p-3.5 font-bold uppercase tracking-wider text-[11px] w-1/5">Destination</th>

@@ -144,7 +144,7 @@ export function TodayView({
         </div>
 
         {/* Live Bento Clock & Date Card */}
-        <div className="flex items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 shadow-subtle self-start sm:self-auto">
+        <div className="flex items-center gap-3.5 px-4 py-2.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 shadow-subtle w-full sm:w-auto">
           <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800/70 border border-zinc-200/50 dark:border-zinc-700/50 flex items-center justify-center text-zinc-600 dark:text-zinc-300 shrink-0">
             <Clock className="w-4 h-4" />
           </div>
@@ -221,7 +221,7 @@ export function TodayView({
           </div>
 
           {nowTask ? (
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-5 shadow-subtle hover:shadow-float flex items-center justify-between gap-4 transition-all duration-200">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-subtle hover:shadow-float flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 transition-all duration-200">
               <div className="flex items-center gap-3.5 flex-1 min-w-0">
                 <button
                   type="button"
@@ -255,7 +255,7 @@ export function TodayView({
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => {

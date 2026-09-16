@@ -607,110 +607,112 @@ export function RoadmapView({
                           )}
                         </button>
 
-                        {/* Title & Status Badges */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <p className={`text-xs font-semibold ${isDone ? "line-through text-slate-400 dark:text-zinc-500" : "text-slate-800 dark:text-zinc-100"}`}>
-                              {milestone.title}
-                            </p>
+                        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                          {/* Title & Status Badges */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <p className={`text-xs font-semibold ${isDone ? "line-through text-slate-400 dark:text-zinc-500" : "text-slate-800 dark:text-zinc-100"}`}>
+                                {milestone.title}
+                              </p>
 
-                            {/* Status Badges */}
-                            {isSlipped && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                                <span className="text-amber-600 dark:text-amber-400">◆</span>
-                                Slipped
-                              </span>
-                            )}
+                              {/* Status Badges */}
+                              {isSlipped && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                                  <span className="text-amber-600 dark:text-amber-400">◆</span>
+                                  Slipped
+                                </span>
+                              )}
 
-                            {isBlocked && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
-                                <Lock className="w-2.5 h-2.5 text-rose-600 dark:text-rose-400" />
-                                Blocked ({milestone.blockedByCount})
-                              </span>
-                            )}
+                              {isBlocked && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                  <Lock className="w-2.5 h-2.5 text-rose-600 dark:text-rose-400" />
+                                  Blocked ({milestone.blockedByCount})
+                                </span>
+                              )}
 
-                            {isAtRisk && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                <Clock className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
-                                At Risk
-                              </span>
-                            )}
+                              {isAtRisk && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                  <Clock className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+                                  At Risk
+                                </span>
+                              )}
 
-                            {isOnCriticalPath && !isDone && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                                <Flame className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />
-                                Critical Path
-                              </span>
-                            )}
-                          </div>
-
-                          {milestone.definitionOfDone && (
-                            <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-0.5">
-                              DoD: {milestone.definitionOfDone}
-                            </p>
-                          )}
-
-                          {/* Blocked by reason list */}
-                          {isBlocked && milestone.incompletePredecessorTitles.length > 0 && (
-                            <p className="text-[10px] font-medium text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
-                              <span>Waiting on:</span>
-                              <span className="font-semibold">{milestone.incompletePredecessorTitles.join(", ")}</span>
-                            </p>
-                          )}
-
-                          {/* Dependencies Badges */}
-                          {incomingDeps.length > 0 && (
-                            <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                              <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-500">Depends on:</span>
-                              {incomingDeps.map((d) => {
-                                const pred = milestoneMap.get(d.predecessorId);
-                                return (
-                                  <span
-                                    key={d.predecessorId}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 rounded-md text-[10px]"
-                                  >
-                                    <LinkIcon className="w-2.5 h-2.5 text-slate-400 dark:text-zinc-500" />
-                                    <span className="truncate max-w-[120px]">{pred?.title || "Predecessor"}</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveDependency(d.predecessorId, milestone.id)}
-                                      className="hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer ml-0.5"
-                                      title="Remove dependency"
-                                    >
-                                      <X className="w-2.5 h-2.5" />
-                                    </button>
-                                  </span>
-                                );
-                              })}
+                              {isOnCriticalPath && !isDone && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                                  <Flame className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />
+                                  Critical Path
+                                </span>
+                              )}
                             </div>
-                          )}
-                        </div>
 
-                        {/* Date & Action Controls */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          {/* Date input / display */}
-                          <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-zinc-400">
-                            <input
-                              type="date"
-                              defaultValue={milestone.dueDate ? format(new Date(milestone.dueDate), "yyyy-MM-dd") : ""}
-                              onChange={(e) => handleUpdateDueDate(milestone.id, e.target.value)}
-                              className="px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 text-[11px] bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:border-slate-300 dark:hover:border-zinc-600 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-zinc-400 cursor-pointer [color-scheme:light] dark:[color-scheme:dark]"
-                              title="Set or update milestone due date"
-                            />
+                            {milestone.definitionOfDone && (
+                              <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-0.5">
+                                DoD: {milestone.definitionOfDone}
+                              </p>
+                            )}
+
+                            {/* Blocked by reason list */}
+                            {isBlocked && milestone.incompletePredecessorTitles.length > 0 && (
+                              <p className="text-[10px] font-medium text-rose-600 dark:text-rose-400 mt-1 flex items-center gap-1">
+                                <span>Waiting on:</span>
+                                <span className="font-semibold">{milestone.incompletePredecessorTitles.join(", ")}</span>
+                              </p>
+                            )}
+
+                            {/* Dependencies Badges */}
+                            {incomingDeps.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-500">Depends on:</span>
+                                {incomingDeps.map((d) => {
+                                  const pred = milestoneMap.get(d.predecessorId);
+                                  return (
+                                    <span
+                                      key={d.predecessorId}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 rounded-md text-[10px]"
+                                    >
+                                      <LinkIcon className="w-2.5 h-2.5 text-slate-400 dark:text-zinc-500" />
+                                      <span className="truncate max-w-[120px]">{pred?.title || "Predecessor"}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveDependency(d.predecessorId, milestone.id)}
+                                        className="hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer ml-0.5"
+                                        title="Remove dependency"
+                                      >
+                                        <X className="w-2.5 h-2.5" />
+                                      </button>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
 
-                          {/* Link Dependency Button */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDepError(null);
-                              setActiveDepMilestoneId(activeDepMilestoneId === milestone.id ? null : milestone.id);
-                            }}
-                            className="p-1 text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 rounded-md transition-colors cursor-pointer"
-                            title="Add predecessor dependency"
-                          >
-                            <LinkIcon className="w-3.5 h-3.5" />
-                          </button>
+                          {/* Date & Action Controls */}
+                          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto pt-0.5 sm:pt-0">
+                            {/* Date input / display */}
+                            <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-zinc-400">
+                              <input
+                                type="date"
+                                defaultValue={milestone.dueDate ? format(new Date(milestone.dueDate), "yyyy-MM-dd") : ""}
+                                onChange={(e) => handleUpdateDueDate(milestone.id, e.target.value)}
+                                className="px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700 text-[11px] bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 hover:border-slate-300 dark:hover:border-zinc-600 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-zinc-400 cursor-pointer [color-scheme:light] dark:[color-scheme:dark]"
+                                title="Set or update milestone due date"
+                              />
+                            </div>
+
+                            {/* Link Dependency Button */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDepError(null);
+                                setActiveDepMilestoneId(activeDepMilestoneId === milestone.id ? null : milestone.id);
+                              }}
+                              className="p-1 text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 rounded-md transition-colors cursor-pointer"
+                              title="Add predecessor dependency"
+                            >
+                              <LinkIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
 
@@ -908,8 +910,8 @@ export function RoadmapView({
                 )}
 
                 {/* Proposed Date Adjustments Table */}
-                <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden text-xs">
-                  <table className="w-full text-left">
+                <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-x-auto text-xs">
+                  <table className="w-full min-w-[480px] text-left">
                     <thead className="bg-slate-50 dark:bg-zinc-800/80 border-b border-slate-200 dark:border-zinc-700 text-[11px] font-bold text-slate-600 dark:text-zinc-400">
                       <tr>
                         <th className="p-2.5">Milestone</th>
@@ -937,7 +939,7 @@ export function RoadmapView({
                   </table>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
                   <button
                     type="button"
                     onClick={() => setIsReplanModalOpen(false)}
@@ -1025,7 +1027,7 @@ export function RoadmapView({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-zinc-800">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setIsShiftModalOpen(false)}
