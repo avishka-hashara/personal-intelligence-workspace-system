@@ -19,6 +19,8 @@ import {
   Menu,
   X,
   Plus,
+  Download,
+  Smartphone,
 } from "lucide-react";
 
 import { SyncStatusIndicator } from "@/components/SyncStatusIndicator";
@@ -26,7 +28,15 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { toggleCopilot, toggleCommand, toggleCapture, toggleDayStrip } = useUIStore();
+  const {
+    toggleCopilot,
+    toggleCommand,
+    toggleCapture,
+    toggleDayStrip,
+    isInstallable,
+    isStandalone,
+    triggerInstall,
+  } = useUIStore();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const links = [
@@ -46,7 +56,7 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile Top Header (Visible < lg) */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/85 dark:bg-zinc-950/85 border-b border-zinc-200/70 dark:border-zinc-800/80 backdrop-blur-xl z-40 px-3 sm:px-4 flex items-center justify-between">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-14 pt-safe bg-white/85 dark:bg-zinc-950/85 border-b border-zinc-200/70 dark:border-zinc-800/80 backdrop-blur-xl z-40 px-3 sm:px-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <button
             type="button"
@@ -182,6 +192,26 @@ export function Sidebar() {
         </nav>
 
         <div className="p-3 border-t border-zinc-200/60 dark:border-sidebar-border space-y-2">
+          {/* Install PIW Native PWA Button (Visible when installable and not in standalone) */}
+          {isInstallable && !isStandalone && (
+            <button
+              type="button"
+              onClick={async () => {
+                await triggerInstall();
+                setIsMobileOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-medium text-xs shadow-subtle cursor-pointer active:scale-[0.98] transition-all hover:opacity-90"
+              title="Install PIW to your Android home screen"
+            >
+              <span className="flex items-center gap-2">
+                <Download className="w-3.5 h-3.5 stroke-[2]" />
+                <span>Install PIW App</span>
+              </span>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/20 dark:bg-zinc-900/10">
+                Android
+              </span>
+            </button>
+          )}
           <ThemeToggle />
           <SyncStatusIndicator />
           <Link
@@ -203,7 +233,7 @@ export function Sidebar() {
       {/* Mobile Bottom Navigation Bar (Visible < lg) */}
       <nav
         aria-label="Mobile Navigation"
-        className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/90 dark:bg-zinc-950/90 border-t border-zinc-200/80 dark:border-zinc-800/80 backdrop-blur-2xl z-40 px-3 sm:px-6 flex items-center justify-around shadow-float"
+        className="lg:hidden fixed bottom-0 left-0 right-0 h-16 pb-safe bg-white/90 dark:bg-zinc-950/90 border-t border-zinc-200/80 dark:border-zinc-800/80 backdrop-blur-2xl z-40 px-3 sm:px-6 flex items-center justify-around shadow-float"
       >
         {/* Today */}
         <Link
