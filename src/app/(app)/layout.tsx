@@ -3,6 +3,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { QuickCapture } from "@/components/QuickCapture";
 import { FocusTimer } from "@/components/FocusTimer";
 import { Copilot } from "@/components/Copilot";
+import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { AppShell } from "@/components/layout/AppShell";
 
 export default function AppLayout({
@@ -16,6 +17,7 @@ export default function AppLayout({
       <QuickCapture />
       <FocusTimer />
       <Copilot />
+      <PWAInstallBanner />
       {/* 240px Left Rail */}
       <Sidebar />
 

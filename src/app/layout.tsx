@@ -22,6 +22,7 @@ export const metadata: Metadata = {
   title: "Personal Intelligence Workspace",
   description: "A single-user, AI-native web workspace",
   applicationName: "PIW",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
