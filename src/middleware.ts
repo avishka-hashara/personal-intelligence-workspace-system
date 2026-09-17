@@ -30,8 +30,20 @@ export async function middleware(request: NextRequest) {
     // Check auth state
     const { data: { user } } = await supabase.auth.getUser()
 
+    const isPublicPwa =
+        request.nextUrl.pathname.startsWith('/manifest') ||
+        request.nextUrl.pathname.startsWith('/sw.js') ||
+        request.nextUrl.pathname.startsWith('/icons/') ||
+        request.nextUrl.pathname === '/robots.txt' ||
+        request.nextUrl.pathname === '/sitemap.xml'
+
     const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/auth')
     const isCronRoute = request.nextUrl.pathname.startsWith('/api/v1/cron')
+
+    // If public PWA asset, allow through unconditionally
+    if (isPublicPwa) {
+        return supabaseResponse
+    }
 
     // If no user and trying to access a protected route, redirect to login (or return 401 for API)
     if (!user && !isAuthRoute && !isCronRoute) {
@@ -60,8 +72,9 @@ export const config = {
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
+         * - sw.js, manifest.webmanifest, manifest.json
          * Feel free to modify this pattern to include more paths.
          */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|manifest\\.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 }
