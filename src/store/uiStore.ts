@@ -58,6 +58,14 @@ interface UIState {
   isDayStripOpen: boolean;
   setDayStripOpen: (open: boolean) => void;
   toggleDayStrip: () => void;
+
+  // PWA Install State
+  isInstallable: boolean;
+  installPrompt: any | null;
+  setInstallPrompt: (prompt: any | null) => void;
+  triggerInstall: () => Promise<boolean>;
+  isStandalone: boolean;
+  setIsStandalone: (standalone: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -127,5 +135,28 @@ export const useUIStore = create<UIState>((set) => ({
   isDayStripOpen: true,
   setDayStripOpen: (open: boolean) => set({ isDayStripOpen: open }),
   toggleDayStrip: () => set((state) => ({ isDayStripOpen: !state.isDayStripOpen })),
+
+  // PWA Install implementation
+  isInstallable: false,
+  installPrompt: null,
+  setInstallPrompt: (prompt: any | null) =>
+    set({ installPrompt: prompt, isInstallable: Boolean(prompt) }),
+  triggerInstall: async () => {
+    const prompt = useUIStore.getState().installPrompt;
+    if (!prompt) return false;
+    try {
+      prompt.prompt();
+      const choice = await prompt.userChoice;
+      if (choice?.outcome === "accepted") {
+        set({ installPrompt: null, isInstallable: false });
+        return true;
+      }
+    } catch (err) {
+      console.warn("Failed to prompt PWA install:", err);
+    }
+    return false;
+  },
+  isStandalone: false,
+  setIsStandalone: (standalone: boolean) => set({ isStandalone: standalone }),
 }));
 

@@ -1,0 +1,93 @@
+name: Build Android APK (Cloud Compiler)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "Public URL of the deployed PIW web application (e.g. https://your-piw.vercel.app)"
+        required: true
+        default: "https://your-piw-domain.vercel.app"
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Bubblewrap CLI (Official Google PWA-to-Android Builder)
+        run: npm install -g @bubblewrap/cli
+
+      - name: Initialize and Build Android APK via Bubblewrap
+        env:
+          APP_URL: ${{ github.event.inputs.app_url }}
+        run: |
+          echo "Initializing Bubblewrap project for $APP_URL..."
+          mkdir -p android-build
+          cd android-build
+
+          # Initialize TWA project non-interactively using manifest
+          bubblewrap init --manifest="${APP_URL}/manifest.webmanifest" --directory=. --skipPwaValidation || true
+
+          # If full init requires interactive inputs, generate standard twa-manifest.json
+          if [ ! -f "twa-manifest.json" ]; then
+            cat <<EOF > twa-manifest.json
+          {
+            "packageId": "com.piw.workspace",
+            "host": "${APP_URL#https://}",
+            "name": "Personal Intelligence Workspace",
+            "launcherName": "PIW",
+            "themeColor": "#09090b",
+            "navigationColor": "#09090b",
+            "backgroundColor": "#09090b",
+            "startUrl": "/",
+            "iconUrl": "${APP_URL}/icons/icon-512x512.png",
+            "maskableIconUrl": "${APP_URL}/icons/icon-maskable-512x512.png",
+            "appVersionName": "1.0.0",
+            "appVersionCode": 1,
+            "shortcuts": [],
+            "generatorApp": "bubblewrap-cli",
+            "webManifestUrl": "${APP_URL}/manifest.webmanifest",
+            "fallbackType": "customtabs",
+            "features": {
+              "locationDelegation": {
+                "enabled": false
+              },
+              "playBilling": {
+                "enabled": false
+              }
+            },
+            "alphaDependencies": {
+              "enabled": false
+            },
+            "enableSiteSettingsShortcut": true,
+            "isChromeOSOnly": false,
+            "fullScopeUrl": "${APP_URL}/"
+          }
+          EOF
+            bubblewrap build --skipSigning || true
+          fi
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: piw-android-apk
+          path: |
+            android-build/*.apk
+            android-build/app/build/outputs/apk/**/*.apk
+          if-no-files-found: warn

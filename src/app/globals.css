@@ -182,9 +182,29 @@
   }
 }
 
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+@utility pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/40;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html, body {
+    overscroll-behavior-y: none;
   }
   body {
     background-color: var(--background);

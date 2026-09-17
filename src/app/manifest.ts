@@ -1,0 +1,73 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "Personal Intelligence Workspace",
+    short_name: "PIW",
+    description:
+      "AI-augmented personal operating system for studies, goals, tasks, and habits.",
+    start_url: "/",
+    scope: "/",
+    display: "standalone",
+    background_color: "#09090b",
+    theme_color: "#09090b",
+    orientation: "portrait-primary",
+    categories: ["productivity", "education", "lifestyle"],
+    icons: [
+      {
+        src: "/icons/icon-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/icon-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/icon-maskable-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/icons/icon-maskable-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
+    shortcuts: [
+      {
+        name: "Today Dashboard",
+        short_name: "Today",
+        description: "Open your synthesized Today briefing and Now Task",
+        url: "/",
+        icons: [{ src: "/icons/icon-192x192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Quick Capture",
+        short_name: "Capture",
+        description: "Rapidly capture a new task or note",
+        url: "/tasks?action=new",
+        icons: [{ src: "/icons/icon-192x192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Study & Courses",
+        short_name: "Study",
+        description: "Exams, flashcard spaced repetition & syllabus tracking",
+        url: "/study/courses",
+        icons: [{ src: "/icons/icon-192x192.png", sizes: "192x192" }],
+      },
+      {
+        name: "Notes & Knowledge",
+        short_name: "Notes",
+        description: "Networked markdown notes and backlinks",
+        url: "/notes",
+        icons: [{ src: "/icons/icon-192x192.png", sizes: "192x192" }],
+      },
+    ],
+  };
+}
