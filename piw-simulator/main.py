@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel
 
 from evaluator import calculate_daily_risk
 from models import (
@@ -12,12 +13,33 @@ from models import (
     SimulationResult
 )
 from seeder import generate_historical_data, generate_seeded_current_state
+from optimizer import optimize_schedule
 
 app = FastAPI(
     title="PIW Predictive Life Simulator Engine",
-    description="Fuzzy logic risk evaluator and timeline predictor sidecar service.",
+    description="Fuzzy logic risk evaluator, timeline predictor, and genetic algorithm optimizer sidecar service.",
     version="1.0.0"
 )
+
+
+# ==========================================
+# Optimization Data Models
+# ==========================================
+
+class TaskOptimizationUpdate(BaseModel):
+    id: Optional[str] = None
+    title: str
+    original_due_date: Optional[str] = None
+    optimized_due_date: str
+    assigned_day_offset: int
+
+
+class OptimizedScheduleResult(BaseModel):
+    before_peak_risk: float
+    after_peak_risk: float
+    risk_reduction_percent: float
+    optimized_risk_timeline: List[DailyRiskScore]
+    task_updates: List[TaskOptimizationUpdate]
 
 
 # ==========================================
@@ -148,11 +170,49 @@ def simulate_timeline(state: CurrentState):
 
     if not recommendations:
         recommendations.append(
-            "Schedule and health metrics are well balanced. High probability of goal completion with minimal burnout risk."
+            "Schedule and schedule metrics are well balanced. High probability of goal completion with minimal burnout risk."
         )
 
     return SimulationResult(
         predicted_bottleneck_dates=bottleneck_dates,
         risk_scores=daily_risk_timeline,
         alternate_schedule_recommendations=recommendations
+    )
+
+
+@app.post("/simulate/optimize", response_model=OptimizedScheduleResult)
+def optimize_timeline(state: CurrentState):
+    """
+    Uses an Evolutionary Genetic Algorithm (DEAP) to optimize task assignment dates,
+    flattening peak burnout risk across the 30-day timeline.
+    """
+    if state.habits:
+        avg_adherence = sum(h.adherence_rate for h in state.habits) / len(state.habits)
+    else:
+        avg_adherence = 75.0
+
+    sleep_deficit = state.health_metrics.sleep_deficit
+
+    # Format task dictionaries for optimizer
+    taskList = []
+    for t in state.tasks:
+        taskList.append({
+            "id": t.id or t.title,
+            "title": t.title,
+            "estimated_hours": t.estimated_hours,
+            "due_date": t.due_date
+        })
+
+    result = optimize_schedule(
+        tasks=taskList,
+        base_deficit=sleep_deficit,
+        base_adherence=avg_adherence
+    )
+
+    return OptimizedScheduleResult(
+        before_peak_risk=result["before_peak_risk"],
+        after_peak_risk=result["after_peak_risk"],
+        risk_reduction_percent=result["risk_reduction_percent"],
+        optimized_risk_timeline=result["optimized_risk_timeline"],
+        task_updates=result["task_updates"]
     )

@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 
 class TaskItem(BaseModel):
+    id: Optional[str] = Field(None, description="Task ID (UUID)")
     title: str = Field(..., description="Title of the task")
     estimated_hours: float = Field(..., ge=0, description="Estimated effort in hours")
     due_date: Optional[str] = Field(None, description="Due date in YYYY-MM-DD format")
