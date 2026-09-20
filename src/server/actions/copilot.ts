@@ -99,7 +99,7 @@ export async function generateSessionTitle(firstMessage: string, sessionId: stri
         "X-Title": "Personal Intelligence Workspace",
       },
       body: JSON.stringify({
-        model: "anthropic/claude-3-haiku",
+        models: ["openrouter/free", "google/gemini-2.5-flash"],
         messages: [
           {
             role: "system",

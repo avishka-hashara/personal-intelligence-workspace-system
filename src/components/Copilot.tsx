@@ -22,6 +22,7 @@ import {
   PanelLeft,
   PanelLeftClose,
   MessageSquare,
+  RotateCcw,
 } from "lucide-react";
 import {
   getChatSessions,
@@ -195,6 +196,8 @@ export function Copilot() {
   const {
     messages,
     sendMessage,
+    regenerate,
+    clearError,
     stop,
     status,
     setMessages,
@@ -746,9 +749,22 @@ export function Copilot() {
                 )}
 
                 {error && (
-                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-medium text-rose-700 dark:text-rose-400 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{error.message || "Failed to reach AI service"}</span>
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-medium text-rose-700 dark:text-rose-400 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                      <span className="truncate">{error.message || "Failed to reach AI service"}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearError();
+                        regenerate();
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white transition-colors text-[11px] font-semibold shrink-0 cursor-pointer shadow-2xs flex items-center gap-1"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Retry</span>
+                    </button>
                   </div>
                 )}
 
