@@ -722,5 +722,29 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+// ----------------------------------------------------------------------
+// Persistent AI Copilot Chat Sessions & Messages
+// ----------------------------------------------------------------------
+
+export const aiChatSessions = pgTable("ai_chat_sessions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").default("New Chat").notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const aiChatMessages = pgTable("ai_chat_messages", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id").notNull().references(() => aiChatSessions.id, { onDelete: "cascade" }),
+    role: text("role").notNull(), // 'user' | 'assistant' | 'system' | 'tool'
+    content: text("content"),
+    toolCalls: jsonb("tool_calls"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+
 
 

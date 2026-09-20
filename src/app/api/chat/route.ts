@@ -12,6 +12,8 @@ import {
   nodes,
   chunks,
   courseResources,
+  aiChatSessions,
+  aiChatMessages,
 } from "@/server/db/schema";
 import { eq, and, isNull, desc, asc, ilike, sql, isNotNull, or } from "drizzle-orm";
 import { format } from "date-fns";
@@ -31,6 +33,7 @@ import {
   updatePersonaSettings,
 } from "@/server/services/settingsService";
 import { maybeTriggerRollingMemory } from "@/server/services/memoryService";
+import { generateSessionTitle } from "@/server/actions/copilot";
 
 export const maxDuration = 30;
 
@@ -56,6 +59,52 @@ export async function POST(req: Request) {
     const body = await req.json();
     const messages = body.messages;
     const rawPageContext = body.pageContext;
+    const rawSessionId = body.sessionId;
+
+    // Session resolution & persistence
+    let activeSessionId =
+      typeof rawSessionId === "string" && rawSessionId.trim().length > 0
+        ? rawSessionId.trim()
+        : null;
+    let isFirstMessage = false;
+
+    if (activeSessionId) {
+      const [existingSession] = await db
+        .select()
+        .from(aiChatSessions)
+        .where(
+          and(
+            eq(aiChatSessions.id, activeSessionId),
+            eq(aiChatSessions.userId, user.id)
+          )
+        )
+        .limit(1);
+
+      if (!existingSession) {
+        const [newSession] = await db
+          .insert(aiChatSessions)
+          .values({ userId: user.id, title: "New Chat" })
+          .returning({ id: aiChatSessions.id });
+        activeSessionId = newSession.id;
+        isFirstMessage = true;
+      } else {
+        const existingMsgs = await db
+          .select({ id: aiChatMessages.id })
+          .from(aiChatMessages)
+          .where(eq(aiChatMessages.sessionId, activeSessionId))
+          .limit(1);
+        if (existingMsgs.length === 0) {
+          isFirstMessage = true;
+        }
+      }
+    } else {
+      const [newSession] = await db
+        .insert(aiChatSessions)
+        .values({ userId: user.id, title: "New Chat" })
+        .returning({ id: aiChatSessions.id });
+      activeSessionId = newSession.id;
+      isFirstMessage = true;
+    }
 
     // Validate ephemeral page context (never trust client payload directly)
     let validatedPageContext: { type: "Note" | "Goal" | "Course"; id: string; title: string; data?: string } | null = null;
@@ -93,6 +142,18 @@ export async function POST(req: Request) {
       : Array.isArray(latestUserMessage?.parts)
       ? latestUserMessage.parts.map((p: any) => (p.type === "text" ? p.text : "")).join("")
       : "";
+
+    if (latestUserText && activeSessionId) {
+      await db.insert(aiChatMessages).values({
+        sessionId: activeSessionId,
+        role: "user",
+        content: latestUserText,
+      });
+      await db
+        .update(aiChatSessions)
+        .set({ updatedAt: new Date() })
+        .where(eq(aiChatSessions.id, activeSessionId));
+    }
 
     const detectedAssistantName = detectAssistantName(latestUserText);
     if (detectedAssistantName && detectedAssistantName !== currentAssistantName) {
@@ -795,9 +856,42 @@ ${
         }),
       },
       stopWhen: isStepCount(5),
+      onFinish: async (event) => {
+        try {
+          if (activeSessionId) {
+            const assistantText = event.text || "";
+            const toolCalls =
+              event.toolCalls && event.toolCalls.length > 0 ? event.toolCalls : null;
+
+            await db.insert(aiChatMessages).values({
+              sessionId: activeSessionId,
+              role: "assistant",
+              content: assistantText,
+              toolCalls: toolCalls,
+            });
+
+            await db
+              .update(aiChatSessions)
+              .set({ updatedAt: new Date() })
+              .where(eq(aiChatSessions.id, activeSessionId));
+
+            if (isFirstMessage && latestUserText) {
+              generateSessionTitle(latestUserText, activeSessionId).catch((err) =>
+                console.error("[onFinish] Title generation error:", err)
+              );
+            }
+          }
+        } catch (err) {
+          console.error("[onFinish] Error saving assistant message:", err);
+        }
+      },
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+      headers: {
+        "x-session-id": activeSessionId,
+      },
+    });
   } catch (error: any) {
     console.error("Chat API error:", error);
     return new Response(
