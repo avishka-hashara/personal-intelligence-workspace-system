@@ -344,7 +344,7 @@ ${
       temperature: 0.85,
       providerOptions: {
         openai: {
-          maxCompletionTokens: 1500,
+          maxCompletionTokens: 800,
         },
       },
       messages: modelMessages,
