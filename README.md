@@ -12,6 +12,11 @@
 
 **Personal Intelligence Workspace (PIW)** is an integrated life-management operating system engineered to bridge the gap between high-level human ambition and daily execution. Most personal productivity tools isolate notes from tasks, decouple goals from academic obligations, and treat AI as an external chatbot detached from real workspace context.
 
+cd piw-simulator
+venv\Scripts\uvicorn.exe main:app --reload --port 8080
+npm run dev -- -p 3000
+
+
 PIW solves this fragmentation through a **unified polymorphic entity graph** and a **deeply integrated, context-aware AI Copilot**. Every goal, course, syllabus milestone, note, and task exists in an interconnected relational model, providing a single source of truth for your life, studies, and personal projects.
 
 ```

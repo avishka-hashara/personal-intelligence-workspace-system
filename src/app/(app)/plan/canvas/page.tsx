@@ -32,6 +32,8 @@ import {
   isAfter,
 } from "date-fns";
 
+import PredictiveSimulator from "@/components/PredictiveSimulator";
+
 interface LifeAreaConfig {
   label: string;
   icon: any;
@@ -313,6 +315,9 @@ export default async function PlanCanvasPage() {
           </div>
         </div>
       </header>
+
+      {/* Predictive Simulation Engine Section */}
+      <PredictiveSimulator />
 
       {/* Timeline Controls & Legend Bar */}
       <section className="bg-white dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800/60 rounded-2xl p-4 shadow-subtle flex flex-wrap items-center justify-between gap-4">
