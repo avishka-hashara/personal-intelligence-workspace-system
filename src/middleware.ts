@@ -39,6 +39,10 @@ export async function middleware(request: NextRequest) {
 
     const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/auth')
     const isCronRoute = request.nextUrl.pathname.startsWith('/api/v1/cron')
+    // Native mobile client: API routes verify the bearer token themselves via getCurrentUser()
+    const isBearerApi =
+        request.nextUrl.pathname.startsWith('/api/') &&
+        !!request.headers.get('authorization')?.toLowerCase().startsWith('bearer ')
 
     // If public PWA asset, allow through unconditionally
     if (isPublicPwa) {
@@ -46,7 +50,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // If no user and trying to access a protected route, redirect to login (or return 401 for API)
-    if (!user && !isAuthRoute && !isCronRoute) {
+    if (!user && !isAuthRoute && !isCronRoute && !isBearerApi) {
         if (request.nextUrl.pathname.startsWith('/api/')) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }

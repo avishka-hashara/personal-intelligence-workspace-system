@@ -130,6 +130,11 @@ export async function toggleHabitCheckIn(habitId: string, dateStr: string) {
                     value: "1",
                     backfilled: isBackfilled,
                 })
+                // A soft-deleted row (e.g. un-checked via mobile sync) still holds the unique slot
+                .onConflictDoUpdate({
+                    target: [habitLogs.userId, habitLogs.habitId, habitLogs.loggedOn],
+                    set: { deletedAt: null, value: "1", backfilled: isBackfilled, updatedAt: new Date() },
+                })
                 .returning();
 
             revalidatePath("/");

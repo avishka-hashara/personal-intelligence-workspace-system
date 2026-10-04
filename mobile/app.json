@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "PIW",
+    "slug": "piw",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "piw",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#09090b",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.piw.workspace"
+    },
+    "android": {
+      "package": "com.piw.workspace",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#09090b",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-sqlite",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#fcfcfd",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#09090b"
+          }
+        }
+      ],
+      "expo-font"
+    ]
+  }
+}

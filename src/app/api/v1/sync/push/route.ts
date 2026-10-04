@@ -27,6 +27,8 @@ export interface ConflictRecord {
 export interface PushSyncResponse {
   applied: string[];
   conflicts: ConflictRecord[];
+  /** Ops that can never apply (bad payload / constraint errors); clients should drop them */
+  rejected: { op_id: string; error: string }[];
   server_hlc: string;
 }
 
@@ -40,6 +42,12 @@ const TABLE_MAP: Record<string, any> = {
   habit_logs: schema.habitLogs,
   habitlogs: schema.habitLogs,
   habit_log: schema.habitLogs,
+  habit_pauses: schema.habitPauses,
+  habitpauses: schema.habitPauses,
+  habit_pause: schema.habitPauses,
+  time_blocks: schema.timeBlocks,
+  timeblocks: schema.timeBlocks,
+  time_block: schema.timeBlocks,
   goals: schema.goals,
   goal: schema.goals,
   objectives: schema.objectives,
@@ -134,14 +142,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid operations payload" }, { status: 400 });
     }
 
+    // Entity rows reference users.id; a mobile client may push before the web app ever upserted it
+    if (ops.length > 0 && user.email) {
+      await db
+        .insert(schema.users)
+        .values({ id: user.id, email: user.email })
+        .onConflictDoNothing();
+    }
+
     const applied: string[] = [];
     const conflicts: ConflictRecord[] = [];
+    const rejected: { op_id: string; error: string }[] = [];
     let latestHlc: string | undefined = undefined;
 
     for (const op of ops) {
       const opId = op.op_id || op.opId;
       const entityType = (op.entity_type || op.entityType || op.entity || "").toLowerCase();
-      const entityId = op.entity_id || op.entityId;
+      let entityId = op.entity_id || op.entityId;
       const opHlc = op.hlc;
 
       if (!opId || !entityType || !entityId || !opHlc) {
@@ -150,74 +167,113 @@ export async function POST(req: Request) {
 
       latestHlc = opHlc;
 
-      // 1. Idempotency check: Skip if op_id already exists in sync_ops
-      const existingOp = await db
-        .select({ opId: syncOps.opId })
-        .from(syncOps)
-        .where(eq(syncOps.opId, opId))
-        .limit(1);
+      // One bad op must not fail the whole batch, or the client retries it forever
+      try {
+        // 1. Idempotency check: Skip if op_id already exists in sync_ops
+        const existingOp = await db
+          .select({ opId: syncOps.opId })
+          .from(syncOps)
+          .where(eq(syncOps.opId, opId))
+          .limit(1);
 
-      if (existingOp.length > 0) {
-        applied.push(opId);
-        continue;
-      }
+        if (existingOp.length > 0) {
+          applied.push(opId);
+          continue;
+        }
 
-      // 2. Resolve target entity table
-      const targetTable = TABLE_MAP[entityType];
-      if (!targetTable) {
-        console.warn(`[Sync Push] Unknown entity type: ${entityType}`);
-        continue;
-      }
+        // 2. Resolve target entity table
+        const targetTable = TABLE_MAP[entityType];
+        if (!targetTable) {
+          console.warn(`[Sync Push] Unknown entity type: ${entityType}`);
+          rejected.push({ op_id: opId, error: `Unknown entity type: ${entityType}` });
+          continue;
+        }
 
-      // 3. Fetch current server state
-      const existingRows = await db
-        .select()
-        .from(targetTable)
-        .where(and(eq(targetTable.id, entityId), eq(targetTable.userId, user.id)))
-        .limit(1);
+        // 3. Fetch current server state
+        const existingRows = await db
+          .select()
+          .from(targetTable)
+          .where(and(eq(targetTable.id, entityId), eq(targetTable.userId, user.id)))
+          .limit(1);
 
-      const serverState = existingRows.length > 0 ? existingRows[0] : null;
+        let serverState = existingRows.length > 0 ? existingRows[0] : null;
 
-      // 4. Merge incoming fields with server state using HLC & field-level LWW
-      const mergeResult = mergeEntityFields(serverState, op);
+        // habit_logs are unique per (user, habit, day): fold a client-generated id onto the
+        // existing row for that day (including soft-deleted ones) instead of inserting a duplicate
+        if (!serverState && targetTable === schema.habitLogs) {
+          const habitId = op.fields?.habitId ?? op.fields?.habit_id;
+          const loggedOn = op.fields?.loggedOn ?? op.fields?.logged_on;
+          if (habitId && loggedOn) {
+            const [sameDay] = await db
+              .select()
+              .from(schema.habitLogs)
+              .where(
+                and(
+                  eq(schema.habitLogs.userId, user.id),
+                  eq(schema.habitLogs.habitId, habitId),
+                  eq(schema.habitLogs.loggedOn, loggedOn)
+                )
+              )
+              .limit(1);
+            if (sameDay) {
+              serverState = sameDay;
+              entityId = sameDay.id;
+            }
+          }
+        }
 
-      // 5. Update or insert target entity in database
-      const sanitized = sanitizeEntityData(targetTable, mergeResult.mergedFields, user.id);
-      sanitized.id = entityId;
+        // Update/delete of a row the server no longer has (e.g. hard-deleted on web): nothing to
+        // apply, and inserting the partial fields would violate NOT NULL columns
+        const opType = op.type || (op.fields ? "update" : "insert");
+        if (!serverState && (opType === "update" || opType === "delete")) {
+          applied.push(opId);
+          continue;
+        }
 
-      if (serverState) {
-        await db
-          .update(targetTable)
-          .set(sanitized)
-          .where(and(eq(targetTable.id, entityId), eq(targetTable.userId, user.id)));
-      } else {
-        await db.insert(targetTable).values(sanitized);
-      }
+        // 4. Merge incoming fields with server state using HLC & field-level LWW
+        const mergeResult = mergeEntityFields(serverState, op);
 
-      // 6. Record operation in sync_ops for idempotency and audit replay
-      await db.insert(syncOps).values({
-        opId: opId,
-        clientId: clientId,
-        entityType: entityType,
-        entityId: entityId,
-        op: op,
-        hlc: opHlc,
-        appliedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+        // 5. Update or insert target entity in database
+        const sanitized = sanitizeEntityData(targetTable, mergeResult.mergedFields, user.id);
+        sanitized.id = entityId;
 
-      // 7. Track conflicts if any
-      if (mergeResult.resolution !== "applied") {
-        conflicts.push({
-          op_id: opId,
-          resolution: mergeResult.resolution,
-          server_state: mergeResult.serverState,
-          field_winners: mergeResult.fieldWinners,
+        if (serverState) {
+          await db
+            .update(targetTable)
+            .set(sanitized)
+            .where(and(eq(targetTable.id, entityId), eq(targetTable.userId, user.id)));
+        } else {
+          await db.insert(targetTable).values(sanitized);
+        }
+
+        // 6. Record operation in sync_ops for idempotency and audit replay
+        await db.insert(syncOps).values({
+          opId: opId,
+          clientId: clientId,
+          entityType: entityType,
+          entityId: entityId,
+          op: op,
+          hlc: opHlc,
+          appliedAt: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
         });
-      }
 
-      applied.push(opId);
+        // 7. Track conflicts if any
+        if (mergeResult.resolution !== "applied") {
+          conflicts.push({
+            op_id: opId,
+            resolution: mergeResult.resolution,
+            server_state: mergeResult.serverState,
+            field_winners: mergeResult.fieldWinners,
+          });
+        }
+
+        applied.push(opId);
+      } catch (opError: any) {
+        console.error(`[Sync Push] Op ${opId} rejected:`, opError);
+        rejected.push({ op_id: opId, error: opError?.message || String(opError) });
+      }
     }
 
     const serverHlc = generateHlc("server", latestHlc);
@@ -225,6 +281,7 @@ export async function POST(req: Request) {
     const responsePayload: PushSyncResponse = {
       applied,
       conflicts,
+      rejected,
       server_hlc: serverHlc,
     };
 

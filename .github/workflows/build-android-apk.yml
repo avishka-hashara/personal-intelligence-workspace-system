@@ -1,93 +1,136 @@
-name: Build Android APK (Cloud Compiler)
+name: Build Android APK
+
+# Builds the native Expo / React Native app in mobile/ into an installable APK.
+# No Android Studio needed: the Android SDK, JDK and Gradle all run on GitHub's runners.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   EXPO_PUBLIC_SUPABASE_URL       Supabase project URL
+#   EXPO_PUBLIC_SUPABASE_ANON_KEY  Supabase anon (public) key
+#   EXPO_PUBLIC_API_URL            Deployed web app URL, e.g. https://your-piw.vercel.app
+# Optional, for a stable release signature (otherwise the template debug key is used):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
 
 on:
   workflow_dispatch:
     inputs:
-      app_url:
-        description: "Public URL of the deployed PIW web application (e.g. https://your-piw.vercel.app)"
-        required: true
-        default: "https://your-piw-domain.vercel.app"
+      publish_release:
+        description: "Also publish a GitHub Release (direct APK download link for your phone)"
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/build-android-apk.yml"
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+      ANDROID_VERSION_CODE: ${{ github.run_number }}
+      NODE_ENV: production
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java JDK
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "17"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Install Bubblewrap CLI (Official Google PWA-to-Android Builder)
-        run: npm install -g @bubblewrap/cli
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Initialize and Build Android APK via Bubblewrap
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Decode signing keystore
+        id: keystore
         env:
-          APP_URL: ${{ github.event.inputs.app_url }}
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          echo "Initializing Bubblewrap project for $APP_URL..."
-          mkdir -p android-build
-          cd android-build
-
-          # Initialize TWA project non-interactively using manifest
-          bubblewrap init --manifest="${APP_URL}/manifest.webmanifest" --directory=. --skipPwaValidation || true
-
-          # If full init requires interactive inputs, generate standard twa-manifest.json
-          if [ ! -f "twa-manifest.json" ]; then
-            cat <<EOF > twa-manifest.json
-          {
-            "packageId": "com.piw.workspace",
-            "host": "${APP_URL#https://}",
-            "name": "Personal Intelligence Workspace",
-            "launcherName": "PIW",
-            "themeColor": "#09090b",
-            "navigationColor": "#09090b",
-            "backgroundColor": "#09090b",
-            "startUrl": "/",
-            "iconUrl": "${APP_URL}/icons/icon-512x512.png",
-            "maskableIconUrl": "${APP_URL}/icons/icon-maskable-512x512.png",
-            "appVersionName": "1.0.0",
-            "appVersionCode": 1,
-            "shortcuts": [],
-            "generatorApp": "bubblewrap-cli",
-            "webManifestUrl": "${APP_URL}/manifest.webmanifest",
-            "fallbackType": "customtabs",
-            "features": {
-              "locationDelegation": {
-                "enabled": false
-              },
-              "playBilling": {
-                "enabled": false
-              }
-            },
-            "alphaDependencies": {
-              "enabled": false
-            },
-            "enableSiteSettingsShortcut": true,
-            "isChromeOSOnly": false,
-            "fullScopeUrl": "${APP_URL}/"
-          }
-          EOF
-            bubblewrap build --skipSigning || true
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "path=$RUNNER_TEMP/release.keystore" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 not set - APK is signed with the template debug key."
           fi
 
-      - name: Upload Debug APK Artifact
+      - name: Build release APK
+        working-directory: mobile/android
+        env:
+          KEYSTORE_PATH: ${{ steps.keystore.outputs.path }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          SIGNING_ARGS=()
+          if [ -n "$KEYSTORE_PATH" ]; then
+            SIGNING_ARGS=(
+              "-Pandroid.injected.signing.store.file=$KEYSTORE_PATH"
+              "-Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD"
+              "-Pandroid.injected.signing.key.alias=$KEY_ALIAS"
+              "-Pandroid.injected.signing.key.password=$KEY_PASSWORD"
+            )
+          fi
+          # arm64 covers virtually all current Android phones and halves build time / APK size
+          ./gradlew assembleRelease --no-daemon \
+            -PreactNativeArchitectures=arm64-v8a \
+            "${SIGNING_ARGS[@]}"
+
+      - name: Rename APK
+        id: apk
+        run: |
+          APK="piw-v1.0.${{ github.run_number }}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$APK"
+          echo "name=$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: piw-android-apk
-          path: |
-            android-build/*.apk
-            android-build/app/build/outputs/apk/**/*.apk
-          if-no-files-found: warn
+          path: mobile/${{ steps.apk.outputs.name }}
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: github.event_name == 'push' || inputs.publish_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v1.0.${{ github.run_number }}
+          name: PIW Android v1.0.${{ github.run_number }}
+          body: |
+            Native Android build from ${{ github.sha }}.
+            Download the APK below on your phone and open it to install (allow "Install unknown apps" for your browser).
+          files: mobile/${{ steps.apk.outputs.name }}
